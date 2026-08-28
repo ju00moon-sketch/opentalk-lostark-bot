@@ -1,5 +1,6 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { commands } from './commands/index.js';
+import { startIslandNotifier } from './notify.js';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -16,6 +17,7 @@ const allowedChannels = (process.env.ALLOWED_CHANNEL_IDS ?? '')
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`로그인 완료: ${readyClient.user.tag} (커맨드 ${commandMap.size}개)`);
+  startIslandNotifier(readyClient);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
