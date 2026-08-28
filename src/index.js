@@ -1,8 +1,15 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { commands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
+import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // 개발자 포털에서 Message Content Intent 활성화 필요
+  ],
+});
 
 const commandMap = new Collection();
 for (const command of commands) {
@@ -16,8 +23,25 @@ const allowedChannels = (process.env.ALLOWED_CHANNEL_IDS ?? '')
   .filter(Boolean);
 
 client.once(Events.ClientReady, (readyClient) => {
-  console.log(`로그인 완료: ${readyClient.user.tag} (커맨드 ${commandMap.size}개)`);
+  console.log(`로그인 완료: ${readyClient.user.tag} (커맨드 ${commandMap.size}개, 이모티콘 ${countEmoticons()}개)`);
   startIslandNotifier(readyClient);
+});
+
+// "[키워드" 형태의 메시지에 이모티콘 이미지로 응답
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return;
+  if (allowedChannels.length > 0 && !allowedChannels.includes(message.channelId)) return;
+
+  const keyword = parseEmoticonKeyword(message.content);
+  if (!keyword) return;
+  const file = findEmoticonFile(keyword);
+  if (!file) return;
+
+  try {
+    await message.channel.send({ files: [file] });
+  } catch (err) {
+    console.error(`[이모티콘 ${keyword}]`, err.message);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
