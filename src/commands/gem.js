@@ -15,6 +15,7 @@ export const data = new SlashCommandBuilder()
       .addChoices(
         { name: '겁화 (4티어 피해)', value: '겁화' },
         { name: '작열 (4티어 쿨감)', value: '작열' },
+        { name: '광휘 (4티어 서포터)', value: '광휘' },
         { name: '멸화 (3티어 피해)', value: '멸화' },
         { name: '홍염 (3티어 쿨감)', value: '홍염' },
       ),

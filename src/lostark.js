@@ -32,6 +32,11 @@ export function getArmory(characterName) {
   return request(`/armories/characters/${encodeURIComponent(characterName)}?filters=${filters}`);
 }
 
+// 전투정보실 개별 항목 조회 (equipment, combat-skills, arkpassive, avatars, collectibles, gems, arkgrid).
+export function getArmoryPart(characterName, part) {
+  return request(`/armories/characters/${encodeURIComponent(characterName)}/${part}`);
+}
+
 // 같은 계정(원정대)의 캐릭터 목록. 조회 불가면 빈 배열.
 export function getSiblings(characterName) {
   return request(`/characters/${encodeURIComponent(characterName)}/siblings`);

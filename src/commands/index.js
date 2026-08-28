@@ -6,5 +6,19 @@ import * as island from './island.js';
 import * as market from './market.js';
 import * as gem from './gem.js';
 import * as help from './help.js';
+import * as equip from './equip.js';
+import * as accessory from './accessory.js';
+import * as stone from './stone.js';
+import * as bracelet from './bracelet.js';
+import * as skills from './skills.js';
+import * as arkpassive from './arkpassive.js';
+import * as arkgrid from './arkgrid.js';
+import * as avatar from './avatar.js';
+import * as collectible from './collectible.js';
+import * as power from './power.js';
 
-export const commands = [character, gear, expedition, bid, island, market, gem, help];
+export const commands = [
+  character, gear, expedition, bid, island, market, gem, help,
+  equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
+  avatar, collectible, power,
+];
