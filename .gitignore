@@ -1,2 +1,6 @@
 node_modules/
 .env
+
+# 이모티콘 이미지: 공식 이미지 재배포 방지를 위해 공개 저장소에서 제외 (로컬/봇 서버에만 보관)
+assets/emoticons/*
+!assets/emoticons/README.md
