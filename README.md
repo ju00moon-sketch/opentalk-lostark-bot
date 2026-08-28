@@ -94,3 +94,7 @@ npm start
 
 API 문서: https://developer-lostark.game.onstove.com/getting-started
 (요청 한도: 기본 분당 100회)
+
+## 라이선스
+
+[MIT](LICENSE)
