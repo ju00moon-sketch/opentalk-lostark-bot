@@ -27,10 +27,10 @@ client.once(Events.ClientReady, (readyClient) => {
   startIslandNotifier(readyClient);
 });
 
-// "[키워드" 형태의 메시지에 이모티콘 이미지로 응답
+// "[키워드" 형태의 메시지에 이모티콘 이미지로 응답.
+// 커맨드와 달리 채널 제한을 적용하지 않는다 — 어느 채널에서든 사용 가능.
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
-  if (allowedChannels.length > 0 && !allowedChannels.includes(message.channelId)) return;
 
   const keyword = parseEmoticonKeyword(message.content);
   if (!keyword) return;
