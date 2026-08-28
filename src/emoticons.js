@@ -23,13 +23,19 @@ export function findEmoticonFile(keyword) {
   return null;
 }
 
+// 등록된 이모티콘 키워드 목록 (가나다순).
+export function listEmoticons() {
+  try {
+    return readdirSync(EMOTICON_DIR)
+      .filter((f) => EXTENSIONS.some((ext) => f.toLowerCase().endsWith(`.${ext}`)))
+      .map((f) => f.replace(/\.[^.]+$/, ''))
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+  } catch {
+    return [];
+  }
+}
+
 // 현재 등록된 이모티콘 수 (시작 로그용).
 export function countEmoticons() {
-  try {
-    return readdirSync(EMOTICON_DIR).filter((f) =>
-      EXTENSIONS.some((ext) => f.toLowerCase().endsWith(`.${ext}`)),
-    ).length;
-  } catch {
-    return 0;
-  }
+  return listEmoticons().length;
 }
