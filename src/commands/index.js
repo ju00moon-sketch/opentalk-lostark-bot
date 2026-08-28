@@ -16,9 +16,10 @@ import * as arkgrid from './arkgrid.js';
 import * as avatar from './avatar.js';
 import * as collectible from './collectible.js';
 import * as power from './power.js';
+import * as emoticon from './emoticon.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
-  avatar, collectible, power,
+  avatar, collectible, power, emoticon,
 ];
