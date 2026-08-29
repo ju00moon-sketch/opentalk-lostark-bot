@@ -36,7 +36,6 @@ import * as cores from './cores.js';
 import * as paradise from './paradise.js';
 import * as skillcode from './skillcode.js';
 import * as guardian from './guardian.js';
-import * as guardianAll from './guardian-all.js';
 import * as alarm from './alarm.js';
 
 import { ALIASES } from '../text-commands.js';
@@ -47,7 +46,7 @@ const base = [
   avatar, collectible, power, emoticon,
   gemsof, gemboard, engraving, engravingRank, life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
-  grinding, cores, paradise, skillcode, guardian, guardianAll, alarm,
+  grinding, cores, paradise, skillcode, guardian, alarm,
 ];
 
 // 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).
