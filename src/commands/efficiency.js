@@ -1,6 +1,6 @@
-import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { searchMarketItems } from '../lostark.js';
-import { REWARD_TABLES, FIXED_UNIT_VALUES, MARKET_ITEMS, DATA_DATE } from '../data/efficiency.js';
+import { buildTable, FIXED_UNIT_VALUES, MARKET_ITEMS, DATA_DATE } from '../data/efficiency.js';
 import { trunc, gold, EMBED_COLOR } from '../format.js';
 
 const MATERIAL_CATEGORY = 50000;
@@ -8,7 +8,7 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 export const data = new SlashCommandBuilder()
   .setName('효율')
-  .setDescription('보상 선택지의 실시간 골드 가치 랭킹')
+  .setDescription('지옥/나락 보상 선택지의 실시간 골드 가치 랭킹 (1750 열쇠)')
   .addStringOption((option) =>
     option
       .setName('콘텐츠')
@@ -17,10 +17,12 @@ export const data = new SlashCommandBuilder()
       .addChoices({ name: '지옥', value: '지옥' }, { name: '나락', value: '나락' }),
   )
   .addIntegerOption((option) =>
-    option.setName('레벨').setDescription('아이템 레벨 (예: 1750)').setRequired(true),
-  )
-  .addIntegerOption((option) =>
-    option.setName('단계').setDescription('단계 (예: 10)').setRequired(true),
+    option
+      .setName('단계')
+      .setDescription('진행도 단계 (0~10)')
+      .setRequired(true)
+      .setMinValue(0)
+      .setMaxValue(10),
   );
 
 // 거래소 시세 캐시 (아이템명 → 개당 골드)
@@ -45,30 +47,31 @@ async function getUnitPrices() {
 }
 
 const unitValue = (prices, name) => prices.get(name) ?? FIXED_UNIT_VALUES[name] ?? 0;
-const itemsValue = (prices, items) =>
-  items.reduce((sum, [name, qty]) => sum + unitValue(prices, name) * qty, 0);
+
+// parts 항목 하나의 가치. 배열이면 지급, { choice }면 택1 중 최대값.
+function partValue(prices, part) {
+  if (Array.isArray(part)) return unitValue(prices, part[0]) * part[1];
+  return Math.max(...part.choice.map(([name, qty]) => unitValue(prices, name) * qty));
+}
 
 export async function execute(interaction) {
   const content = interaction.options.getString('콘텐츠');
-  const level = interaction.options.getInteger('레벨');
   const stage = interaction.options.getInteger('단계');
 
-  const table = REWARD_TABLES[`${content}:${level}:${stage}`];
+  const table = buildTable(content, stage);
   if (!table) {
-    const known = Object.values(REWARD_TABLES).map((t) => `\`${t.label}\``).join(', ');
-    await interaction.reply({
-      content: `\`${content} ${level} ${stage}단계\` 데이터가 아직 없어요.\n현재 등록된 표: ${known || '없음'}\n엉... 보상 구성(전체보기)을 알려주시면 추가할게요!`,
-      flags: MessageFlags.Ephemeral,
-    });
+    await interaction.reply(`\`${content} ${stage}단계\` 데이터가 없어요. 단계는 0~10이에요.`);
     return;
   }
 
   await interaction.deferReply();
   const prices = await getUnitPrices();
 
-  const baseValue = itemsValue(prices, table.base);
   const ranked = table.options
-    .map((option) => ({ ...option, value: baseValue + itemsValue(prices, option.items) }))
+    .map((option) => ({
+      name: option.name,
+      value: table.baseGold + option.parts.reduce((sum, part) => sum + partValue(prices, part), 0),
+    }))
     .sort((a, b) => b.value - a.value);
 
   const lines = ranked.map((o, i) => `**[${i + 1}] ${o.name}** — ${gold(o.value)}`);
@@ -77,9 +80,10 @@ export async function execute(interaction) {
     .setColor(EMBED_COLOR)
     .setTitle(`⚖️ ${table.label} 효율`)
     .setDescription(trunc(lines.join('\n'), 4096))
-    .addFields({ name: '기본 보상 가치 (모든 선택지에 포함)', value: gold(baseValue) })
     .setFooter({
-      text: `거래 가능 재료는 실시간 시세, 귀속 아이템은 추정 단가 · 구성표 ${DATA_DATE} 기준`,
+      text:
+        (table.baseGold > 0 ? `기본 보상(약 ${gold(table.baseGold)}) 포함 · ` : '') +
+        `재료는 실시간 시세, 귀속템은 추정 단가 · 구성표 ${DATA_DATE} 기준`,
     });
 
   await interaction.editReply({ embeds: [embed] });
