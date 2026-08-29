@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포근해챗봇 — 로스트아크 디스코드 봇</title>
+<meta name="description" content="로스트아크 정보 조회 디스코드 봇. 캐릭터 조회, 장비 상세, 시세 검색, 모험섬 알림, 이모티콘까지.">
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-card: #171a21;
+    --bg-soft: #1e222b;
+    --text: #e8eaf0;
+    --text-dim: #9aa3b2;
+    --accent: #f5a623;
+    --accent-soft: rgba(245, 166, 35, 0.12);
+    --border: #262b36;
+    --green: #5dd39e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+  header {
+    padding: 72px 0 56px;
+    text-align: center;
+    background: radial-gradient(ellipse at top, rgba(245,166,35,0.08), transparent 60%);
+  }
+  .logo { font-size: 56px; }
+  h1 { font-size: 2.2rem; margin: 12px 0 8px; }
+  h1 .accent { color: var(--accent); }
+  .tagline { color: var(--text-dim); font-size: 1.05rem; }
+  .badges { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    background: var(--bg-soft); border: 1px solid var(--border);
+    padding: 5px 14px; border-radius: 99px; font-size: 0.85rem; color: var(--text-dim);
+  }
+  .badge b { color: var(--accent); font-weight: 600; }
+
+  section { padding: 40px 0; border-top: 1px solid var(--border); }
+  h2 { font-size: 1.4rem; margin-bottom: 6px; }
+  h2 .emoji { margin-right: 8px; }
+  .section-desc { color: var(--text-dim); margin-bottom: 24px; font-size: 0.95rem; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .card h3 { font-size: 1.02rem; margin-bottom: 6px; }
+  .card p { color: var(--text-dim); font-size: 0.9rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 0.85rem; }
+  td code, p code, li code {
+    background: var(--accent-soft); color: var(--accent);
+    padding: 2px 7px; border-radius: 6px; font-size: 0.88em;
+    font-family: "Cascadia Code", Consolas, monospace;
+    white-space: nowrap;
+  }
+  .table-scroll { overflow-x: auto; }
+
+  .steps { counter-reset: step; list-style: none; }
+  .steps li {
+    counter-increment: step; position: relative;
+    padding: 0 0 20px 48px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem;
+  }
+  .steps li b { display: block; margin-bottom: 2px; }
+  .steps li p { color: var(--text-dim); font-size: 0.92rem; }
+  pre {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+    font-size: 0.88rem; margin: 8px 0;
+    font-family: "Cascadia Code", Consolas, monospace;
+    color: var(--green);
+  }
+
+  .timeline { list-style: none; border-left: 2px solid var(--border); margin-left: 8px; }
+  .timeline li { padding: 0 0 24px 24px; position: relative; }
+  .timeline li::before {
+    content: ""; position: absolute; left: -7px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg);
+  }
+  .timeline .date { color: var(--text-dim); font-size: 0.82rem; }
+  .timeline b { display: block; margin: 2px 0 4px; }
+  .timeline p { color: var(--text-dim); font-size: 0.92rem; }
+
+  .note {
+    background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; font-size: 0.92rem; color: var(--text-dim);
+    margin-top: 16px;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0 48px; text-align: center; color: var(--text-dim); font-size: 0.88rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">🌱</div>
+    <h1>포근해<span class="accent">챗봇</span></h1>
+    <p class="tagline">로스트아크 정보 조회 디스코드 봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
+    <div class="badges">
+      <span class="badge">커맨드 <b>19개</b></span>
+      <span class="badge">이모티콘 <b>74종</b></span>
+      <span class="badge">가동률 <b>24시간</b></span>
+      <span class="badge">데이터 <b>로스트아크 공식 API</b></span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="emoji">✨</span>주요 기능</h2>
+    <p class="section-desc">슬래시(/) 하나로 게임 정보를 채팅방에서 바로 확인하세요.</p>
+    <div class="cards">
+      <div class="card"><h3>🔍 캐릭터 조회</h3><p>기본 정보부터 장비·각인·보석·카드 군장검사, 원정대 전체 캐릭터까지.</p></div>
+      <div class="card"><h3>📋 부위별 상세</h3><p>장비 품질, 악세서리 연마 효과, 스톤 세공, 팔찌, 스킬 트라이포드·룬.</p></div>
+      <div class="card"><h3>✨ 최신 시스템</h3><p>아크 패시브 포인트·노드, 아크 그리드 코어, 전투력, 수집품 내실.</p></div>
+      <div class="card"><h3>💰 시세 · 계산</h3><p>거래소 검색, 보석 최저가, 경매 적정 입찰가 자동 계산 (수수료 반영).</p></div>
+      <div class="card"><h3>🏝️ 모험섬 알림</h3><p>매일 아침 8시, 오늘의 모험 섬과 보상을 자동 공지. 골드섬은 💰 표시.</p></div>
+      <div class="card"><h3>😄 이모티콘</h3><p>채팅에 <code>[따봉</code>처럼 입력하면 이미지로 응답. 모든 채널에서 사용 가능.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="emoji">⌨️</span>커맨드 목록</h2>
+    <p class="section-desc">서버에서 <code>/도움말</code>을 입력하면 언제든 다시 볼 수 있어요.</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th>커맨드</th><th>기능</th></tr>
+        <tr><td><code>/캐릭터 닉네임</code></td><td>서버 · 직업 · 아이템 레벨 등 기본 정보</td></tr>
+        <tr><td><code>/군장 닉네임</code></td><td>장비 · 각인 · 보석 · 카드 한눈에</td></tr>
+        <tr><td><code>/전투력 닉네임</code></td><td>전투력 · 전투 특성 · 공격력/생명력</td></tr>
+        <tr><td><code>/원정대 닉네임</code></td><td>계정의 모든 캐릭터를 아이템 레벨 순으로</td></tr>
+        <tr><td><code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code></td><td>부위별 상세 — 품질, 연마 효과, 세공 각인, 팔찌 효과</td></tr>
+        <tr><td><code>/스킬 닉네임</code></td><td>채용 스킬 · 트라이포드 · 룬</td></tr>
+        <tr><td><code>/앜패</code> <code>/앜그</code></td><td>아크 패시브 포인트/노드 · 아크 그리드 코어/효과</td></tr>
+        <tr><td><code>/아바타 닉네임</code></td><td>장착 아바타 목록</td></tr>
+        <tr><td><code>/내실 닉네임</code></td><td>수집품 진행도 (모코코 씨앗, 섬의 마음 등)</td></tr>
+        <tr><td><code>/시세 아이템명</code></td><td>거래소 가격 검색 (부분 검색 가능)</td></tr>
+        <tr><td><code>/보석 종류 레벨</code></td><td>경매장 보석 최저가 (겁화/작열/광휘/멸화/홍염)</td></tr>
+        <tr><td><code>/입찰 가격 [인원]</code></td><td>경매 적정 입찰가 계산 (4/8/16인, 수수료 5% 반영)</td></tr>
+        <tr><td><code>/모험섬</code></td><td>오늘의 모험 섬 시간표 + 주요 보상</td></tr>
+        <tr><td><code>/이모티콘</code></td><td>사용 가능한 이모티콘 키워드 목록</td></tr>
+        <tr><td><code>/도움말</code></td><td>커맨드 사용법 안내</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="emoji">😄</span>이모티콘 사용법</h2>
+    <p class="section-desc">커맨드가 아니라 일반 채팅으로 입력해요. 어느 채널에서든 작동합니다.</p>
+    <ol class="steps">
+      <li><b>채팅에 <code>[키워드</code> 입력</b><p>예: <code>[따봉</code> <code>[ㅋㅋ</code> <code>[모무룩</code> <code>[엣큥</code> — 봇이 해당 이모티콘 이미지를 올려줍니다.</p></li>
+      <li><b>키워드 목록 확인</b><p><code>/이모티콘</code> 커맨드를 입력하면 사용 가능한 전체 키워드(74종)를 볼 수 있어요.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="emoji">🔗</span>연동 방법</h2>
+    <p class="section-desc">현재는 비공개로 운영 중인 봇이라 지정된 서버에서만 사용할 수 있어요. 직접 운영하고 싶다면 아래 방법으로 나만의 봇을 띄울 수 있습니다.</p>
+    <ol class="steps">
+      <li><b>코드 받기</b><p>GitHub 저장소를 클론합니다. Node.js 24 이상이 필요해요.</p>
+        <pre>git clone https://github.com/ju00moon-sketch/opentalk-lostark-bot.git
+cd opentalk-lostark-bot
+npm install</pre></li>
+      <li><b>토큰 3개 발급</b><p>디스코드 개발자 포털에서 봇 토큰과 애플리케이션 ID, 로스트아크 개발자 사이트에서 API 키를 발급받아 <code>.env</code> 파일에 넣습니다. 자세한 과정은 저장소 README에 단계별로 정리돼 있어요.</p></li>
+      <li><b>커맨드 등록 후 실행</b>
+        <pre>npm run register
+npm start</pre>
+        <p>"로그인 완료"가 뜨면 디스코드에서 <code>/도움말</code>을 입력해 보세요.</p></li>
+    </ol>
+    <div class="note">💡 24시간 운영하려면 무료 클라우드(Oracle Cloud Free Tier 등)에 올리고 pm2로 상시 실행하는 걸 추천해요. 이 봇도 그렇게 돌아가고 있습니다.</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="emoji">📝</span>업데이트 내역</h2>
+    <ul class="timeline">
+      <li>
+        <span class="date">2026. 08. 29</span>
+        <b>이모티콘 시스템</b>
+        <p>채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종) · <code>/이모티콘</code> 목록 커맨드 · 모든 채널에서 사용 가능</p>
+      </li>
+      <li>
+        <span class="date">2026. 08. 29</span>
+        <b>모험섬 아침 알림 · 저장소 공개</b>
+        <p>매일 아침 8시(KST) 오늘의 모험 섬 자동 공지 · 새벽 시간대 날짜 버그 수정 · GitHub 공개 및 MIT 라이선스 적용</p>
+      </li>
+      <li>
+        <span class="date">2026. 08. 28</span>
+        <b>캐릭터 상세 조회 10종 추가</b>
+        <p><code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/전투력</code> · 보석 검색에 광휘 추가</p>
+      </li>
+      <li>
+        <span class="date">2026. 08. 28</span>
+        <b>24시간 운영 시작</b>
+        <p>Oracle Cloud 서버 이전 · pm2 자동 복구 · 채널 제한 기능 · <code>/도움말</code> 추가</p>
+      </li>
+      <li>
+        <span class="date">2026. 08. 28</span>
+        <b>v0.1 첫 공개</b>
+        <p>커맨드 7종으로 시작 — <code>/캐릭터</code> <code>/군장</code> <code>/원정대</code> <code>/입찰</code> <code>/모험섬</code> <code>/시세</code> <code>/보석</code></p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>🌱 포근해챗봇 · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
+    <p style="margin-top:6px; font-size:0.8rem;">데이터 출처: 로스트아크 오픈 API — 본 사이트는 Smilegate RPG와 무관한 팬 프로젝트입니다.</p>
+  </div>
+</footer>
+
+</body>
+</html>
