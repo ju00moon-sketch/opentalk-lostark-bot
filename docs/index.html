@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>포근해챗봇 — 로스트아크 디스코드 봇</title>
-<meta name="description" content="로스트아크 정보 조회 디스코드 봇. 캐릭터 조회, 장비 상세, 시세 검색, 모험섬 알림, 이모티콘까지.">
+<title>포근해챗봇 — 포근해 길드 전용 로스트아크 챗봇</title>
+<meta name="description" content="포근해 길드 전용 로스트아크 디스코드 챗봇. 캐릭터 조회, 장비 상세, 시세 검색, 모험섬 알림, 이모티콘까지.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 <style>
   :root {
     --bg: #0f1115;
@@ -16,6 +17,7 @@
     --accent-soft: rgba(245, 166, 35, 0.12);
     --border: #262b36;
     --green: #5dd39e;
+    --kakao: #fee500;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -27,25 +29,49 @@
   .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
 
   header {
-    padding: 72px 0 56px;
+    padding: 52px 0 36px;
     text-align: center;
     background: radial-gradient(ellipse at top, rgba(245,166,35,0.08), transparent 60%);
   }
-  .logo { font-size: 56px; }
-  h1 { font-size: 2.2rem; margin: 12px 0 8px; }
+  .logo { font-size: 48px; }
+  h1 { font-size: 2rem; margin: 10px 0 6px; }
   h1 .accent { color: var(--accent); }
-  .tagline { color: var(--text-dim); font-size: 1.05rem; }
-  .badges { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .tagline { color: var(--text-dim); font-size: 1rem; }
+  .tagline b { color: var(--accent); font-weight: 600; }
+  .badges { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .badge {
     background: var(--bg-soft); border: 1px solid var(--border);
     padding: 5px 14px; border-radius: 99px; font-size: 0.85rem; color: var(--text-dim);
   }
   .badge b { color: var(--accent); font-weight: 600; }
 
-  section { padding: 40px 0; border-top: 1px solid var(--border); }
+  /* 탭 내비게이션 */
+  nav.tabs {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15, 17, 21, 0.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs-inner {
+    max-width: 880px; margin: 0 auto; padding: 0 12px;
+    display: flex; gap: 4px; overflow-x: auto;
+  }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.95rem; font-family: inherit;
+    padding: 14px 16px; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .tab-panel { display: none; padding: 40px 0 56px; }
+  .tab-panel.active { display: block; }
+
   h2 { font-size: 1.4rem; margin-bottom: 6px; }
   h2 .emoji { margin-right: 8px; }
   .section-desc { color: var(--text-dim); margin-bottom: 24px; font-size: 0.95rem; }
+  .sub-block { margin-top: 40px; }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
   .card {
@@ -124,6 +150,20 @@
   details summary { cursor: pointer; color: var(--text-dim); font-size: 0.95rem; }
   details[open] summary { margin-bottom: 12px; }
 
+  .kakao-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--kakao);
+    border-radius: 12px; padding: 20px 22px; margin-top: 12px;
+  }
+  .kakao-card h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .soon {
+    display: inline-block; margin-left: 8px; vertical-align: middle;
+    background: rgba(254, 229, 0, 0.12); color: var(--kakao);
+    font-size: 0.75rem; font-weight: 700;
+    padding: 2px 10px; border-radius: 99px;
+  }
+  .kakao-card p { color: var(--text-dim); font-size: 0.92rem; }
+
   footer {
     border-top: 1px solid var(--border);
     padding: 32px 0 48px; text-align: center; color: var(--text-dim); font-size: 0.88rem;
@@ -138,7 +178,7 @@
   <div class="wrap">
     <div class="logo">🌱</div>
     <h1>포근해<span class="accent">챗봇</span></h1>
-    <p class="tagline">로스트아크 정보 조회 디스코드 봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
+    <p class="tagline"><b>포근해 길드 전용</b> 로스트아크 챗봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
     <div class="badges">
       <span class="badge">커맨드 <b>19개</b></span>
       <span class="badge">이모티콘 <b>74종</b></span>
@@ -148,10 +188,21 @@
   </div>
 </header>
 
-<section>
-  <div class="wrap">
+<nav class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" data-tab="intro">🏠 소개</button>
+    <button class="tab-btn" data-tab="commands">⌨️ 커맨드</button>
+    <button class="tab-btn" data-tab="emoticons">😄 이모티콘</button>
+    <button class="tab-btn" data-tab="link">🔗 연동</button>
+    <button class="tab-btn" data-tab="updates">📝 업데이트</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section class="tab-panel active" id="panel-intro">
     <h2><span class="emoji">✨</span>주요 기능</h2>
-    <p class="section-desc">슬래시(/) 하나로 게임 정보를 채팅방에서 바로 확인하세요.</p>
+    <p class="section-desc">루페온 서버 포근해 길드를 위해 만든 디스코드 봇이에요. 슬래시(/) 하나로 게임 정보를 채팅방에서 바로 확인하세요.</p>
     <div class="cards">
       <div class="card"><h3>🔍 캐릭터 조회</h3><p>기본 정보부터 장비·각인·보석·카드 군장검사, 원정대 전체 캐릭터까지.</p></div>
       <div class="card"><h3>📋 부위별 상세</h3><p>장비 품질, 악세서리 연마 효과, 스톤 세공, 팔찌, 스킬 트라이포드·룬.</p></div>
@@ -160,11 +211,9 @@
       <div class="card"><h3>🏝️ 모험섬 알림</h3><p>매일 아침 8시, 오늘의 모험 섬과 보상을 자동 공지. 골드섬은 💰 표시.</p></div>
       <div class="card"><h3>😄 이모티콘</h3><p>채팅에 <code>[따봉</code>처럼 입력하면 이미지로 응답. 모든 채널에서 사용 가능.</p></div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="wrap">
+  <section class="tab-panel" id="panel-commands">
     <h2><span class="emoji">⌨️</span>커맨드 목록</h2>
     <p class="section-desc">서버에서 <code>/도움말</code>을 입력하면 언제든 다시 볼 수 있어요.</p>
     <div class="table-scroll">
@@ -184,27 +233,24 @@
         <tr><td><code>/입찰 가격 [인원]</code></td><td>경매 적정 입찰가 계산 (4/8/16인, 수수료 5% 반영)</td></tr>
         <tr><td><code>/모험섬</code></td><td>오늘의 모험 섬 시간표 + 주요 보상</td></tr>
         <tr><td><code>/이모티콘</code></td><td>사용 가능한 이모티콘 키워드 목록</td></tr>
-        <tr><td><code>/도움말</code></td><td>커맨드 사용법 안내</td></tr>
+        <tr><td><code>/도움말</code></td><td>커맨드 사용법 안내 (본인에게만 표시)</td></tr>
       </table>
     </div>
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="wrap">
+  <section class="tab-panel" id="panel-emoticons">
     <h2><span class="emoji">😄</span>이모티콘 사용법</h2>
     <p class="section-desc">커맨드가 아니라 일반 채팅으로 입력해요. 어느 채널에서든 작동합니다.</p>
     <ol class="steps">
       <li><b>채팅에 <code>[키워드</code> 입력</b><p>예: <code>[따봉</code> <code>[ㅋㅋ</code> <code>[모무룩</code> <code>[엣큥</code> — 봇이 해당 이모티콘 이미지를 올려줍니다.</p></li>
       <li><b>키워드 목록 확인</b><p><code>/이모티콘</code> 커맨드를 입력하면 사용 가능한 전체 키워드(74종)를 볼 수 있어요.</p></li>
     </ol>
-  </div>
-</section>
+    <div class="note">💡 이모티콘은 커맨드 채널 제한과 무관하게 서버의 모든 채널에서 사용할 수 있어요.</div>
+  </section>
 
-<section>
-  <div class="wrap">
-    <h2><span class="emoji">🔗</span>서버에 초대하기</h2>
-    <p class="section-desc">버튼 하나로 여러분의 디스코드 서버에 포근해챗봇을 추가할 수 있어요.</p>
+  <section class="tab-panel" id="panel-link">
+    <h2><span class="emoji">🔗</span>디스코드 서버에 초대하기</h2>
+    <p class="section-desc">포근해 길드용으로 만들었지만, 버튼 하나로 다른 서버에도 추가할 수 있어요.</p>
     <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=1542885088038092901&permissions=52224&scope=bot%20applications.commands">➕ 포근해챗봇 초대하기</a>
     <ol class="steps">
       <li><b>버튼 클릭 → 서버 선택</b><p>디스코드에 로그인한 뒤 봇을 추가할 서버를 고릅니다. (서버 관리 권한이 있어야 해요)</p></li>
@@ -212,6 +258,15 @@
       <li><b>바로 사용</b><p><code>/도움말</code>을 입력해 보세요. 이모티콘(<code>[따봉</code>)도 바로 작동합니다.</p></li>
     </ol>
     <div class="note">💡 특정 채널에서만 커맨드를 허용하고 싶다면 <b>서버 설정 → 연동 → 포근해챗봇</b>에서 채널을 제한할 수 있어요. 모험섬 아침 알림은 현재 운영 서버 전용이며, 초대한 서버에서의 알림 설정 기능은 준비 중입니다.</div>
+
+    <div class="sub-block">
+      <h2><span class="emoji">💬</span>카카오톡 연동<span class="soon">준비 중</span></h2>
+      <div class="kakao-card">
+        <h3>카카오톡에서도 포근해챗봇을</h3>
+        <p>길드 카카오톡 채팅방에서도 캐릭터 조회, 시세 검색 같은 핵심 기능을 쓸 수 있도록 연동을 준비하고 있어요. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유하는 방식이라, 어느 쪽에서 물어봐도 같은 정보를 받아볼 수 있게 됩니다. 자세한 사용법은 준비가 끝나면 이곳에 공개할게요.</p>
+      </div>
+    </div>
+
     <details>
       <summary>직접 운영하고 싶다면 (셀프 호스팅)</summary>
       <p class="section-desc">코드가 공개돼 있어서 나만의 봇을 띄울 수도 있어요. Node.js 24 이상 필요.</p>
@@ -220,22 +275,20 @@ cd opentalk-lostark-bot
 npm install</pre>
       <p class="section-desc">이후 토큰 발급과 실행 방법은 <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot#readme" style="color:var(--accent)">저장소 README</a>에 단계별로 정리돼 있습니다.</p>
     </details>
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="wrap">
+  <section class="tab-panel" id="panel-updates">
     <h2><span class="emoji">📝</span>업데이트 내역</h2>
     <ul class="timeline">
       <li>
         <span class="date">2026. 08. 29</span>
         <ul>
+          <li><b>공개 봇 전환</b> — 글로벌 커맨드 등록, 어느 서버에서든 초대 가능</li>
+          <li><b>홈페이지 개편</b> — 탭 구조로 재구성, 카카오톡 연동 안내 추가</li>
           <li><b>캐릭터 상세 조회 10종 추가</b> — <code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/전투력</code></li>
-          <li><b>이모티콘 시스템</b> — 채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종), <code>/이모티콘</code> 목록 커맨드, 모든 채널 사용 가능</li>
+          <li><b>이모티콘 시스템</b> — 채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종), <code>/이모티콘</code> 목록 커맨드</li>
           <li><b>모험섬 아침 알림</b> — 매일 아침 8시(KST) 자동 공지, 새벽 시간대 날짜 버그 수정</li>
-          <li>보석 검색에 광휘 추가</li>
-          <li>GitHub 저장소 공개, MIT 라이선스 적용</li>
-          <li>공식 홈페이지 오픈</li>
+          <li>보석 검색에 광휘 추가 · GitHub 저장소 공개, MIT 라이선스 · 공식 홈페이지 오픈</li>
         </ul>
       </li>
       <li>
@@ -247,8 +300,9 @@ npm install</pre>
         </ul>
       </li>
     </ul>
-  </div>
-</section>
+  </section>
+
+</main>
 
 <footer>
   <div class="wrap">
@@ -256,6 +310,36 @@ npm install</pre>
     <p style="margin-top:6px; font-size:0.8rem;">데이터 출처: 로스트아크 오픈 API — 본 사이트는 Smilegate RPG와 무관한 팬 프로젝트입니다.</p>
   </div>
 </footer>
+
+<script>
+  const buttons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  function showTab(name) {
+    const target = document.getElementById('panel-' + name);
+    if (!target) return false;
+    buttons.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+    panels.forEach((p) => p.classList.toggle('active', p === target));
+    return true;
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      showTab(btn.dataset.tab);
+      history.replaceState(null, '', '#' + btn.dataset.tab);
+    });
+  });
+
+  // 주소의 #탭이름과 화면을 동기화한다 (예: index.html#updates).
+  // 페이지 로드 시는 물론, 열려 있는 상태에서 해시만 바뀌어도 (뒤로가기 포함) 반영되도록
+  // hashchange 이벤트를 함께 처리한다.
+  function syncFromHash() {
+    const name = location.hash.slice(1);
+    if (!name || !showTab(name)) showTab('intro');
+  }
+  window.addEventListener('hashchange', syncFromHash);
+  syncFromHash();
+</script>
 
 </body>
 </html>
