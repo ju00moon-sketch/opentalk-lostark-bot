@@ -21,7 +21,7 @@ export const ALIASES = {
     return [4, 8, 16].includes(인원) ? { 가격, 인원 } : { 가격 };
   } },
   ㅁㅎㅅ: { cmd: '모험섬', parse: () => ({}) },
-  ㄱㅌ: { cmd: '가토', parse: (p) => ({ 전체: /전체/.test(p[0] ?? '') || null }) },
+  ㄱㅌ: { cmd: '가토', parse: (p) => ({ 전체: /전체/.test(p.join(' ')) ? '전체' : null }) },
   ㅈㅇ: { cmd: '지옥', parse: (p) => ({ 등급: GRADE_MAP[p[0]] ?? null }) },
   ㄴㄹ: { cmd: '나락', parse: (p) => ({ 등급: GRADE_MAP[p[0]] ?? null }) },
   ㅅㄴㅈ: { cmd: '시너지', parse: (p) => ({ 검색: p.join(' ') || null }) },

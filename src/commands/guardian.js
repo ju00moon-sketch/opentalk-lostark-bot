@@ -5,12 +5,12 @@ import { trunc, EMBED_COLOR } from '../format.js';
 export const data = new SlashCommandBuilder()
   .setName('가토')
   .setDescription('이번 주 잔영 가디언 토벌 — 속성 취약과 추천 카드')
-  .addBooleanOption((option) =>
-    option.setName('전체').setDescription('전체 가디언의 속성/카드 표 보기'),
+  .addStringOption((option) =>
+    option.setName('전체').setDescription('아무 값이나 입력하면 전체 가디언 표를 보여줍니다'),
   );
 
 export async function execute(interaction) {
-  const showAll = interaction.options.getBoolean('전체') ?? false;
+  const showAll = interaction.options.getString('전체') != null;
   const current = guardianForWeek(0);
   const next = guardianForWeek(1);
   const cards = cardsFor(current.element);
@@ -37,7 +37,7 @@ export async function execute(interaction) {
     embed.addFields({ name: '📋 전체 가디언', value: trunc(lines.join('\n')) });
     embed.addFields({ name: '※ 무속성', value: '취약 보정이 없어 보유 카드 중 각성 높은 세팅 추천' });
   } else {
-    embed.setFooter({ text: `전체 가디언 표: /가토 전체:True · 수요일 06시 리셋 자동 계산 · ${DATA_DATE}` });
+    embed.setFooter({ text: `전체 가디언 표: "ㄱㅌ 전체" 또는 /가토 전체 · 수요일 06시 리셋 자동 계산 · ${DATA_DATE}` });
   }
 
   await interaction.reply({ embeds: [embed] });
