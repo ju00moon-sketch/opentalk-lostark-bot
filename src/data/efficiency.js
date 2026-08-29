@@ -40,18 +40,19 @@ export const FIXED_UNIT_VALUES = {
 };
 
 // 지옥 단계 0~10. breath=[용암,빙하], stones=[운명,혼돈], guard=[파괴,수호], gem=[수량,등급]
+// base(기본 보상 가치)는 엉봇 기준(10단계 3,210G)에 맞춰 보정한 근사값.
 export const HELL_STAGES = [
-  { stone: 9, breath: [12, 36], fusion: 75, special: 28, stones: [9, 7], guard: [600, 1800], gold: 5500, gem: [3, '희귀'], heaven: 0, brace: 4, leap: 30, base: 734 },
-  { stone: 12, breath: [18, 54], fusion: 110, special: 45, stones: [13, 10], guard: [750, 2250], gold: 8200, gem: [6, '희귀'], heaven: 0, brace: 6, leap: 42, base: 896 },
-  { stone: 18, breath: [24, 72], fusion: 150, special: 62, stones: [18, 15], guard: [1100, 3300], gold: 11000, gem: [8, '희귀'], heaven: 0, brace: 8, leap: 56, base: 1053 },
-  { stone: 25, breath: [30, 90], fusion: 200, special: 84, stones: [24, 20], guard: [1500, 4500], gold: 14400, gem: [12, '희귀'], heaven: 0, brace: 12, leap: 76, base: 1243 },
-  { stone: 33, breath: [40, 120], fusion: 270, special: 115, stones: [33, 27], guard: [2000, 6000], gold: 19200, gem: [1, '영웅'], heaven: 0, brace: 18, leap: 108, base: 1441 },
-  { stone: 45, breath: [60, 180], fusion: 360, special: 155, stones: [45, 36], guard: [2700, 8100], gold: 26400, gem: [2, '영웅'], heaven: 2, brace: 24, leap: 160, base: 1657 },
-  { stone: 60, breath: [90, 270], fusion: 540, special: 220, stones: [72, 54], guard: [3600, 10800], gold: 38400, gem: [3, '영웅'], heaven: 4, brace: 30, leap: 230, base: 1906 },
-  { stone: 80, breath: [130, 390], fusion: 720, special: 310, stones: [90, 72], guard: [5400, 16200], gold: 54000, gem: [4, '영웅'], heaven: 7, brace: 42, leap: 320, base: 2138 },
-  { stone: 110, breath: [180, 540], fusion: 1000, special: 430, stones: [120, 100], guard: [7800, 23400], gold: 78000, gem: [5, '영웅'], heaven: 10, brace: 60, leap: 450, base: 2386 },
-  { stone: 150, breath: [260, 780], fusion: 1440, special: 600, stones: [180, 144], guard: [10800, 32400], gold: 114000, gem: [6, '영웅'], heaven: 15, brace: 90, leap: 650, base: 2636 },
-  { stone: 220, breath: [380, 1140], fusion: 2400, special: 1000, stones: [300, 250], guard: [18000, 54000], gold: 156000, gem: [7, '영웅'], heaven: 20, brace: 150, leap: 1000, base: 2879 },
+  { stone: 9, breath: [12, 36], fusion: 75, special: 28, stones: [9, 7], guard: [600, 1800], gold: 5500, gem: [3, '희귀'], heaven: 0, brace: 4, leap: 30, base: 818 },
+  { stone: 12, breath: [18, 54], fusion: 110, special: 45, stones: [13, 10], guard: [750, 2250], gold: 8200, gem: [6, '희귀'], heaven: 0, brace: 6, leap: 42, base: 999 },
+  { stone: 18, breath: [24, 72], fusion: 150, special: 62, stones: [18, 15], guard: [1100, 3300], gold: 11000, gem: [8, '희귀'], heaven: 0, brace: 8, leap: 56, base: 1174 },
+  { stone: 25, breath: [30, 90], fusion: 200, special: 84, stones: [24, 20], guard: [1500, 4500], gold: 14400, gem: [12, '희귀'], heaven: 0, brace: 12, leap: 76, base: 1386 },
+  { stone: 33, breath: [40, 120], fusion: 270, special: 115, stones: [33, 27], guard: [2000, 6000], gold: 19200, gem: [1, '영웅'], heaven: 0, brace: 18, leap: 108, base: 1607 },
+  { stone: 45, breath: [60, 180], fusion: 360, special: 155, stones: [45, 36], guard: [2700, 8100], gold: 26400, gem: [2, '영웅'], heaven: 2, brace: 24, leap: 160, base: 1848 },
+  { stone: 60, breath: [90, 270], fusion: 540, special: 220, stones: [72, 54], guard: [3600, 10800], gold: 38400, gem: [3, '영웅'], heaven: 4, brace: 30, leap: 230, base: 2125 },
+  { stone: 80, breath: [130, 390], fusion: 720, special: 310, stones: [90, 72], guard: [5400, 16200], gold: 54000, gem: [4, '영웅'], heaven: 7, brace: 42, leap: 320, base: 2384 },
+  { stone: 110, breath: [180, 540], fusion: 1000, special: 430, stones: [120, 100], guard: [7800, 23400], gold: 78000, gem: [5, '영웅'], heaven: 10, brace: 60, leap: 450, base: 2661 },
+  { stone: 150, breath: [260, 780], fusion: 1440, special: 600, stones: [180, 144], guard: [10800, 32400], gold: 114000, gem: [6, '영웅'], heaven: 15, brace: 90, leap: 650, base: 2939 },
+  { stone: 220, breath: [380, 1140], fusion: 2400, special: 1000, stones: [300, 250], guard: [18000, 54000], gold: 156000, gem: [7, '영웅'], heaven: 20, brace: 150, leap: 1000, base: 3210 },
 ];
 
 // 나락 단계 0~10. engrave=귀속 각인서, jewel=귀속 보석, card=전설 카드팩
