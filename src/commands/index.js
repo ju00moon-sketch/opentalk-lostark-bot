@@ -24,10 +24,14 @@ import * as engravingRank from './engraving-rank.js';
 import * as life from './life.js';
 import * as events from './events.js';
 import * as notices from './notices.js';
+import * as raidgold from './raidgold.js';
+import * as weekly from './weekly.js';
+import * as synergy from './synergy.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
   avatar, collectible, power, emoticon,
   gemsof, gemboard, engraving, engravingRank, life, events, notices,
+  raidgold, weekly, synergy,
 ];
