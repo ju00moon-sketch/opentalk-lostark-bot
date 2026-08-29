@@ -16,7 +16,7 @@ try {
     console.log(`개발 서버(${guildId})에 커맨드 ${body.length}개 등록 완료! (즉시 반영)`);
   } else {
     await rest.put(Routes.applicationCommands(clientId), { body });
-    console.log(`글로벌 커맨드 ${body.length}개 등록 완료! (반영까지 최대 1시간 걸릴 수 있어요)`);
+    console.log(`글로벌 커맨드 ${body.length}개 등록 완료! (안 보이면 디스코드에서 Ctrl+R 새로고침)`);
   }
 } catch (err) {
   console.error(err);
