@@ -75,10 +75,17 @@ class TextInteraction {
   }
 }
 
+// 조회 테이블: 초성 별칭 + 커맨드 원래 이름 + 추가 별칭 (예: 분배금).
+// ".분배금 4000"처럼 점/느낌표 접두사도 허용한다.
+const LOOKUP = { ...ALIASES };
+for (const def of Object.values(ALIASES)) LOOKUP[def.cmd] = def;
+LOOKUP['분배금'] = ALIASES['ㅂㅂㄱ'];
+
 // 처리했으면 true를 반환한다.
 export async function handleTextCommand(message, commandMap) {
   const parts = message.content.trim().split(/\s+/);
-  const alias = ALIASES[parts[0]];
+  const token = (parts[0] ?? '').replace(/^[.!]/, '');
+  const alias = LOOKUP[token];
   if (!alias) return false;
 
   const command = commandMap.get(alias.cmd);
