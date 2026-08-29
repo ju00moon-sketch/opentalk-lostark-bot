@@ -27,11 +27,15 @@ import * as notices from './notices.js';
 import * as raidgold from './raidgold.js';
 import * as weekly from './weekly.js';
 import * as synergy from './synergy.js';
+import * as tankiness from './tankiness.js';
+import * as hell from './hell.js';
+import * as naraka from './naraka.js';
+import * as efficiency from './efficiency.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
   avatar, collectible, power, emoticon,
   gemsof, gemboard, engraving, engravingRank, life, events, notices,
-  raidgold, weekly, synergy,
+  raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
 ];

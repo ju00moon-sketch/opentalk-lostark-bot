@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>체방 계수표</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f1115; font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+  .chart { width: 940px; padding: 28px 32px; color: #e8eaf0; }
+  .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .head h1 { font-size: 26px; }
+  .head h1 .accent { color: #f5a623; }
+  .head .sub { color: #9aa3b2; font-size: 13px; }
+  .tier { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-top: 1px solid #262b36; }
+  .tier:first-of-type { border-top: none; margin-top: 10px; }
+  .tier-label { flex: 0 0 96px; font-weight: 800; font-size: 16px; padding-top: 5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { padding: 5px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #14161a; }
+  .chip small { font-weight: 500; opacity: 0.75; }
+  .t30 .tier-label { color: #ff8a5c; } .t30 .chip { background: #ff8a5c; }
+  .t25 .tier-label { color: #ffb454; } .t25 .chip { background: #ffb454; }
+  .t22 .tier-label { color: #ffd166; } .t22 .chip { background: #ffd166; }
+  .t20 .tier-label { color: #8fd694; } .t20 .chip { background: #8fd694; }
+  .t18 .tier-label { color: #7cc7e8; } .t18 .chip { background: #7cc7e8; }
+  .t16 .tier-label { color: #b7a6e8; } .t16 .chip { background: #b7a6e8; }
+  .t00 .tier-label { color: #e89bb5; } .t00 .chip { background: #e89bb5; }
+  .foot { margin-top: 16px; color: #9aa3b2; font-size: 12px; line-height: 1.7; border-top: 1px solid #262b36; padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="chart" id="chart">
+  <div class="head">
+    <h1>🛡️ 직업별 <span class="accent">체방 계수</span></h1>
+    <span class="sub">체력 × 방어력 — 높을수록 단단해요 · 2026. 08. 29 기준</span>
+  </div>
+  <div id="tiers"></div>
+  <div class="foot">
+    ※ 서포터(중갑)는 별도 표기 · 광기 버서커 상향(1.80) 반영 · 발키리는 홀리나이트와 동일 계수로 알려짐 · 차원술사는 공개 자료 미확인<br>
+    🌱 포근해챗봇 · 데이터 출처: 다로아(daloa.xyz)
+  </div>
+</div>
+<script>
+  const TIERS = [
+    ['t30', '3.0 이상', [
+      ['홀리나이트', 4.62, '중갑3'], ['바드', 3.60, '중갑'], ['도화가', 3.60, '중갑'], ['블래스터', 3.50, '포격'],
+    ]],
+    ['t25', '2.5 ~', [
+      ['홀리나이트', 2.77, '중갑1'], ['워로드', 2.50],
+    ]],
+    ['t22', '2.2 ~', [
+      ['가디언나이트', 2.42], ['스카우터', 2.40, '변신'], ['디스트로이어', 2.20],
+    ]],
+    ['t20', '2.0 ~', [
+      ['브레이커', 2.11], ['인파이터', 2.11], ['데모닉', 2.10, '변신'], ['슬레이어', 2.02], ['버서커', 2.02],
+    ]],
+    ['t18', '1.8 ~', [
+      ['스트라이커', 1.93], ['창술사', 1.93], ['배틀마스터', 1.93], ['홀리나이트', 1.93, '딜'], ['발키리', 1.93, '딜'],
+      ['블래스터', 1.84, '화강1'], ['기공사', 1.84], ['블레이드', 1.83], ['버서커', 1.80, '광기'],
+    ]],
+    ['t16', '1.6 ~', [
+      ['소울이터', 1.75], ['기상술사', 1.75], ['환수사', 1.75], ['데모닉', 1.75], ['블래스터', 1.75],
+      ['호크아이', 1.66], ['서머너', 1.66], ['아르카나', 1.66], ['소서리스', 1.66],
+    ]],
+    ['t00', '1.6 미만', [
+      ['데빌헌터', 1.58], ['건슬링어', 1.58], ['스카우터', 1.58], ['리퍼', 1.58], ['바드', 1.50, '딜'], ['도화가', 1.50, '딜'],
+    ]],
+  ];
+
+  document.getElementById('tiers').innerHTML = TIERS.map(([cls, label, rows]) => `
+    <div class="tier ${cls}">
+      <div class="tier-label">${label}</div>
+      <div class="chips">${rows.map(([name, value, tag]) =>
+        `<span class="chip">${tag ? `[${tag}] ` : ''}${name} <small>${value.toFixed(2)}</small></span>`
+      ).join('')}</div>
+    </div>`).join('');
+</script>
+</body>
+</html>
