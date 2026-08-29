@@ -1,21 +1,14 @@
 // /지옥 · /나락 커맨드가 공유하는 강하 추천 출력 로직.
-import { EmbedBuilder, MessageFlags } from 'discord.js';
-import { DESCENT, GRADES, DATA_DATE } from './data/descent.js';
+import { EmbedBuilder } from 'discord.js';
+import { PATH, GRADES, DATA_DATE } from './data/descent.js';
 import { EMBED_COLOR } from './format.js';
 
 export async function replyDescent(interaction, content) {
   const grade = interaction.options.getString('등급') ?? '전설';
-  const path = DESCENT[content]?.[grade];
+  const floors = GRADES.find((g) => g.value === grade)?.floors ?? 7;
 
-  if (!path) {
-    await interaction.reply({
-      content: `\`${content} ${grade}\` 경로 데이터가 아직 없어요. 추천 경로를 알려주시면 바로 추가할게요!`,
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  const floors = path.length;
+  // 경로 배열은 7층부터 — 등급에 맞춰 시작 층 이하만 사용한다
+  const path = PATH.slice(PATH.length - floors);
   const lines = path.map((direction, i) => {
     const floor = floors - i;
     const arrow = direction === '왼쪽' ? '⬅️' : '➡️';

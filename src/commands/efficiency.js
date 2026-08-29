@@ -46,6 +46,12 @@ async function getUnitPrices() {
   return prices;
 }
 
+function priceAgeLabel() {
+  if (!priceCache || priceCache.size === 0) return '시세 조회 불가 — 예비 단가 사용';
+  const min = Math.floor((Date.now() - cachedAt) / 60000);
+  return min > 0 ? `${min}분 전 시세 (5분마다 갱신)` : '방금 조회한 실시간 시세';
+}
+
 const unitValue = (prices, name) => prices.get(name) ?? FIXED_UNIT_VALUES[name] ?? 0;
 
 // parts 항목 하나의 가치. 배열이면 지급, { choice }면 택1 중 최대값.
@@ -83,7 +89,7 @@ export async function execute(interaction) {
     .setFooter({
       text:
         (table.baseGold > 0 ? `기본 보상(약 ${gold(table.baseGold)}) 포함 · ` : '') +
-        `재료는 실시간 시세, 귀속템은 추정 단가 · 구성표 ${DATA_DATE} 기준`,
+        `${priceAgeLabel()} · 귀속템은 추정 단가 · 구성표 ${DATA_DATE} 기준`,
     });
 
   await interaction.editReply({ embeds: [embed] });
