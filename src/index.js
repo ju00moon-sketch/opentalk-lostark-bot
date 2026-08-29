@@ -49,7 +49,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   const command = commandMap.get(interaction.commandName);
   if (!command) return;
 
-  if (allowedChannels.length > 0 && !allowedChannels.includes(interaction.channelId)) {
+  // 채널 제한은 운영(홈) 서버에서만 적용 — 다른 서버는 각자 서버 설정(연동)으로 제어한다.
+  const isHomeGuild = interaction.guildId === process.env.HOME_GUILD_ID;
+  if (isHomeGuild && allowedChannels.length > 0 && !allowedChannels.includes(interaction.channelId)) {
     await interaction.reply({
       content: `이 채널에서는 봇을 사용할 수 없어요. <#${allowedChannels[0]}> 채널에서 이용해 주세요!`,
       flags: MessageFlags.Ephemeral,
