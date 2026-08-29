@@ -52,15 +52,26 @@ export function getMarketOptions() {
   return request('/markets/options');
 }
 
-// 거래소 아이템 검색 (부분 일치 지원).
-export function searchMarketItems(categoryCode, itemName) {
+// 거래소 아이템 검색 (부분 일치 지원). opts: { grade: '유물', order: 'DESC' }
+export function searchMarketItems(categoryCode, itemName, opts = {}) {
   return request('/markets/items', {
     Sort: 'CURRENT_MIN_PRICE',
     CategoryCode: categoryCode,
     ItemName: itemName,
+    ItemGrade: opts.grade ?? null,
     PageNo: 1,
-    SortCondition: 'ASC',
+    SortCondition: opts.order ?? 'ASC',
   });
+}
+
+// 진행 중인 이벤트 목록.
+export function getEvents() {
+  return request('/news/events');
+}
+
+// 공식 공지사항 목록.
+export function getNotices() {
+  return request('/news/notices');
 }
 
 // 경매장 검색 (보석 등).

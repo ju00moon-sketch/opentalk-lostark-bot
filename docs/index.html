@@ -207,7 +207,7 @@
     <h1>포근해<span class="accent">챗봇</span></h1>
     <p class="tagline"><b>포근해 길드 전용</b> 로스트아크 챗봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
     <div class="badges">
-      <span class="badge">커맨드 <b>19개</b></span>
+      <span class="badge">커맨드 <b>26개</b></span>
       <span class="badge">이모티콘 <b>74종</b></span>
       <span class="badge">가동률 <b>24시간</b></span>
       <span class="badge">데이터 <b>로스트아크 공식 API</b></span>
@@ -255,10 +255,16 @@
         <tr><td><code>/앜패</code> <code>/앜그</code></td><td>아크 패시브 포인트/노드 · 아크 그리드 코어/효과</td></tr>
         <tr><td><code>/아바타 닉네임</code></td><td>장착 아바타 목록</td></tr>
         <tr><td><code>/내실 닉네임</code></td><td>수집품 진행도 (모코코 씨앗, 섬의 마음 등)</td></tr>
+        <tr><td><code>/장착보석 닉네임</code></td><td>장착 보석과 스킬별 효과</td></tr>
         <tr><td><code>/시세 아이템명</code></td><td>거래소 가격 검색 (부분 검색 가능)</td></tr>
         <tr><td><code>/보석 종류 레벨</code></td><td>경매장 보석 최저가 (겁화/작열/광휘/멸화/홍염)</td></tr>
+        <tr><td><code>/보석현황</code></td><td>4티어 보석 레벨별 최저가 한눈에</td></tr>
+        <tr><td><code>/각인서 각인명</code></td><td>각인서 시세 (등급별)</td></tr>
+        <tr><td><code>/각인서랭킹 [등급]</code></td><td>가장 비싼 각인서 TOP 10 (유물/전설)</td></tr>
+        <tr><td><code>/생활재료</code></td><td>생활 재료 분야별 시세</td></tr>
         <tr><td><code>/입찰 가격 [인원]</code></td><td>경매 적정 입찰가 계산 (4/8/16인, 수수료 5% 반영)</td></tr>
         <tr><td><code>/모험섬</code></td><td>오늘의 모험 섬 시간표 + 주요 보상</td></tr>
+        <tr><td><code>/이벤트</code> <code>/공지</code></td><td>진행 중 이벤트 · 최신 공지사항</td></tr>
         <tr><td><code>/이모티콘</code></td><td>사용 가능한 이모티콘 키워드 목록</td></tr>
         <tr><td><code>/도움말</code></td><td>커맨드 사용법 안내 (본인에게만 표시)</td></tr>
       </table>
@@ -333,6 +339,7 @@ npm install</pre>
       <li>
         <span class="date">2026. 08. 29</span>
         <ul>
+          <li><b>정보 커맨드 7종 추가</b> — <code>/장착보석</code> <code>/보석현황</code> <code>/각인서</code> <code>/각인서랭킹</code> <code>/생활재료</code> <code>/이벤트</code> <code>/공지</code></li>
           <li><b>공개 봇 전환</b> — 글로벌 커맨드 등록, 어느 서버에서든 초대 가능</li>
           <li><b>홈페이지 개편</b> — 탭 구조로 재구성, 카카오톡 연동 안내 추가</li>
           <li><b>캐릭터 상세 조회 10종 추가</b> — <code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/전투력</code></li>

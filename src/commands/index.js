@@ -17,9 +17,17 @@ import * as avatar from './avatar.js';
 import * as collectible from './collectible.js';
 import * as power from './power.js';
 import * as emoticon from './emoticon.js';
+import * as gemsof from './gemsof.js';
+import * as gemboard from './gemboard.js';
+import * as engraving from './engraving.js';
+import * as engravingRank from './engraving-rank.js';
+import * as life from './life.js';
+import * as events from './events.js';
+import * as notices from './notices.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
   avatar, collectible, power, emoticon,
+  gemsof, gemboard, engraving, engravingRank, life, events, notices,
 ];
