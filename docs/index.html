@@ -150,6 +150,21 @@
   details summary { cursor: pointer; color: var(--text-dim); font-size: 0.95rem; }
   details[open] summary { margin-bottom: 12px; }
 
+  /* 이모티콘 키워드 토글 목록 */
+  details.kw-group {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; margin-top: 10px;
+  }
+  details.kw-group summary {
+    color: var(--text); font-weight: 600; font-size: 0.95rem;
+    list-style: none; display: flex; align-items: center; gap: 8px;
+  }
+  details.kw-group summary::before { content: "▸"; color: var(--accent); transition: transform 0.15s; }
+  details.kw-group[open] summary::before { transform: rotate(90deg); }
+  details.kw-group summary .count { color: var(--text-dim); font-weight: 400; font-size: 0.85rem; }
+  .kw-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .kw-chips code { white-space: nowrap; }
+
   .kakao-card {
     background: var(--bg-card); border: 1px solid var(--border);
     border-left: 3px solid var(--kakao);
@@ -255,9 +270,32 @@
     <p class="section-desc">커맨드가 아니라 일반 채팅으로 입력해요. 어느 채널에서든 작동합니다.</p>
     <ol class="steps">
       <li><b>채팅에 <code>[키워드</code> 입력</b><p>예: <code>[따봉</code> <code>[ㅋㅋ</code> <code>[모무룩</code> <code>[엣큥</code> — 봇이 해당 이모티콘 이미지를 올려줍니다.</p></li>
-      <li><b>키워드 목록 확인</b><p><code>/이모티콘</code> 커맨드를 입력하면 사용 가능한 전체 키워드(74종)를 볼 수 있어요.</p></li>
+      <li><b>키워드 목록 확인</b><p>아래 목록을 펼쳐 보거나, 서버에서 <code>/이모티콘</code> 커맨드를 입력하면 전체 키워드를 볼 수 있어요.</p></li>
     </ol>
     <div class="note">💡 이모티콘은 커맨드 채널 제한과 무관하게 서버의 모든 채널에서 사용할 수 있어요.</div>
+
+    <div class="sub-block">
+      <h2><span class="emoji">📚</span>사용 가능한 키워드 <span class="section-desc" style="display:inline">— 총 74종</span></h2>
+      <details class="kw-group" open>
+        <summary>모코코콘 <span class="count">34종</span></summary>
+        <div class="kw-chips">
+          <code>[따봉</code> <code>[엄지</code> <code>[눈물</code> <code>[모야</code> <code>[익은</code> <code>[사랑</code> <code>[ㅋㅋ</code> <code>[크크</code> <code>[멘탈</code> <code>[물음</code> <code>[방긋</code> <code>[재</code> <code>[에</code> <code>[물끄럼</code> <code>[줘</code> <code>[안줘</code> <code>[안</code> <code>[슬픈</code> <code>[빠직</code> <code>[슬퍼</code> <code>[어때</code> <code>[엣큥</code> <code>[깜짝</code> <code>[짝</code> <code>[향기</code> <code>[모무룩</code> <code>[문열</code> <code>[외침</code> <code>[뜨거</code> <code>[시원</code> <code>[컷</code> <code>[힘내</code> <code>[화</code> <code>[귀여</code>
+        </div>
+      </details>
+      <details class="kw-group">
+        <summary>모코코콘 2 <span class="count">35종</span></summary>
+        <div class="kw-chips">
+          <code>[웃음</code> <code>[호에</code> <code>[호엥</code> <code>[좋아</code> <code>[응애</code> <code>[빛</code> <code>[하트</code> <code>[점프</code> <code>[잉</code> <code>[이잉</code> <code>[헤헷</code> <code>[묘한</code> <code>[히죽</code> <code>[두렵</code> <code>[침묵</code> <code>[선</code> <code>[선넘</code> <code>[모자</code> <code>[펀치</code> <code>[째릿</code> <code>[핥짝</code> <code>[못참</code> <code>[머쓱</code> <code>[스핀</code> <code>[거기</code> <code>[분노</code> <code>[뀨</code> <code>[죽은</code> <code>[멈춰</code> <code>[하지마</code> <code>[신나</code> <code>[흑흑</code> <code>[영차</code> <code>[템포</code> <code>[철퍼</code>
+        </div>
+      </details>
+      <details class="kw-group">
+        <summary>기타 <span class="count">5종</span></summary>
+        <div class="kw-chips">
+          <code>[모코코</code> <code>[놀</code> <code>[털썩</code> <code>[버럭</code> <code>[뭐라</code>
+        </div>
+      </details>
+      <p class="section-desc" style="margin-top:14px">이모티콘 이미지는 저작권 보호를 위해 사이트에 게시하지 않아요. 실제 모습은 디스코드에서 직접 확인해 주세요!</p>
+    </div>
   </section>
 
   <section class="tab-panel" id="panel-link">
