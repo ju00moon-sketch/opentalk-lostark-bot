@@ -111,6 +111,19 @@
     margin-top: 16px;
   }
 
+  .invite-btn {
+    display: inline-block; margin: 8px 0 24px;
+    background: var(--accent); color: #1a1200;
+    font-weight: 700; font-size: 1.05rem;
+    padding: 14px 32px; border-radius: 12px; text-decoration: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 18px rgba(245, 166, 35, 0.25);
+  }
+  .invite-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(245, 166, 35, 0.35); }
+  details { margin-top: 20px; }
+  details summary { cursor: pointer; color: var(--text-dim); font-size: 0.95rem; }
+  details[open] summary { margin-bottom: 12px; }
+
   footer {
     border-top: 1px solid var(--border);
     padding: 32px 0 48px; text-align: center; color: var(--text-dim); font-size: 0.88rem;
@@ -190,20 +203,23 @@
 
 <section>
   <div class="wrap">
-    <h2><span class="emoji">🔗</span>연동 방법</h2>
-    <p class="section-desc">현재는 비공개로 운영 중인 봇이라 지정된 서버에서만 사용할 수 있어요. 직접 운영하고 싶다면 아래 방법으로 나만의 봇을 띄울 수 있습니다.</p>
+    <h2><span class="emoji">🔗</span>서버에 초대하기</h2>
+    <p class="section-desc">버튼 하나로 여러분의 디스코드 서버에 포근해챗봇을 추가할 수 있어요.</p>
+    <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=1542885088038092901&permissions=52224&scope=bot%20applications.commands">➕ 포근해챗봇 초대하기</a>
     <ol class="steps">
-      <li><b>코드 받기</b><p>GitHub 저장소를 클론합니다. Node.js 24 이상이 필요해요.</p>
-        <pre>git clone https://github.com/ju00moon-sketch/opentalk-lostark-bot.git
-cd opentalk-lostark-bot
-npm install</pre></li>
-      <li><b>토큰 3개 발급</b><p>디스코드 개발자 포털에서 봇 토큰과 애플리케이션 ID, 로스트아크 개발자 사이트에서 API 키를 발급받아 <code>.env</code> 파일에 넣습니다. 자세한 과정은 저장소 README에 단계별로 정리돼 있어요.</p></li>
-      <li><b>커맨드 등록 후 실행</b>
-        <pre>npm run register
-npm start</pre>
-        <p>"로그인 완료"가 뜨면 디스코드에서 <code>/도움말</code>을 입력해 보세요.</p></li>
+      <li><b>버튼 클릭 → 서버 선택</b><p>디스코드에 로그인한 뒤 봇을 추가할 서버를 고릅니다. (서버 관리 권한이 있어야 해요)</p></li>
+      <li><b>권한 승인</b><p>메시지 보내기 · 링크 임베드 · 파일 첨부 — 봇이 응답과 이모티콘을 올리는 데 필요한 최소 권한만 요청합니다.</p></li>
+      <li><b>바로 사용</b><p><code>/도움말</code>을 입력해 보세요. 이모티콘(<code>[따봉</code>)도 바로 작동합니다.</p></li>
     </ol>
-    <div class="note">💡 24시간 운영하려면 무료 클라우드(Oracle Cloud Free Tier 등)에 올리고 pm2로 상시 실행하는 걸 추천해요. 이 봇도 그렇게 돌아가고 있습니다.</div>
+    <div class="note">💡 특정 채널에서만 커맨드를 허용하고 싶다면 <b>서버 설정 → 연동 → 포근해챗봇</b>에서 채널을 제한할 수 있어요. 모험섬 아침 알림은 현재 운영 서버 전용이며, 초대한 서버에서의 알림 설정 기능은 준비 중입니다.</div>
+    <details>
+      <summary>직접 운영하고 싶다면 (셀프 호스팅)</summary>
+      <p class="section-desc">코드가 공개돼 있어서 나만의 봇을 띄울 수도 있어요. Node.js 24 이상 필요.</p>
+      <pre>git clone https://github.com/ju00moon-sketch/opentalk-lostark-bot.git
+cd opentalk-lostark-bot
+npm install</pre>
+      <p class="section-desc">이후 토큰 발급과 실행 방법은 <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot#readme" style="color:var(--accent)">저장소 README</a>에 단계별로 정리돼 있습니다.</p>
+    </details>
   </div>
 </section>
 
