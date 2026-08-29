@@ -36,6 +36,7 @@ import * as cores from './cores.js';
 import * as paradise from './paradise.js';
 import * as skillcode from './skillcode.js';
 import * as guardian from './guardian.js';
+import * as alarm from './alarm.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
@@ -43,5 +44,5 @@ export const commands = [
   avatar, collectible, power, emoticon,
   gemsof, gemboard, engraving, engravingRank, life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
-  grinding, cores, paradise, skillcode, guardian,
+  grinding, cores, paradise, skillcode, guardian, alarm,
 ];

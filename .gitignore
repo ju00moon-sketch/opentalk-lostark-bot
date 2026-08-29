@@ -7,3 +7,6 @@ assets/emoticons/*
 
 # Playwright MCP 테스트 잔여물
 .playwright-mcp/
+
+# 서버별 알림 설정 (봇 런타임 상태)
+notify-channels.json
