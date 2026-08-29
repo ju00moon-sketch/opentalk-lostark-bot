@@ -20,9 +20,9 @@ export async function execute(interaction) {
     .setTitle(`⚔️ 이번 주 잔영 가디언 — ${current.name}`)
     .addFields(
       { name: '속성 취약', value: `**${current.element}속성**`, inline: true },
-      { name: '다음 주', value: `${next.name} (${next.element})`, inline: true },
       { name: '🗡️ 딜러 추천 카드', value: cards.dealer, inline: true },
       { name: '💚 서폿 추천 카드', value: cards.support, inline: true },
+      { name: '다음 주', value: `${next.name} (${next.element}속성)` },
     );
   if (cards.note) {
     embed.addFields({ name: '참고', value: cards.note });

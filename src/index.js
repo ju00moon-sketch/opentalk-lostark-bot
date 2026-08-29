@@ -2,6 +2,7 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'dis
 import { commands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
 import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
+import { handleTextCommand } from './text-commands.js';
 
 const client = new Client({
   intents: [
@@ -27,11 +28,17 @@ client.once(Events.ClientReady, (readyClient) => {
   startIslandNotifier(readyClient);
 });
 
-// "[키워드" 형태의 메시지에 이모티콘 이미지로 응답.
-// 커맨드와 달리 채널 제한을 적용하지 않는다 — 어느 채널에서든 사용 가능.
+// 텍스트 메시지 처리: ① 초성 커맨드 (ㅂㅂㄱ 4000 등) ② 이모티콘 ([따봉 등)
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
 
+  // 초성 커맨드 — 슬래시 커맨드와 같은 채널 제한 적용 (홈 서버 한정)
+  const isHomeGuild = message.guildId === process.env.HOME_GUILD_ID;
+  const channelAllowed =
+    !isHomeGuild || allowedChannels.length === 0 || allowedChannels.includes(message.channelId);
+  if (channelAllowed && (await handleTextCommand(message, commandMap))) return;
+
+  // 이모티콘은 채널 제한 없이 어디서든
   const keyword = parseEmoticonKeyword(message.content);
   if (!keyword) return;
   const file = findEmoticonFile(keyword);
