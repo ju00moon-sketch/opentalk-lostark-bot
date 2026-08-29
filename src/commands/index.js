@@ -31,6 +31,8 @@ import * as tankiness from './tankiness.js';
 import * as hell from './hell.js';
 import * as naraka from './naraka.js';
 import * as efficiency from './efficiency.js';
+import * as grinding from './grinding.js';
+import * as cores from './cores.js';
 
 export const commands = [
   character, gear, expedition, bid, island, market, gem, help,
@@ -38,4 +40,5 @@ export const commands = [
   avatar, collectible, power, emoticon,
   gemsof, gemboard, engraving, engravingRank, life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
+  grinding, cores,
 ];

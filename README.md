@@ -32,7 +32,9 @@
 | `/시너지 [검색]` | 직업별 파티 시너지 ([src/data/synergies.js](src/data/synergies.js) 수정으로 갱신) |
 | `/체방` | 직업별 체방 계수표 이미지 (scripts/chembang-chart.html 렌더링으로 생성) |
 | `/지옥` `/나락` | 강하 선택 추천 경로 ([src/data/descent.js](src/data/descent.js)) |
-| `/효율 콘텐츠 레벨 단계` | 보상 선택지 가치 랭킹 — 실시간 시세 반영 ([src/data/efficiency.js](src/data/efficiency.js)) |
+| `/효율 콘텐츠 단계 [레벨]` | 보상 선택지 가치 랭킹 — 실시간 시세 반영 ([src/data/efficiency.js](src/data/efficiency.js)) |
+| `/연마표` | 악세서리 연마 효과 수치표 |
+| `/코어 검색` | 아크 그리드 코어 정보 — 직업/각인/코어명/혼돈 검색 ([src/data/cores.js](src/data/cores.js)) |
 | `/이모티콘` | 사용 가능한 이모티콘 키워드 목록 |
 | `/도움말` | 커맨드 사용법 안내 (본인에게만 표시) |
 
