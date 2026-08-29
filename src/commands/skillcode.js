@@ -6,10 +6,40 @@ import { stripTags } from '../tooltip.js';
 
 export const data = new SlashCommandBuilder()
   .setName('스킬코드')
-  .setDescription('캐릭터의 빌드 요약과 빌드 코드 (각인·스킬·보석·아크패시브)')
+  .setDescription('게임 호환 스킬코드 + 빌드 요약 (각인·스킬·보석·아크패시브)')
   .addStringOption((option) =>
     option.setName('닉네임').setDescription('캐릭터 닉네임').setRequired(true),
   );
+
+// 공식 전투정보실의 스킬코드 발급 엔드포인트를 그대로 사용한다.
+// 프로필 페이지에서 토큰(memberNo/pcId/worldNo)을 추출해 SkillRecommend에 POST하면
+// 게임 [K] 스킬 창에 붙여넣을 수 있는 진짜 스킬코드가 나온다.
+async function fetchGameSkillCode(name) {
+  const profileUrl = `https://lostark.game.onstove.com/Profile/Character/${encodeURIComponent(name)}`;
+  const pageRes = await fetch(profileUrl, { headers: { 'user-agent': 'Mozilla/5.0' } });
+  const html = await pageRes.text();
+  const cookies = pageRes.headers.getSetCookie?.().map((c) => c.split(';')[0]).join('; ') ?? '';
+  const grab = (v) => new RegExp(`_${v} = '([^']+)'`).exec(html)?.[1];
+  const memberNo = grab('memberNo');
+  const pcId = grab('pcId');
+  const worldNo = grab('worldNo');
+  if (!memberNo || !pcId || !worldNo) return null;
+
+  const res = await fetch('https://lostark.game.onstove.com/Profile/SkillRecommend', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'x-requested-with': 'XMLHttpRequest',
+      'user-agent': 'Mozilla/5.0',
+      referer: profileUrl,
+      ...(cookies ? { cookie: cookies } : {}),
+    },
+    body: new URLSearchParams({ memberNo, worldNo, pcId }),
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  return /class="code">([0-9A-F]+)</.exec(json.content ?? '')?.[1] ?? null;
+}
 
 // 보석 짧은 표기: 효과 설명으로 겁(피해)/작(재사용) 계열을 구분한다
 function shortGem(gem, effectDesc) {
@@ -23,7 +53,10 @@ export async function execute(interaction) {
   const name = interaction.options.getString('닉네임');
   await interaction.deferReply();
 
-  const armory = await getFullArmory(name);
+  const [armory, gameCode] = await Promise.all([
+    getFullArmory(name),
+    fetchGameSkillCode(name).catch(() => null),
+  ]);
   if (!armory || !armory.ArmoryProfile) {
     await interaction.editReply(`\`${name}\` — ${NOT_FOUND_HINT}`);
     return;
@@ -70,19 +103,24 @@ export async function execute(interaction) {
     arkSections.push({ label: `${point.Name} ${point.Value}${point.Description ? ` · ${point.Description}` : ''}`, nodes });
   }
 
-  // 빌드 코드: 빌드 구성 요소의 SHA-512 지문 — 같은 빌드면 항상 같은 코드
-  const fingerprintSource = JSON.stringify({
-    engravings,
-    skills: skills.map((s) => [s.Name, s.Level, s.Rune?.Name ?? null, (s.Tripods ?? []).filter((t) => t.IsSelected).map((t) => t.Name)]),
-    gems: gemLines,
-    ark: arkSections,
-  });
-  const code = createHash('sha512').update(fingerprintSource).digest('hex').toUpperCase();
+  // 게임 호환 코드 우선, 발급 실패 시 SHA-512 빌드 지문으로 폴백
+  let code = gameCode;
+  let codeNote = '📋 게임에서 [K] 스킬 창 → 스킬 코드 → 붙여넣기로 바로 적용할 수 있어요!';
+  if (!code) {
+    const fingerprintSource = JSON.stringify({
+      engravings,
+      skills: skills.map((s) => [s.Name, s.Level, s.Rune?.Name ?? null, (s.Tripods ?? []).filter((t) => t.IsSelected).map((t) => t.Name)]),
+      gems: gemLines,
+      ark: arkSections,
+    });
+    code = createHash('sha512').update(fingerprintSource).digest('hex').toUpperCase();
+    codeNote = '⚠️ 공식 스킬코드 발급이 일시적으로 안 돼서, 빌드 비교용 지문 코드로 대체했어요.';
+  }
 
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setTitle(`🧬 ${profile.CharacterName} — 스킬 코드`)
-    .setDescription(`직업: **${profile.CharacterClassName}**\n\`\`\`${code}\`\`\``)
+    .setDescription(`직업: **${profile.CharacterClassName}**\n\`\`\`${code}\`\`\`${codeNote}`)
     .addFields(
       { name: '📜 각인', value: trunc(engravings.join(' ') || '-') },
       {
@@ -94,7 +132,11 @@ export async function execute(interaction) {
   for (const section of arkSections) {
     embed.addFields({ name: `✨ ${section.label}`, value: trunc(section.nodes.join('\n') || '-'), inline: true });
   }
-  embed.setFooter({ text: '빌드 코드는 포근해챗봇 지문 — 각인·스킬·트포·보석·앜패가 같으면 같은 코드예요' });
+  embed.setFooter({
+    text: gameCode
+      ? '공식 전투정보실 발급 스킬코드 — 스킬·트포·보석·각인·앜패·앜그 포함'
+      : '빌드 지문 — 각인·스킬·트포·보석·앜패가 같으면 같은 코드예요',
+  });
 
   await interaction.editReply({ embeds: [embed] });
 }
