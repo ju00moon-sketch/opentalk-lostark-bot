@@ -14,7 +14,7 @@ const GRADE_MAP = {
 
 // parse는 인자 배열을 받아 옵션 객체를 반환한다. null이면 사용법 안내.
 export const ALIASES = {
-  ㅂㅂㄱ: { cmd: '입찰', usage: 'ㅂㅂㄱ 가격 [인원] (예: ㅂㅂㄱ 4000)', parse: (p) => {
+  ㅂㅂㄱ: { cmd: '분배금', usage: 'ㅂㅂㄱ 가격 [인원] (예: ㅂㅂㄱ 4000)', parse: (p) => {
     const 가격 = toInt(p[0]);
     if (가격 === null || 가격 < 1) return null;
     const 인원 = toInt(String(p[1] ?? '').replace('인', ''));
@@ -75,17 +75,19 @@ class TextInteraction {
   }
 }
 
-// 조회 테이블: 초성 별칭 + 커맨드 원래 이름 + 추가 별칭 (예: 분배금).
-// ".분배금 4000"처럼 점/느낌표 접두사도 허용한다.
-const LOOKUP = { ...ALIASES };
-for (const def of Object.values(ALIASES)) LOOKUP[def.cmd] = def;
-LOOKUP['분배금'] = ALIASES['ㅂㅂㄱ'];
+// 규칙: 초성(ㅂㅂㄱ)은 접두사 없이 바로, 원래 단어(분배금·지옥 등)는 반드시 "." 또는 "!"를
+// 붙여야 반응한다 — 일반 대화("지옥 같네")가 오작동하지 않도록.
+const WORD_CMDS = new Map(Object.values(ALIASES).map((def) => [def.cmd, def]));
 
 // 처리했으면 true를 반환한다.
 export async function handleTextCommand(message, commandMap) {
   const parts = message.content.trim().split(/\s+/);
-  const token = (parts[0] ?? '').replace(/^[.!]/, '');
-  const alias = LOOKUP[token];
+  const raw = parts[0] ?? '';
+  const hasPrefix = /^[.!]/.test(raw);
+  const token = raw.replace(/^[.!]/, '');
+
+  let alias = ALIASES[token]; // 초성 — 접두사 유무 무관
+  if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 단어 — 접두사 필수
   if (!alias) return false;
 
   const command = commandMap.get(alias.cmd);

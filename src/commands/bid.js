@@ -2,8 +2,8 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { gold, EMBED_COLOR } from '../format.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('입찰')
-  .setDescription('경매 아이템의 적정 입찰가를 계산합니다')
+  .setName('분배금')
+  .setDescription('경매 아이템의 적정 입찰가(분배금)를 계산합니다')
   .addIntegerOption((option) =>
     option
       .setName('가격')
@@ -46,7 +46,7 @@ export async function execute(interaction) {
 
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
-    .setTitle(`입찰 계산기 — 시세 ${gold(price)}`)
+    .setTitle(`분배금 계산기 — 시세 ${gold(price)}`)
     .addFields(...fields, {
       name: '손익분기 상한',
       value: `${gold(breakeven)} — 이 이상 입찰하면 거래소 구매보다 손해예요`,
