@@ -32,6 +32,11 @@ export function getArmory(characterName) {
   return request(`/armories/characters/${encodeURIComponent(characterName)}?filters=${filters}`);
 }
 
+// 전투정보실 전체 조회 (모든 섹션 포함 — /스킬코드처럼 여러 섹션이 필요할 때).
+export function getFullArmory(characterName) {
+  return request(`/armories/characters/${encodeURIComponent(characterName)}`);
+}
+
 // 전투정보실 개별 항목 조회 (equipment, combat-skills, arkpassive, avatars, collectibles, gems, arkgrid).
 export function getArmoryPart(characterName, part) {
   return request(`/armories/characters/${encodeURIComponent(characterName)}/${part}`);
