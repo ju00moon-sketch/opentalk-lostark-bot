@@ -38,7 +38,9 @@ import * as skillcode from './skillcode.js';
 import * as guardian from './guardian.js';
 import * as alarm from './alarm.js';
 
-export const commands = [
+import { ALIASES } from '../text-commands.js';
+
+const base = [
   character, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
   avatar, collectible, power, emoticon,
@@ -46,3 +48,19 @@ export const commands = [
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
   grinding, cores, paradise, skillcode, guardian, alarm,
 ];
+
+// 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).
+// 대상 커맨드의 옵션 구조를 그대로 복제하고 이름만 바꾼다.
+const aliasCommands = Object.entries(ALIASES).flatMap(([alias, def]) => {
+  const target = base.find((c) => c.data.name === def.cmd);
+  if (!target) return [];
+  return [{
+    data: {
+      name: alias,
+      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: `${def.cmd} (초성 축약)` }),
+    },
+    execute: target.execute,
+  }];
+});
+
+export const commands = [...base, ...aliasCommands];
