@@ -10,3 +10,6 @@ assets/emoticons/*
 
 # 서버별 알림 설정 (봇 런타임 상태)
 notify-channels.json
+
+# 세션 운영 가이드 (서버 접속 정보 포함 — 공개 저장소 제외)
+CLAUDE.md
