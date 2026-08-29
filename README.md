@@ -48,16 +48,39 @@
 - **이모티콘** — 채팅에 `[키워드` 입력 시 이미지 응답. `assets/emoticons/`에 `키워드.png`를 넣으면 등록됨 (Message Content Intent 필요)
 - **채팅 커맨드** — 초성은 바로(`ㅂㅂㄱ 4000`), 원래 단어는 `.` 필수(`.분배금 4000`), 슬래시 별칭(`/ㅂㅂㄱ`)도 지원 ([src/text-commands.js](src/text-commands.js)의 ALIASES에서 추가)
 
-## 구조
+## 프로젝트 구조
 
 ```
 src/
-  index.js              # 봇 본체 (디스코드 로그인 + 커맨드 디스패치)
-  register-commands.js  # 슬래시 커맨드 등록 스크립트
-  lostark.js            # 로스트아크 오픈 API 공용 모듈 (나중에 카톡 봇에도 재사용)
-  format.js             # 임베드 공용 포맷터
-  commands/             # 커맨드 1개 = 파일 1개 (data + execute 내보내기)
+  index.js              # 봇 본체 — 로그인, 채널 제한, 메시지 처리(초성 커맨드 → 이모티콘 순)
+  register-commands.js  # 슬래시 커맨드 등록 스크립트 (npm run register)
+  lostark.js            # 로스트아크 오픈 API 래퍼 (armory/거래소/경매장/캘린더/뉴스)
+  format.js             # 임베드 공용 포맷터 (trunc, gold, 색상)
+  tooltip.js            # 장비 툴팁(JSON) 파서 — 품질/연마/세공/낙원력 추출
+  text-commands.js      # 채팅 커맨드 — 초성(ㅂㅂㄱ)은 바로, 단어는 "." 필수. 슬래시 별칭도 여기서 생성
+  emoticons.js          # 이모티콘 — assets/emoticons/의 파일명 = 키워드, 재시작 없이 인식
+  notify.js             # 모험섬 아침 알림 (매일 08:00 KST, 등록된 모든 채널로 발송)
+  notify-store.js       # 서버별 알림 채널 영구 저장 (notify-channels.json)
+  descent-shared.js     # /지옥·/나락 공용 로직 (랜덤 강하 추천)
+  commands/             # 커맨드 1개 = 파일 1개 (data + execute 내보내기) → index.js 배열에 등록
+  data/                 # 수동 관리 게임 데이터 — 패치 시 여기만 수정
+    raids.js            #   레이드 클리어 골드표 (/클골, /주급)
+    synergies.js        #   직업별 시너지표 (/시너지)
+    guardians.js        #   가토 로테이션·속성·카드 (/가토)
+    efficiency.js       #   지옥/나락 효율 단가·계산 (/효율)
+    hellRewards.js      #   지옥/나락 단계별 보상표 (자동 생성분)
+    cores.js            #   아크그리드 코어 558종 (/코어, 자동 생성분)
+    descent.js          #   강하 등급 정의
+assets/
+  emoticons/            # 이모티콘 이미지 (파일명 = 키워드, 저작권 문제로 git 제외)
+  charts/               # /체방 등 커맨드가 전송하는 차트 이미지
+scripts/
+  chembang-chart.html   # 체방 차트 원본 — 수정 후 렌더링 캡처로 assets/charts 갱신
+docs/
+  index.html            # 홈페이지 (GitHub Pages, main 브랜치에서 자동 배포)
 ```
+
+**커맨드 추가 절차**: `src/commands/`에 파일 생성 → `commands/index.js` 배열에 추가 → `npm run register` → 서버 배포 → `/도움말`·README·홈페이지 갱신. 초성 별칭은 `text-commands.js`의 ALIASES에 한 줄 추가하면 채팅·슬래시 양쪽에 생긴다.
 
 ## 처음 한 번만 하는 설정
 
