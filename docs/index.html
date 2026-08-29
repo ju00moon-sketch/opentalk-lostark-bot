@@ -90,15 +90,20 @@
   }
 
   .timeline { list-style: none; border-left: 2px solid var(--border); margin-left: 8px; }
-  .timeline li { padding: 0 0 24px 24px; position: relative; }
-  .timeline li::before {
+  .timeline > li { padding: 0 0 28px 24px; position: relative; }
+  .timeline > li::before {
     content: ""; position: absolute; left: -7px; top: 6px;
     width: 12px; height: 12px; border-radius: 50%;
     background: var(--accent); border: 3px solid var(--bg);
   }
-  .timeline .date { color: var(--text-dim); font-size: 0.82rem; }
-  .timeline b { display: block; margin: 2px 0 4px; }
-  .timeline p { color: var(--text-dim); font-size: 0.92rem; }
+  .timeline .date { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+  .timeline ul { list-style: none; margin-top: 8px; }
+  .timeline ul li {
+    color: var(--text-dim); font-size: 0.92rem;
+    padding: 3px 0 3px 16px; position: relative;
+  }
+  .timeline ul li::before { content: "•"; position: absolute; left: 2px; color: var(--accent); }
+  .timeline ul li b { color: var(--text); font-weight: 600; }
 
   .note {
     background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
@@ -208,28 +213,22 @@ npm start</pre>
     <ul class="timeline">
       <li>
         <span class="date">2026. 08. 29</span>
-        <b>이모티콘 시스템</b>
-        <p>채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종) · <code>/이모티콘</code> 목록 커맨드 · 모든 채널에서 사용 가능</p>
-      </li>
-      <li>
-        <span class="date">2026. 08. 29</span>
-        <b>모험섬 아침 알림 · 저장소 공개</b>
-        <p>매일 아침 8시(KST) 오늘의 모험 섬 자동 공지 · 새벽 시간대 날짜 버그 수정 · GitHub 공개 및 MIT 라이선스 적용</p>
-      </li>
-      <li>
-        <span class="date">2026. 08. 28</span>
-        <b>캐릭터 상세 조회 10종 추가</b>
-        <p><code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/전투력</code> · 보석 검색에 광휘 추가</p>
+        <ul>
+          <li><b>캐릭터 상세 조회 10종 추가</b> — <code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/전투력</code></li>
+          <li><b>이모티콘 시스템</b> — 채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종), <code>/이모티콘</code> 목록 커맨드, 모든 채널 사용 가능</li>
+          <li><b>모험섬 아침 알림</b> — 매일 아침 8시(KST) 자동 공지, 새벽 시간대 날짜 버그 수정</li>
+          <li>보석 검색에 광휘 추가</li>
+          <li>GitHub 저장소 공개, MIT 라이선스 적용</li>
+          <li>공식 홈페이지 오픈</li>
+        </ul>
       </li>
       <li>
         <span class="date">2026. 08. 28</span>
-        <b>24시간 운영 시작</b>
-        <p>Oracle Cloud 서버 이전 · pm2 자동 복구 · 채널 제한 기능 · <code>/도움말</code> 추가</p>
-      </li>
-      <li>
-        <span class="date">2026. 08. 28</span>
-        <b>v0.1 첫 공개</b>
-        <p>커맨드 7종으로 시작 — <code>/캐릭터</code> <code>/군장</code> <code>/원정대</code> <code>/입찰</code> <code>/모험섬</code> <code>/시세</code> <code>/보석</code></p>
+        <ul>
+          <li><b>v0.1 첫 공개</b> — 커맨드 7종으로 시작 (<code>/캐릭터</code> <code>/군장</code> <code>/원정대</code> <code>/입찰</code> <code>/모험섬</code> <code>/시세</code> <code>/보석</code>)</li>
+          <li><b>24시간 운영 시작</b> — Oracle Cloud 서버 + pm2 자동 복구</li>
+          <li><code>/도움말</code> 커맨드, 채널 제한 기능 추가</li>
+        </ul>
       </li>
     </ul>
   </div>
