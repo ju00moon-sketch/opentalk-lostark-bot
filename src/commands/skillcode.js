@@ -2,13 +2,14 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { createHash } from 'node:crypto';
 import { getFullArmory } from '../lostark.js';
 import { trunc, EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
+import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 import { stripTags } from '../tooltip.js';
 
 export const data = new SlashCommandBuilder()
   .setName('스킬코드')
   .setDescription('게임 호환 스킬코드 + 빌드 요약 (각인·스킬·보석·아크패시브)')
   .addStringOption((option) =>
-    option.setName('닉네임').setDescription('캐릭터 닉네임').setRequired(true),
+    option.setName('닉네임').setDescription('캐릭터 닉네임 (비우면 /등록한 내 캐릭터)'),
   );
 
 // 공식 전투정보실의 스킬코드 발급 엔드포인트를 그대로 사용한다.
@@ -50,7 +51,11 @@ function shortGem(gem, effectDesc) {
 }
 
 export async function execute(interaction) {
-  const name = interaction.options.getString('닉네임');
+  const name = resolveCharacter(interaction);
+  if (!name) {
+    await interaction.reply(NO_CHARACTER_HINT);
+    return;
+  }
   await interaction.deferReply();
 
   const [armory, gameCode] = await Promise.all([

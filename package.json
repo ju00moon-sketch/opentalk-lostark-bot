@@ -1,6 +1,6 @@
 {
   "name": "opentalk-lostark-bot",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "로스트아크 정보 조회 디스코드 봇",

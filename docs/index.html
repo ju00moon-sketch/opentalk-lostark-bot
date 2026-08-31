@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>포근해챗봇 — 포근해 길드 전용 로스트아크 챗봇</title>
+<title>포근해용 — 포근해 길드 전용 로스트아크 챗봇</title>
 <meta name="description" content="포근해 길드 전용 로스트아크 디스코드 챗봇. 캐릭터 조회, 장비 상세, 시세 검색, 모험섬 알림, 이모티콘까지.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 <style>
@@ -204,10 +204,11 @@
 <header>
   <div class="wrap">
     <div class="logo">🌱</div>
-    <h1>포근해<span class="accent">챗봇</span></h1>
+    <h1>포근해<span class="accent">용</span></h1>
     <p class="tagline"><b>포근해 길드 전용</b> 로스트아크 챗봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
     <div class="badges">
-      <span class="badge">커맨드 <b>39개</b></span>
+      <span class="badge">버전 <b>v1.0</b></span>
+      <span class="badge">커맨드 <b>49개</b></span>
       <span class="badge">이모티콘 <b>74종</b></span>
       <span class="badge">가동률 <b>24시간</b></span>
       <span class="badge">데이터 <b>로스트아크 공식 API</b></span>
@@ -231,6 +232,7 @@
     <h2><span class="emoji">✨</span>주요 기능</h2>
     <p class="section-desc">루페온 서버 포근해 길드를 위해 만든 디스코드 봇이에요. 슬래시(/) 하나로 게임 정보를 채팅방에서 바로 확인하세요.</p>
     <div class="cards">
+      <div class="card"><h3>🙋 내 캐릭터 등록</h3><p><code>/등록</code> 한 번이면 이후 모든 조회 커맨드에서 닉네임을 생략할 수 있어요. 서버 닉네임이 캐릭터명이면 등록 없이도 바로 됩니다.</p></div>
       <div class="card"><h3>🔍 캐릭터 조회</h3><p>기본 정보부터 장비·각인·보석·카드 군장검사, 원정대 전체 캐릭터까지.</p></div>
       <div class="card"><h3>📋 부위별 상세</h3><p>장비 품질, 악세서리 연마 효과, 스톤 세공, 팔찌, 스킬 트라이포드·룬.</p></div>
       <div class="card"><h3>✨ 최신 시스템</h3><p>아크 패시브 포인트·노드, 아크 그리드 코어, 전투력, 수집품 내실.</p></div>
@@ -246,11 +248,18 @@
     <div class="table-scroll">
       <table>
         <tr><th>커맨드</th><th>기능</th></tr>
+        <tr><td><code>/등록</code></td><td>내 디스코드 서버 닉네임으로 캐릭터 등록 (본인 것만) — 이후 모든 조회 커맨드에서 닉네임 생략</td></tr>
+        <tr><td><code>/정보 닉네임</code></td><td>스펙 종합 요약 — 돌 · 각인 · 카드 · 아크패시브 · 특성 · 수집품</td></tr>
         <tr><td><code>/캐릭터 닉네임</code></td><td>서버 · 직업 · 아이템 레벨 등 기본 정보</td></tr>
         <tr><td><code>/군장 닉네임</code></td><td>장비 · 각인 · 보석 · 카드 한눈에</td></tr>
         <tr><td><code>/전투력 닉네임</code></td><td>전투력 · 전투 특성 · 공격력/생명력</td></tr>
+        <tr><td><code>/로펙 닉네임</code></td><td>로펙 환산 점수 · 전체/직업 순위 · 레벨 중앙값 대비</td></tr>
+        <tr><td><code>/젬효율 닉네임</code></td><td>아크 그리드 젬 효율 — 옵션/포인트 구성과 옵션별 실효율</td></tr>
+        <tr><td><code>/부캐 닉네임</code></td><td>계정 내 모든 캐릭터를 아이템 레벨 순으로 (<code>/원정대</code>와 동일)</td></tr>
+        <tr><td><code>/치적 닉네임</code></td><td>치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 아크패시브 · 백어택</td></tr>
         <tr><td><code>/원정대 닉네임</code></td><td>계정의 모든 캐릭터를 아이템 레벨 순으로</td></tr>
-        <tr><td><code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code></td><td>부위별 상세 — 품질, 연마 효과, 세공 각인, 팔찌 효과</td></tr>
+        <tr><td><code>/장비</code> <code>/악세</code> <code>/스톤</code></td><td>부위별 상세 — 품질, 연마 효과, 세공 각인</td></tr>
+        <tr><td><code>/팔찌 닉네임</code></td><td>어빌리티 스톤 + 팔찌 한눈에, 팔찌 효율까지</td></tr>
         <tr><td><code>/스킬 닉네임</code></td><td>채용 스킬 · 트라이포드 · 룬</td></tr>
         <tr><td><code>/앜패</code> <code>/앜그</code></td><td>아크 패시브 포인트/노드 · 아크 그리드 코어/효과</td></tr>
         <tr><td><code>/아바타 닉네임</code></td><td>장착 아바타 목록</td></tr>
@@ -265,10 +274,13 @@
         <tr><td><code>/보석현황</code></td><td>4티어 보석 레벨별 최저가 한눈에</td></tr>
         <tr><td><code>/각인서 각인명</code></td><td>각인서 시세 (등급별)</td></tr>
         <tr><td><code>/각인서랭킹 [등급]</code></td><td>가장 비싼 각인서 TOP 10 (유물/전설)</td></tr>
+        <tr><td><code>/유각</code> <code>/전각</code></td><td>유물 · 전설 각인서 TOP 10 (등급 고정 단축 커맨드)</td></tr>
         <tr><td><code>/생활재료</code></td><td>생활 재료 분야별 시세</td></tr>
         <tr><td><code>/분배금 가격 [인원]</code></td><td>경매 적정 입찰가 계산 (4/8/16인, 수수료 5% 반영)</td></tr>
         <tr><td><code>/모험섬</code></td><td>오늘의 모험 섬 시간표 + 주요 보상</td></tr>
         <tr><td><code>/이벤트</code> <code>/공지</code></td><td>진행 중 이벤트 · 최신 공지사항</td></tr>
+        <tr><td><code>/딜지분 레이드 [관문] [피해량]</code></td><td>딜지분(기여도) · 예상 칭호 · 컷 달성 여부</td></tr>
+        <tr><td><code>/딜컷 레이드 [관문] [분]</code></td><td>관문별 강투 · 1인분 · 잔혈 컷과 필요 DPS</td></tr>
         <tr><td><code>/클골 [레이드명]</code></td><td>레이드 클리어 골드표 (관문별 + 더보기)</td></tr>
         <tr><td><code>/주급 닉네임</code></td><td>원정대 주간 골드 수입 추정</td></tr>
         <tr><td><code>/시너지 [검색]</code></td><td>직업별 파티 시너지 (방깎/치적/피증 검색 가능)</td></tr>
@@ -276,6 +288,7 @@
         <tr><td><code>/지옥</code> <code>/나락</code></td><td>강하 선택 추천 경로 (등급별)</td></tr>
         <tr><td><code>/효율 콘텐츠 단계 [레벨]</code></td><td>보상 선택지 가치 랭킹 (실시간 시세)</td></tr>
         <tr><td><code>/연마표</code></td><td>악세서리 연마 효과 수치표</td></tr>
+        <tr><td><code>/악세 검색 [품질]</code></td><td>연마 조합별 경매장 최저가 — 채팅은 <code>.상상</code> <code>.상중 70</code></td></tr>
         <tr><td><code>/코어 검색</code></td><td>아크 그리드 코어 정보 (직업/코어명/혼돈)</td></tr>
         <tr><td><code>/이모티콘</code></td><td>사용 가능한 이모티콘 키워드 목록</td></tr>
         <tr><td><code>/도움말</code></td><td>커맨드 사용법 안내 (본인에게만 표시)</td></tr>
@@ -319,18 +332,18 @@
   <section class="tab-panel" id="panel-link">
     <h2><span class="emoji">🔗</span>디스코드 서버에 초대하기</h2>
     <p class="section-desc">포근해 길드용으로 만들었지만, 버튼 하나로 다른 서버에도 추가할 수 있어요.</p>
-    <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=1542885088038092901&permissions=52224&scope=bot%20applications.commands">➕ 포근해챗봇 초대하기</a>
+    <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=1542885088038092901&permissions=52224&scope=bot%20applications.commands">➕ 포근해용 초대하기</a>
     <ol class="steps">
       <li><b>버튼 클릭 → 서버 선택</b><p>디스코드에 로그인한 뒤 봇을 추가할 서버를 고릅니다. (서버 관리 권한이 있어야 해요)</p></li>
       <li><b>권한 승인</b><p>메시지 보내기 · 링크 임베드 · 파일 첨부 — 봇이 응답과 이모티콘을 올리는 데 필요한 최소 권한만 요청합니다.</p></li>
       <li><b>바로 사용</b><p><code>/도움말</code>을 입력해 보세요. 이모티콘(<code>[따봉</code>)도 바로 작동합니다.</p></li>
     </ol>
-    <div class="note">💡 특정 채널에서만 커맨드를 허용하고 싶다면 <b>서버 설정 → 연동 → 포근해챗봇</b>에서 채널을 제한할 수 있어요. 모험섬 아침 알림은 서버 관리자가 <code>/알림설정 켜기</code>로 원하는 채널에 켤 수 있습니다.</div>
+    <div class="note">💡 특정 채널에서만 커맨드를 허용하고 싶다면 <b>서버 설정 → 연동 → 포근해용</b>에서 채널을 제한할 수 있어요. 모험섬 아침 알림은 서버 관리자가 <code>/알림설정 켜기</code>로 원하는 채널에 켤 수 있습니다.</div>
 
     <div class="sub-block">
       <h2><span class="emoji">💬</span>카카오톡 연동<span class="soon">준비 중</span></h2>
       <div class="kakao-card">
-        <h3>카카오톡에서도 포근해챗봇을</h3>
+        <h3>카카오톡에서도 포근해용을</h3>
         <p>길드 카카오톡 채팅방에서도 캐릭터 조회, 시세 검색 같은 핵심 기능을 쓸 수 있도록 연동을 준비하고 있어요. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유하는 방식이라, 어느 쪽에서 물어봐도 같은 정보를 받아볼 수 있게 됩니다. 자세한 사용법은 준비가 끝나면 이곳에 공개할게요.</p>
       </div>
     </div>
@@ -349,6 +362,20 @@ npm install</pre>
     <h2><span class="emoji">📝</span>업데이트 내역</h2>
     <ul class="timeline">
       <li>
+        <span class="date">2026. 08. 31</span>
+        <ul>
+          <li><b><code>/정보</code> 추가</b> — 어빌리티 스톤 단계, 각인 축약, 카드 세트, 아크패시브 포인트, 전투 특성, 수집품 진행도를 한 화면에 요약</li>
+          <li><b><code>/유각</code> <code>/전각</code> 추가</b> — 등급 선택 없이 바로 유물 · 전설 각인서 TOP 10</li>
+          <li><b><code>/로펙</code> <code>/부캐</code> 추가</b> — 로펙 환산 점수와 전체·직업 순위, 레벨 중앙값 대비를 한눈에. <code>/부캐</code>는 <code>/원정대</code>와 같은 내용이고, <code>/로펙</code>에는 보유카드 현황과 팔찌·젬 효율도 함께 나옵니다. <code>/젬효율</code>로 아크 그리드 젬을 옵션별로 뜯어볼 수도 있어요. <code>/캐릭터</code>에는 전투력 · 길드 등급 · 영지 · 스킬 포인트 · 성향을 추가했습니다.</li>
+          <li><b>닉네임 없이 내 캐릭터 조회</b> — 디스코드 서버 닉네임을 캐릭터명으로 쓰고 있으면 별도 설정 없이 <code>/정보</code> <code>/군장</code> <code>/주급</code> 등 모든 조회 커맨드와 초성(<code>ㅈㅂ</code>)에서 닉네임을 생략할 수 있어요. 닉네임이 다르면 <code>/등록</code>으로 캐릭터를 연결해 두면 됩니다.</li>
+          <li><b>후속 조회 버튼</b> — <code>/정보</code> <code>/캐릭터</code> <code>/군장</code> 결과 아래 버튼(군장 · 치적 · 팔찌 · 주급)으로 같은 캐릭터를 클릭 한 번에 이어서 조회</li>
+          <li><b><code>/치적</code> 추가</b> — 치명 특성 · 악세 · 팔찌 · 아크패시브를 합산한 상시 치명타 적중률을 보여주고, 발동 조건이 붙은 각인과 직업마다 다른 스킬 트라이포드 치적은 따로 구분해 표시</li>
+          <li><b>악세 연마 조합 시세 검색</b> — <code>.상상</code> <code>.상중</code> <code>.상단일</code> <code>.상상하</code> 등 10가지 조합으로 목걸이 · 귀걸이 · 반지 경매장 최저가를 한 번에 (<code>.상상 70</code>처럼 품질 지정 가능)</li>
+          <li><b><code>/팔찌</code> 개편</b> — 어빌리티 스톤 세공(<code>돌3 아2</code>)과 팔찌 고정 스탯 · 옵션을 한 화면에, 팔찌 효율까지 함께 표시</li>
+          <li><b><code>/딜지분</code> <code>/딜컷</code> 추가</b> — 관문별 보스 체력 기준으로 강투 · 1인분 · 잔혈 컷과 필요 DPS를 계산하고, 피해량을 넣으면 딜지분과 예상 칭호까지 판정 (4막 · 종막 · 세르카 · 지평의 성당 · 벨가르딘)</li>
+        </ul>
+      </li>
+      <li>
         <span class="date">2026. 08. 30</span>
         <ul>
           <li><b>v0.1 첫 공개 · 24시간 운영</b> — 기본 커맨드 7종으로 시작, Oracle Cloud 서버 + pm2 자동 복구</li>
@@ -357,7 +384,7 @@ npm install</pre>
           <li><b>게임 정보 커맨드</b> — <code>/클골</code> <code>/주급</code> <code>/시너지</code> <code>/체방</code> <code>/지옥</code> <code>/나락</code> <code>/효율</code>(전 티어 × 0~10단계 실시간 시세) <code>/연마표</code> <code>/코어</code>(558종) <code>/가토</code> <code>/분배금</code></li>
           <li><b>게임 호환 <code>/스킬코드</code></b> — 게임 [K] 스킬 창에 붙여넣는 진짜 스킬코드 발급</li>
           <li><b>이모티콘 시스템</b> — 채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종), <code>/이모티콘</code> 목록</li>
-          <li><b>채팅 커맨드</b> — 초성 바로 입력(<code>ㅂㅂㄱ 4000</code>), 단어는 점 필수(<code>.분배금</code>), 슬래시 별칭(<code>/ㅂㅂㄱ</code>) 16종</li>
+          <li><b>채팅 커맨드</b> — 초성 바로 입력(<code>ㅂㅂㄱ 4000</code>), 단어는 점 필수(<code>.분배금</code>), 슬래시 별칭(<code>/ㅂㅂㄱ</code>) 23종</li>
           <li><b>모험섬 아침 알림</b> — 매일 아침 8시(KST) 자동 공지, 서버별 설정(<code>/알림설정</code>)</li>
           <li><b>공개 봇 전환 · 홈페이지 오픈</b> — 어느 서버든 초대 가능, GitHub 공개 + MIT 라이선스</li>
         </ul>
@@ -369,7 +396,7 @@ npm install</pre>
 
 <footer>
   <div class="wrap">
-    <p>🌱 포근해챗봇 · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
+    <p>🌱 포근해용 · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
     <p style="margin-top:6px;">문의: <a href="mailto:ju00moon@naver.com">ju00moon@naver.com</a></p>
     <p style="margin-top:6px; font-size:0.8rem;">데이터 출처: 로스트아크 오픈 API — 본 사이트는 Smilegate RPG와 무관한 팬 프로젝트입니다.</p>
   </div>

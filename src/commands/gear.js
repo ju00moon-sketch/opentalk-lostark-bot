@@ -1,12 +1,14 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getArmory } from '../lostark.js';
 import { trunc, EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
+import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
+import { characterButtons } from '../buttons.js';
 
 export const data = new SlashCommandBuilder()
   .setName('군장')
   .setDescription('장비 · 각인 · 보석 · 카드를 한눈에 보여줍니다')
   .addStringOption((option) =>
-    option.setName('닉네임').setDescription('캐릭터 닉네임').setRequired(true),
+    option.setName('닉네임').setDescription('캐릭터 닉네임 (비우면 /등록한 내 캐릭터)'),
   );
 
 // 장비 툴팁(JSON 문자열)에서 품질 값을 찾는다. 실패해도 조용히 넘어간다.
@@ -26,7 +28,11 @@ function extractQuality(tooltipJson) {
 const GEAR_TYPES = ['무기', '투구', '상의', '하의', '장갑', '어깨'];
 
 export async function execute(interaction) {
-  const name = interaction.options.getString('닉네임');
+  const name = resolveCharacter(interaction);
+  if (!name) {
+    await interaction.reply(NO_CHARACTER_HINT);
+    return;
+  }
   await interaction.deferReply();
 
   const armory = await getArmory(name);
@@ -91,5 +97,8 @@ export async function execute(interaction) {
     }
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({
+    embeds: [embed],
+    components: characterButtons(profile.CharacterName, ['정보', '치적', '팔찌']),
+  });
 }

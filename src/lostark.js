@@ -79,6 +79,30 @@ export function getNotices() {
   return request('/news/notices');
 }
 
+// 경매장 악세서리 검색. etcOptions: [{ second, min, max }] — 연마 효과 코드와 수치.
+// MinValue만 주면 필터가 걸리지 않아서 MaxValue까지 같이 보내야 한다.
+export function searchAccessories({ category, etcOptions, quality, grade = '고대', tier = 4 }) {
+  return request('/auctions/items', {
+    ItemLevelMin: 0,
+    ItemLevelMax: 0,
+    ItemGradeQuality: quality,
+    EtcOptions: etcOptions.map((o) => ({
+      FirstOption: 7,
+      SecondOption: o.second,
+      MinValue: o.min,
+      MaxValue: o.max,
+    })),
+    Sort: 'BUY_PRICE',
+    CategoryCode: category,
+    CharacterClass: '',
+    ItemTier: tier,
+    ItemGrade: grade,
+    ItemName: '',
+    PageNo: 1,
+    SortCondition: 'ASC',
+  });
+}
+
 // 경매장 검색 (보석 등).
 export function searchAuctionItems(categoryCode, itemName) {
   return request('/auctions/items', {

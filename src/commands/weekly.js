@@ -2,6 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getSiblings } from '../lostark.js';
 import { RAIDS, DATA_DATE, totalGold } from '../data/raids.js';
 import { trunc, gold, EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
+import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 
 const GOLD_CHARACTER_LIMIT = 6; // 골드 획득 지정 캐릭터 수
 const RAIDS_PER_CHARACTER = 3; // 캐릭터당 골드를 받는 레이드 수
@@ -10,7 +11,7 @@ export const data = new SlashCommandBuilder()
   .setName('주급')
   .setDescription('원정대 기준 주간 레이드 골드 수입을 추정합니다')
   .addStringOption((option) =>
-    option.setName('닉네임').setDescription('원정대 내 아무 캐릭터 닉네임').setRequired(true),
+    option.setName('닉네임').setDescription('원정대 내 아무 캐릭터 닉네임 (비우면 /등록한 내 캐릭터)'),
   );
 
 const toLevel = (s) => parseFloat(String(s ?? '0').replace(/,/g, ''));
@@ -34,7 +35,11 @@ const shortName = (name) => name.split(':')[0].trim();
 const shortDiff = { 노말: '노', 하드: '하', 싱글: '싱', 나이트메어: '나메', '1단계': '1단', '2단계': '2단', '3단계': '3단' };
 
 export async function execute(interaction) {
-  const name = interaction.options.getString('닉네임');
+  const name = resolveCharacter(interaction);
+  if (!name) {
+    await interaction.reply(NO_CHARACTER_HINT);
+    return;
+  }
   await interaction.deferReply();
 
   const siblings = await getSiblings(name);

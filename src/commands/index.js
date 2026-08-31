@@ -21,6 +21,12 @@ import * as gemsof from './gemsof.js';
 import * as gemboard from './gemboard.js';
 import * as engraving from './engraving.js';
 import * as engravingRank from './engraving-rank.js';
+import * as engravingRankRelic from './engraving-rank-relic.js';
+import * as engravingRankLegend from './engraving-rank-legend.js';
+import * as info from './info.js';
+import * as crit from './crit.js';
+import * as dealshare from './dealshare.js';
+import * as dealcut from './dealcut.js';
 import * as life from './life.js';
 import * as events from './events.js';
 import * as notices from './notices.js';
@@ -37,16 +43,21 @@ import * as paradise from './paradise.js';
 import * as skillcode from './skillcode.js';
 import * as guardian from './guardian.js';
 import * as alarm from './alarm.js';
+import * as register from './register.js';
+import * as lopec from './lopec.js';
+import * as alt from './alt.js';
+import * as gemEfficiency from './gem-efficiency.js';
 
 import { ALIASES } from '../text-commands.js';
 
 const base = [
-  character, gear, expedition, bid, island, market, gem, help,
+  character, info, gear, expedition, bid, island, market, gem, help,
   equip, accessory, stone, bracelet, skills, arkpassive, arkgrid,
-  avatar, collectible, power, emoticon,
-  gemsof, gemboard, engraving, engravingRank, life, events, notices,
-  raidgold, weekly, synergy, tankiness, hell, naraka, efficiency,
-  grinding, cores, paradise, skillcode, guardian, alarm,
+  avatar, collectible, power, crit, emoticon,
+  gemsof, gemboard, engraving, engravingRank, engravingRankRelic, engravingRankLegend,
+  life, events, notices,
+  raidgold, weekly, synergy, tankiness, hell, naraka, efficiency, dealshare, dealcut,
+  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency,
 ];
 
 // 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).

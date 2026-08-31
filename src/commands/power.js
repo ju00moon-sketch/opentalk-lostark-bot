@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getCharacterProfile } from '../lostark.js';
 import { EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
+import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 
 const COMBAT_STATS = ['치명', '특화', '제압', '신속', '인내', '숙련'];
 
@@ -8,11 +9,15 @@ export const data = new SlashCommandBuilder()
   .setName('전투력')
   .setDescription('전투력과 전투 특성')
   .addStringOption((option) =>
-    option.setName('닉네임').setDescription('캐릭터 닉네임').setRequired(true),
+    option.setName('닉네임').setDescription('캐릭터 닉네임 (비우면 /등록한 내 캐릭터)'),
   );
 
 export async function execute(interaction) {
-  const name = interaction.options.getString('닉네임');
+  const name = resolveCharacter(interaction);
+  if (!name) {
+    await interaction.reply(NO_CHARACTER_HINT);
+    return;
+  }
   await interaction.deferReply();
 
   const profile = await getCharacterProfile(name);

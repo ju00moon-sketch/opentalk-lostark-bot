@@ -3,6 +3,7 @@ import { commands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
 import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
 import { handleTextCommand } from './text-commands.js';
+import { handleButton } from './buttons.js';
 
 const client = new Client({
   intents: [
@@ -52,6 +53,23 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  // 조회 결과에 붙은 후속 조회 버튼 (예: /정보 → [군장] 클릭)
+  if (interaction.isButton()) {
+    try {
+      await handleButton(interaction, commandMap);
+    } catch (err) {
+      console.error(`[버튼 ${interaction.customId}]`, err);
+      try {
+        const message = `오류가 발생했어요: ${err.message}`;
+        if (interaction.deferred || interaction.replied) await interaction.editReply(message);
+        else await interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
+      } catch {
+        // 인터랙션 만료 — 무시
+      }
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
   const command = commandMap.get(interaction.commandName);
   if (!command) return;

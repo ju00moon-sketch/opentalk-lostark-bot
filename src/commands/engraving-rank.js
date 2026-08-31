@@ -14,8 +14,8 @@ export const data = new SlashCommandBuilder()
       .addChoices({ name: '유물 (유각)', value: '유물' }, { name: '전설 (전각)', value: '전설' }),
   );
 
-export async function execute(interaction) {
-  const grade = interaction.options.getString('등급') ?? '유물';
+// /유각 · /전각처럼 등급이 고정된 커맨드에서도 재사용한다.
+export async function showRanking(interaction, grade) {
   await interaction.deferReply();
 
   const result = await searchMarketItems(ENGRAVING_CATEGORY, '', { grade, order: 'DESC' });
@@ -35,4 +35,8 @@ export async function execute(interaction) {
     .setDescription(trunc(lines.join('\n'), 4096));
 
   await interaction.editReply({ embeds: [embed] });
+}
+
+export function execute(interaction) {
+  return showRanking(interaction, interaction.options.getString('등급') ?? '유물');
 }

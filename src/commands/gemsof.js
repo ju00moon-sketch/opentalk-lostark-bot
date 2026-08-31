@@ -1,13 +1,14 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getArmoryPart } from '../lostark.js';
 import { trunc, EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
+import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 import { stripTags } from '../tooltip.js';
 
 export const data = new SlashCommandBuilder()
   .setName('장착보석')
   .setDescription('캐릭터가 장착한 보석과 스킬별 효과')
   .addStringOption((option) =>
-    option.setName('닉네임').setDescription('캐릭터 닉네임').setRequired(true),
+    option.setName('닉네임').setDescription('캐릭터 닉네임 (비우면 /등록한 내 캐릭터)'),
   );
 
 // "10레벨 겁화의 보석 (귀속)" → "10겁화"
@@ -17,7 +18,11 @@ function shortGemName(rawName) {
 }
 
 export async function execute(interaction) {
-  const name = interaction.options.getString('닉네임');
+  const name = resolveCharacter(interaction);
+  if (!name) {
+    await interaction.reply(NO_CHARACTER_HINT);
+    return;
+  }
   await interaction.deferReply();
 
   const gemData = await getArmoryPart(name, 'gems');
