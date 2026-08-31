@@ -208,7 +208,7 @@
     <p class="tagline"><b>포근해 길드 전용</b> 로스트아크 챗봇 — 캐릭터부터 시세, 모험섬 알림, 이모티콘까지</p>
     <div class="badges">
       <span class="badge">버전 <b>v1.0</b></span>
-      <span class="badge">커맨드 <b>49개</b></span>
+      <span class="badge">커맨드 <b>51개</b></span>
       <span class="badge">이모티콘 <b>74종</b></span>
       <span class="badge">가동률 <b>24시간</b></span>
       <span class="badge">데이터 <b>로스트아크 공식 API</b></span>
@@ -278,6 +278,7 @@
         <tr><td><code>/생활재료</code></td><td>생활 재료 분야별 시세</td></tr>
         <tr><td><code>/분배금 가격 [인원]</code></td><td>경매 적정 입찰가 계산 (4/8/16인, 수수료 5% 반영)</td></tr>
         <tr><td><code>/모험섬</code></td><td>오늘의 모험 섬 시간표 + 주요 보상</td></tr>
+        <tr><td><code>/업데이트</code> <code>/업뎃</code></td><td>이번 주 업데이트 내역 — 버튼으로 공지 바로 열기, 같은 날 공지와 지난 업데이트도 함께</td></tr>
         <tr><td><code>/이벤트</code> <code>/공지</code></td><td>진행 중 이벤트 · 최신 공지사항</td></tr>
         <tr><td><code>/딜지분 레이드 [관문] [피해량]</code></td><td>딜지분(기여도) · 예상 칭호 · 컷 달성 여부</td></tr>
         <tr><td><code>/딜컷 레이드 [관문] [분]</code></td><td>관문별 강투 · 1인분 · 잔혈 컷과 필요 DPS</td></tr>
@@ -287,6 +288,7 @@
         <tr><td><code>/체방</code></td><td>직업별 체방 계수표 (이미지)</td></tr>
         <tr><td><code>/지옥</code> <code>/나락</code></td><td>강하 선택 추천 경로 (등급별)</td></tr>
         <tr><td><code>/효율 콘텐츠 단계 [레벨]</code></td><td>보상 선택지 가치 랭킹 (실시간 시세)</td></tr>
+        <tr><td><code>/cpm 횟수 시간 [목표]</code></td><td>분당 시전 횟수 — 평균 간격과 목표 CPM 달성에 필요한 횟수</td></tr>
         <tr><td><code>/연마표</code></td><td>악세서리 연마 효과 수치표</td></tr>
         <tr><td><code>/악세 검색 [품질]</code></td><td>연마 조합별 경매장 최저가 — 채팅은 <code>.상상</code> <code>.상중 70</code></td></tr>
         <tr><td><code>/코어 검색</code></td><td>아크 그리드 코어 정보 (직업/코어명/혼돈)</td></tr>
@@ -366,7 +368,7 @@ npm install</pre>
         <ul>
           <li><b><code>/정보</code> 추가</b> — 어빌리티 스톤 단계, 각인 축약, 카드 세트, 아크패시브 포인트, 전투 특성, 수집품 진행도를 한 화면에 요약</li>
           <li><b><code>/유각</code> <code>/전각</code> 추가</b> — 등급 선택 없이 바로 유물 · 전설 각인서 TOP 10</li>
-          <li><b><code>/로펙</code> <code>/부캐</code> 추가</b> — 로펙 환산 점수와 전체·직업 순위, 레벨 중앙값 대비를 한눈에. <code>/부캐</code>는 <code>/원정대</code>와 같은 내용이고, <code>/로펙</code>에는 보유카드 현황과 팔찌·젬 효율도 함께 나옵니다. <code>/젬효율</code>로 아크 그리드 젬을 옵션별로 뜯어볼 수도 있어요. <code>/캐릭터</code>에는 전투력 · 길드 등급 · 영지 · 스킬 포인트 · 성향을 추가했습니다.</li>
+          <li><b><code>/로펙</code> <code>/부캐</code> 추가</b> — 로펙 환산 점수와 전체·직업 순위, 레벨 중앙값 대비를 한눈에. <code>/업데이트</code>로 이번 주 수요일 업데이트 공지를 바로 열 수 있고, <code>/부캐</code>는 <code>/원정대</code>와 같은 내용이며, <code>/로펙</code>에는 보유카드 현황과 팔찌·젬 효율도 함께 나옵니다. <code>/젬효율</code>로 아크 그리드 젬을 옵션별로 뜯어볼 수도 있어요. <code>/캐릭터</code>에는 전투력 · 길드 등급 · 영지 · 스킬 포인트 · 성향을 추가했습니다.</li>
           <li><b>닉네임 없이 내 캐릭터 조회</b> — 디스코드 서버 닉네임을 캐릭터명으로 쓰고 있으면 별도 설정 없이 <code>/정보</code> <code>/군장</code> <code>/주급</code> 등 모든 조회 커맨드와 초성(<code>ㅈㅂ</code>)에서 닉네임을 생략할 수 있어요. 닉네임이 다르면 <code>/등록</code>으로 캐릭터를 연결해 두면 됩니다.</li>
           <li><b>후속 조회 버튼</b> — <code>/정보</code> <code>/캐릭터</code> <code>/군장</code> 결과 아래 버튼(군장 · 치적 · 팔찌 · 주급)으로 같은 캐릭터를 클릭 한 번에 이어서 조회</li>
           <li><b><code>/치적</code> 추가</b> — 치명 특성 · 악세 · 팔찌 · 아크패시브를 합산한 상시 치명타 적중률을 보여주고, 발동 조건이 붙은 각인과 직업마다 다른 스킬 트라이포드 치적은 따로 구분해 표시</li>

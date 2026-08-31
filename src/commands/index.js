@@ -47,6 +47,8 @@ import * as register from './register.js';
 import * as lopec from './lopec.js';
 import * as alt from './alt.js';
 import * as gemEfficiency from './gem-efficiency.js';
+import * as update from './update.js';
+import * as cpm from './cpm.js';
 
 import { ALIASES } from '../text-commands.js';
 
@@ -57,7 +59,7 @@ const base = [
   gemsof, gemboard, engraving, engravingRank, engravingRankRelic, engravingRankLegend,
   life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency, dealshare, dealcut,
-  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency,
+  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm,
 ];
 
 // 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).
@@ -68,7 +70,7 @@ const aliasCommands = Object.entries(ALIASES).flatMap(([alias, def]) => {
   return [{
     data: {
       name: alias,
-      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: `${def.cmd} (초성 축약)` }),
+      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: `${def.cmd} 축약 커맨드` }),
     },
     execute: target.execute,
   }];

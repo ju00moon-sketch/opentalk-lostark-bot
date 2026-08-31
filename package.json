@@ -10,7 +10,9 @@
   },
   "scripts": {
     "start": "node --env-file=.env src/index.js",
-    "register": "node --env-file=.env src/register-commands.js"
+    "register": "node --env-file=.env src/register-commands.js",
+    "dev": "node --env-file=.env.dev src/index.js",
+    "dev:register": "node --env-file=.env.dev src/register-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.27.0"

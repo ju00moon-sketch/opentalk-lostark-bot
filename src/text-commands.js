@@ -47,6 +47,12 @@ export const ALIASES = {
   ㅂㅋ: { cmd: '부캐', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅈㅎㅇ: { cmd: '젬효율', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄱㅈ: { cmd: '군장', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
+  ㅇㄷㅇㅌ: { cmd: '업데이트', parse: () => ({}) },
+  업뎃: { cmd: '업데이트', parse: () => ({}) },
+  시전: { cmd: 'cpm', usage: '.cpm 횟수 시간 [목표] (예: .cpm 35 7분)', parse: (p) => {
+    const 횟수 = toInt(p[0]);
+    return 횟수 && p[1] ? { 횟수, 시간: p[1], 목표: p[2] ? Number(p[2]) : null } : null;
+  } },
   ㄷㅇㅁ: { cmd: '도움말', parse: () => ({}) },
 };
 
@@ -64,6 +70,7 @@ class TextInteraction {
     this.options = {
       getString: (name) => options[name] ?? null,
       getInteger: (name) => options[name] ?? null,
+      getNumber: (name) => options[name] ?? null,
       getBoolean: (name) => options[name] ?? null,
       getChannel: () => null,
       getSubcommand: () => options.__sub,
@@ -89,7 +96,9 @@ class TextInteraction {
 
 // 규칙: 초성(ㅂㅂㄱ)은 접두사 없이 바로, 원래 단어(분배금·지옥 등)는 반드시 "." 또는 "!"를
 // 붙여야 반응한다 — 일반 대화("지옥 같네")가 오작동하지 않도록.
+// ALIASES에 초성이 아닌 축약("업뎃")을 넣을 수도 있는데, 이런 단어형도 접두사를 요구한다.
 const WORD_CMDS = new Map(Object.values(ALIASES).map((def) => [def.cmd, def]));
+const CHOSUNG_ONLY = /^[ㄱ-ㅎ]+$/;
 
 // 악세 연마 조합 단축어 — ".상상", ".상중 70" 처럼 쓴다.
 // ALIASES와 달리 슬래시 커맨드로는 등록하지 않는다 (초성 별칭 없음).
@@ -128,8 +137,9 @@ export async function handleTextCommand(message, commandMap) {
     return runCommand(command, message, refine.options, raw);
   }
 
-  let alias = ALIASES[token]; // 초성 — 접두사 유무 무관
-  if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 단어 — 접두사 필수
+  // 초성은 접두사 유무 무관, 단어형 축약은 접두사 필수
+  let alias = ALIASES[token] && (CHOSUNG_ONLY.test(token) || hasPrefix) ? ALIASES[token] : null;
+  if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 원래 커맨드명
   if (!alias) return false;
 
   const command = commandMap.get(alias.cmd);
