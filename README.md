@@ -126,7 +126,7 @@ docs/
 ### 2. 디스코드 봇 생성
 
 1. https://discord.com/developers/applications 접속
-2. **New Application** → 이름 입력 (예: 엉봇짭)
+2. **New Application** → 이름 입력
 3. **General Information** 탭의 **Application ID** 복사
 4. **Bot** 탭 → **Reset Token** → 토큰 복사 (이 화면 벗어나면 다시 못 봄!)
 
