@@ -2,7 +2,7 @@
 
 포근해 길드(루페온) 전용 로스트아크 정보 조회 봇. **v1.1**
 
-🌐 **홈페이지: https://ju00moon-sketch.github.io/opentalk-lostark-bot/** — 커맨드 목록 · 이모티콘 키워드 · 봇 초대하기
+🌐 **홈페이지: https://ju00moon-sketch.github.io/opentalk-lostark-bot/** — 커맨드 목록 · 이모티콘 키워드 · 봇 초대하기 · [업데이트 노트](https://ju00moon-sketch.github.io/opentalk-lostark-bot/updates.html)
 
 **요구 사항: Node.js 24 이상** (ESM + 내장 `--env-file` 사용)
 

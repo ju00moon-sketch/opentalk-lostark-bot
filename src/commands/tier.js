@@ -8,7 +8,7 @@ import { commandButtons } from '../buttons.js';
 // 반영된 값이라 "여러 직업을 키우고 각각 세팅까지 맞춘 사람"이 위로 간다. 개인 스펙은 /랭킹.
 export const data = new SlashCommandBuilder()
   .setName('체급')
-  .setDescription('원정대 체급 랭킹 — 등록된 길드원의 1720 이상 캐릭터 로펙 점수 합 (딜러·서포터 같은 척도)');
+  .setDescription('길드 내 원정대 체급 랭킹 — 등록된 길드원의 1720 이상 캐릭터 로펙 점수 합 (딜러·서포터 같은 척도)');
 
 const RAID_LEVEL = 1720; // 원정대 체급에 넣는 최소 레벨
 
@@ -49,7 +49,7 @@ export async function expeditionBoard(entries) {
       + ` · 템렙 합 ${num(e.levelSum, 0)}${unscored}`;
   });
   return {
-    title: `🏆 원정대 체급 랭킹 — ${RAID_LEVEL}↑ 로펙 점수 합`,
+    title: `🏆 길드 내 원정대 체급 랭킹 — ${RAID_LEVEL}↑ 로펙 점수 합`,
     footer: `${RAID_LEVEL} 이상 캐릭터의 로펙 환산 점수 합(캐릭 수 × 평균) — 딜러·서포터 같은 척도, 보석·장비 반영 · ${RAID_LEVEL} 미만 제외 · lopec.kr`,
     sections: [{ name: null, ranked, lines }],
     failed,
