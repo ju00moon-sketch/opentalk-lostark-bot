@@ -114,6 +114,7 @@ assets/
   charts/               # /체방 등 커맨드가 전송하는 차트 이미지
 scripts/
   chembang-chart.html   # 체방 차트 원본 — 수정 후 렌더링 캡처로 assets/charts 갱신
+  build-update-pages.py # docs/updates.html의 버전별 <article>로 docs/updates/<버전>.html 생성
 docs/
   index.html            # 홈페이지 (GitHub Pages, main 브랜치에서 자동 배포)
 ```

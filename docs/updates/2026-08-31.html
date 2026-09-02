@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="stylesheet" href="../updates.css">
+<title>기능 캐릭터 분석 확장 — 포근해용 업데이트 노트</title>
+<meta name="description" content="포근해용 기능 업데이트 노트 (2026. 08. 31) — 캐릭터 분석 확장.">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="nav-row">
+      <a class="back" href="../index.html#updates">← 포근해용 홈으로</a>
+      <a class="back" href="../updates.html">전체 노트 보기 →</a>
+    </div>
+    <h1>업데이트 <span class="accent">노트</span></h1>
+    <p class="lead">기능 · 2026. 08. 31</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <article class="release" id="2026-08-31">
+    <div class="release-head">
+      <h2>캐릭터 분석 확장</h2>
+      <span class="date">2026. 08. 31</span>
+    </div>
+    <p class="summary">스펙 요약 · 치적 · 딜지분 · 악세 시세 검색까지, 캐릭터를 뜯어보는 커맨드가 대거 추가됐습니다.</p>
+    <ul>
+      <li><b><code>/정보</code> 추가</b> — 어빌리티 스톤 단계, 각인 축약, 카드 세트, 아크패시브 포인트, 전투 특성, 수집품 진행도를 한 화면에 요약</li>
+      <li><b><code>/유각</code> <code>/전각</code> 추가</b> — 등급 선택 없이 바로 유물 · 전설 각인서 TOP 10</li>
+      <li><b><code>/로펙</code> <code>/부캐</code> 추가</b> — 로펙 환산 점수와 전체·직업 순위, 레벨 중앙값 대비를 한눈에. <code>/업데이트</code>로 이번 주 수요일 업데이트 공지를 바로 열 수 있고, <code>/부캐</code>는 <code>/원정대</code>와 같은 내용이며, <code>/로펙</code>에는 보유카드 현황과 팔찌·젬 효율도 함께 나옵니다. <code>/젬효율</code>로 아크 그리드 젬을 옵션별로 뜯어볼 수도 있어요. <code>/캐릭터</code>에는 전투력 · 길드 등급 · 영지 · 스킬 포인트 · 성향을 추가했습니다.</li>
+      <li><b>닉네임 없이 내 캐릭터 조회</b> — 디스코드 서버 닉네임을 캐릭터명으로 쓰고 있으면 별도 설정 없이 <code>/정보</code> <code>/군장</code> <code>/주급</code> 등 모든 조회 커맨드와 초성(<code>ㅈㅂ</code>)에서 닉네임을 생략할 수 있어요. 닉네임이 다르면 <code>/등록</code>으로 캐릭터를 연결해 두면 됩니다.</li>
+      <li><b>후속 조회 버튼</b> — <code>/정보</code> <code>/캐릭터</code> <code>/군장</code> 결과 아래 버튼(군장 · 치적 · 팔찌 · 주급)으로 같은 캐릭터를 클릭 한 번에 이어서 조회</li>
+      <li><b><code>/치적</code> 추가</b> — 치명 특성 · 악세 · 팔찌 · 아크패시브를 합산한 상시 치명타 적중률을 보여주고, 발동 조건이 붙은 각인과 직업마다 다른 스킬 트라이포드 치적은 따로 구분해 표시</li>
+      <li><b>악세 연마 조합 시세 검색</b> — <code>.상상</code> <code>.상중</code> <code>.상단일</code> <code>.상상하</code> 등 10가지 조합으로 목걸이 · 귀걸이 · 반지 경매장 최저가를 한 번에 (<code>.상상 70</code>처럼 품질 지정 가능)</li>
+      <li><b><code>/팔찌</code> 개편</b> — 어빌리티 스톤 세공(<code>돌3 아2</code>)과 팔찌 고정 스탯 · 옵션을 한 화면에, 팔찌 효율까지 함께 표시</li>
+      <li><b><code>/딜지분</code> <code>/딜컷</code> 추가</b> — 관문별 보스 체력 기준으로 강투 · 1인분 · 잔혈 컷과 필요 DPS를 계산하고, 피해량을 넣으면 딜지분과 예상 칭호까지 판정 (4막 · 종막 · 세르카 · 지평의 성당 · 벨가르딘)</li>
+    </ul>
+  </article>
+
+  <nav class="pager" aria-label="이전 · 다음 글">
+    <a class="pager-item prev" href="v0.1.html"><span class="k">이전 글</span><span class="t">v0.1 · 첫 공개</span></a>
+    <a class="pager-item next" href="v1.1.html"><span class="k">다음 글</span><span class="t">v1.1 · 길드원 랭킹 추가</span></a>
+  </nav>
+
+  <section class="board" aria-label="전체 업데이트 목록">
+    <div class="board-head">전체 업데이트</div>
+    <a class="row" href="v1.1.html"><span class="badge">v1.1</span><span class="title">길드원 랭킹 추가</span><span class="date">2026. 09. 02</span></a>
+    <a class="row current" href="2026-08-31.html"><span class="badge">기능</span><span class="title">캐릭터 분석 확장</span><span class="date">2026. 08. 31</span></a>
+    <a class="row" href="v0.1.html"><span class="badge">v0.1</span><span class="title">첫 공개</span><span class="date">2026. 08. 30</span></a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>🌱 <a href="../index.html">포근해용 홈</a> · <a href="../updates.html">전체 업데이트 노트</a> · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="stylesheet" href="../updates.css">
+<title>v0.1 첫 공개 — 포근해용 업데이트 노트</title>
+<meta name="description" content="포근해용 v0.1 업데이트 노트 (2026. 08. 30) — 첫 공개.">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="nav-row">
+      <a class="back" href="../index.html#updates">← 포근해용 홈으로</a>
+      <a class="back" href="../updates.html">전체 노트 보기 →</a>
+    </div>
+    <h1>업데이트 <span class="accent">노트</span></h1>
+    <p class="lead">v0.1 · 2026. 08. 30</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <article class="release" id="v0-1">
+    <div class="release-head">
+      <h2><span class="ver">v0.1</span> 첫 공개</h2>
+      <span class="date">2026. 08. 30</span>
+    </div>
+    <p class="summary">기본 커맨드 7종으로 시작해 하루 만에 캐릭터 조회 · 시세 · 게임 정보 커맨드를 갖췄고, Oracle Cloud 서버에서 24시간 돌기 시작했습니다.</p>
+    <ul>
+      <li><b>24시간 운영</b> — Oracle Cloud 서버 + pm2 자동 복구</li>
+      <li><b>캐릭터 조회 전면 구축</b> — <code>/캐릭터</code> <code>/군장</code> <code>/원정대</code> <code>/전투력</code> + 부위별 상세 10종 (<code>/장비</code> <code>/악세</code> <code>/스톤</code> <code>/팔찌</code> <code>/스킬</code> <code>/앜패</code> <code>/앜그</code> <code>/아바타</code> <code>/내실</code> <code>/낙원력</code>)</li>
+      <li><b>시세 · 정보 커맨드</b> — <code>/시세</code> <code>/보석</code> <code>/보석현황</code> <code>/장착보석</code> <code>/각인서</code> <code>/각인서랭킹</code> <code>/생활재료</code> <code>/이벤트</code> <code>/공지</code></li>
+      <li><b>게임 정보 커맨드</b> — <code>/클골</code> <code>/주급</code> <code>/시너지</code> <code>/체방</code> <code>/지옥</code> <code>/나락</code> <code>/효율</code>(전 티어 × 0~10단계 실시간 시세) <code>/연마표</code> <code>/코어</code>(558종) <code>/가토</code> <code>/분배금</code></li>
+      <li><b>게임 호환 <code>/스킬코드</code></b> — 게임 [K] 스킬 창에 붙여넣는 진짜 스킬코드 발급</li>
+      <li><b>이모티콘 시스템</b> — 채팅 <code>[키워드</code> 입력 시 이미지 응답 (74종), <code>/이모티콘</code> 목록</li>
+      <li><b>채팅 커맨드</b> — 초성 바로 입력(<code>ㅂㅂㄱ 4000</code>), 단어는 점 필수(<code>.분배금</code>), 슬래시 별칭(<code>/ㅂㅂㄱ</code>) 23종</li>
+      <li><b>모험섬 아침 알림</b> — 매일 아침 8시(KST) 자동 공지, 서버별 설정(<code>/알림설정</code>)</li>
+      <li><b>공개 봇 전환 · 홈페이지 오픈</b> — 어느 서버든 초대 가능, GitHub 공개 + MIT 라이선스</li>
+    </ul>
+  </article>
+
+  <nav class="pager" aria-label="이전 · 다음 글">
+    <span class="pager-item empty" aria-hidden="true"></span>
+    <a class="pager-item next" href="2026-08-31.html"><span class="k">다음 글</span><span class="t">기능 · 캐릭터 분석 확장</span></a>
+  </nav>
+
+  <section class="board" aria-label="전체 업데이트 목록">
+    <div class="board-head">전체 업데이트</div>
+    <a class="row" href="v1.1.html"><span class="badge">v1.1</span><span class="title">길드원 랭킹 추가</span><span class="date">2026. 09. 02</span></a>
+    <a class="row" href="2026-08-31.html"><span class="badge">기능</span><span class="title">캐릭터 분석 확장</span><span class="date">2026. 08. 31</span></a>
+    <a class="row current" href="v0.1.html"><span class="badge">v0.1</span><span class="title">첫 공개</span><span class="date">2026. 08. 30</span></a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>🌱 <a href="../index.html">포근해용 홈</a> · <a href="../updates.html">전체 업데이트 노트</a> · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
+  </div>
+</footer>
+
+</body>
+</html>
