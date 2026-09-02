@@ -14,13 +14,20 @@ export function parseEmoticonKeyword(content) {
   return match ? match[1] : null;
 }
 
-// 키워드에 해당하는 이미지 파일 경로. 없으면 null.
-export function findEmoticonFile(keyword) {
+// 파일명 그대로 찾는다. 없으면 null.
+function lookup(name) {
   for (const ext of EXTENSIONS) {
-    const file = join(EMOTICON_DIR, `${keyword}.${ext}`);
+    const file = join(EMOTICON_DIR, `${name}.${ext}`);
     if (existsSync(file)) return file;
   }
   return null;
+}
+
+// 키워드에 해당하는 이미지 파일 경로. 없으면 null.
+// 모코콩콘처럼 "~콩"으로 끝나는 이름은 콩을 뗀 형태로도 부를 수 있게 한다 ([물줘 → 물줘콩).
+// 정확히 일치하는 파일이 먼저다 — 짧은 이름이 다른 이모티콘을 가리는 일은 없다.
+export function findEmoticonFile(keyword) {
+  return lookup(keyword) ?? (keyword.endsWith('콩') ? null : lookup(`${keyword}콩`));
 }
 
 // 등록된 이모티콘 키워드 목록 (가나다순).

@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('이번 주 업데이트 내역 (수요일 정기 업데이트)');
 
 // 정기 업데이트 글은 "8월 26일(수) 업데이트 내역 안내" 형태로 올라온다.
-const UPDATE_TITLE = /업데이트 내역/;
+export const UPDATE_TITLE = /업데이트 내역/;
 
 // 공지 분류별 아이콘 — 같은 날 글이 한눈에 구분되게.
 const TYPE_ICON = { 공지: '📢', 점검: '🔧', 상점: '🛒', 이벤트: '🎉' };
@@ -34,22 +34,12 @@ function agoLabel(date) {
 // 제목에서 날짜 부분을 떼어 낸다. "8월 26일(수) 업데이트 내역 안내" → "업데이트 내역 안내"
 const stripDate = (title) => title.replace(/^\d+월\s*\d+일\s*\([일월화수목금토]\)\s*/, '').trim();
 
-export async function execute(interaction) {
-  await interaction.deferReply();
-
-  const notices = await getNotices();
-  if (!notices || notices.length === 0) {
-    await interaction.editReply('공지사항을 가져오지 못했어요.');
-    return;
-  }
-
+// /업데이트 응답 본문. 자동 알림(update-notify.js)도 같은 화면을 보낸다. 업데이트 글이 없으면 null.
+export function buildUpdateMessage(notices) {
   const updates = notices
     .filter((n) => UPDATE_TITLE.test(n.Title))
     .sort((a, b) => new Date(b.Date) - new Date(a.Date));
-  if (updates.length === 0) {
-    await interaction.editReply('업데이트 내역 공지를 찾지 못했어요. `/공지`로 전체 목록을 확인해 보세요.');
-    return;
-  }
+  if (updates.length === 0) return null;
 
   const latest = updates[0];
   const fresh = Date.now() - new Date(latest.Date).getTime() < 7 * 86400000;
@@ -90,5 +80,23 @@ export async function execute(interaction) {
       .setURL('https://lostark.game.onstove.com/News/Notice/List'),
   );
 
-  await interaction.editReply({ embeds: [embed], components: [row] });
+  return { embeds: [embed], components: [row] };
+}
+
+export async function execute(interaction) {
+  await interaction.deferReply();
+
+  const notices = await getNotices();
+  if (!notices || notices.length === 0) {
+    await interaction.editReply('공지사항을 가져오지 못했어요.');
+    return;
+  }
+
+  const message = buildUpdateMessage(notices);
+  if (!message) {
+    await interaction.editReply('업데이트 내역 공지를 찾지 못했어요. `/공지`로 전체 목록을 확인해 보세요.');
+    return;
+  }
+
+  await interaction.editReply(message);
 }

@@ -15,7 +15,8 @@ function msUntilNextKst(hour) {
   return target - nowKst;
 }
 
-function targetChannelIds() {
+// 알림을 보낼 채널 목록 — 업데이트 알림(update-notify.js)도 같은 채널을 쓴다.
+export function targetChannelIds() {
   const homeChannel =
     process.env.NOTIFY_CHANNEL_ID ||
     (process.env.ALLOWED_CHANNEL_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)[0];

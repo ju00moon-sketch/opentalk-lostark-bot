@@ -1,6 +1,7 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { commands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
+import { startUpdateNotifier } from './update-notify.js';
 import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
 import { handleTextCommand } from './text-commands.js';
 import { handleButton } from './buttons.js';
@@ -27,6 +28,7 @@ const allowedChannels = (process.env.ALLOWED_CHANNEL_IDS ?? '')
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`로그인 완료: ${readyClient.user.tag} (커맨드 ${commandMap.size}개, 이모티콘 ${countEmoticons()}개)`);
   startIslandNotifier(readyClient);
+  startUpdateNotifier(readyClient);
 });
 
 // 텍스트 메시지 처리: ① 초성 커맨드 (ㅂㅂㄱ 4000 등) ② 이모티콘 ([따봉 등)
