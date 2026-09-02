@@ -23,6 +23,11 @@ export function getLinkedCharacter(userId) {
   return userId ? load()[userId] ?? null : null;
 }
 
+// { 디스코드 유저ID: 캐릭터명 } 전체 — /랭킹 집계용
+export function getAllLinks() {
+  return load();
+}
+
 export function linkCharacter(userId, characterName) {
   const store = load();
   store[userId] = characterName;

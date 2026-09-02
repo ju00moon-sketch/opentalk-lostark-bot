@@ -117,12 +117,61 @@ export async function getLopecScore(characterName) {
     return {
       ...summary,
       combatPower: objectAfter(payload, '"stats":')?.combatPower ?? null,
+      // 달성 최고 점수 — 로펙 DB에 저장된 이 캐릭터의 최고 환산 점수. 로펙 랭킹(classRank 등)의 기준값이고,
+      // 현재 specPoint는 장비를 옮겨 뒀거나 로펙이 보석을 못 읽었을 때 훨씬 낮게 나올 수 있다.
+      dbScore: Number(/"dbScore":([\d.]+)/.exec(payload)?.[1]) || null,
       median: Number(/"nowMedian":([\d.]+)/.exec(payload)?.[1]) || null,
       gemMedian: Number(/"arkgridGemMedian":([\d.]+)/.exec(payload)?.[1]) || null,
       cardData: objectAfter(payload, '"cardData":'),
     };
   } catch (err) {
     console.error('[로펙 점수]', err.message);
+    return null;
+  }
+}
+
+// idx를 감싸는 가장 안쪽 { … } 객체를 파싱한다 (뒤로 훑어 여는 괄호를 찾고 matchBrace로 닫는다).
+function enclosingObject(payload, idx) {
+  let depth = 0;
+  for (let i = idx; i >= 0; i -= 1) {
+    const c = payload[i];
+    if (c === '}') depth += 1;
+    else if (c === '{') {
+      if (depth === 0) {
+        const close = matchBrace(payload, i);
+        if (close === -1) return null;
+        try {
+          return JSON.parse(payload.slice(i, close + 1));
+        } catch {
+          return null;
+        }
+      }
+      depth -= 1;
+    }
+  }
+  return null;
+}
+
+// 로펙 "원정대" 탭 — 계정의 모든 캐릭터와 각각의 로펙 점수(DB에 저장된 최고 환산 점수)를 한 번에 준다.
+// 환산 점수는 딜러·서포터를 같은 척도로 매기므로 원정대 체급(/체급) 합산에 쓴다. 5분 캐시.
+// 항목: { nickname, characterClass, itemLevel, lopecScore(없으면 null), combatPower, role: 'dealer'|'support'|null }
+export async function getLopecExpedition(characterName) {
+  const key = `expedition:${characterName}`;
+  const hit = pageCache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+  try {
+    const html = await fetchText(`${BASE_URL}/character/expedition/${encodeURIComponent(characterName)}`);
+    const payload = flightPayload(html);
+    const byName = new Map();
+    for (const m of payload.matchAll(/"lopecScore":/g)) {
+      const o = enclosingObject(payload, m.index);
+      if (o?.nickname && !byName.has(o.nickname)) byName.set(o.nickname, o);
+    }
+    const data = byName.size > 0 ? [...byName.values()] : null;
+    pageCache.set(key, { at: Date.now(), data });
+    return data;
+  } catch (err) {
+    console.error('[로펙 원정대]', err.message);
     return null;
   }
 }

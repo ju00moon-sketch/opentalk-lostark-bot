@@ -47,6 +47,8 @@ export const ALIASES = {
   ㅂㅋ: { cmd: '부캐', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅈㅎㅇ: { cmd: '젬효율', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄱㅈ: { cmd: '군장', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
+  ㄹㅋ: { cmd: '랭킹', parse: () => ({}) },
+  ㅊㄱ: { cmd: '체급', parse: () => ({}) },
   ㅇㄷㅇㅌ: { cmd: '업데이트', parse: () => ({}) },
   업뎃: { cmd: '업데이트', parse: () => ({}) },
   시전: { cmd: 'cpm', usage: '.cpm 횟수 시간 [목표] (예: .cpm 35 7분)', parse: (p) => {
@@ -62,6 +64,7 @@ class TextInteraction {
     this.message = message;
     this.channelId = message.channelId;
     this.guildId = message.guildId;
+    this.guild = message.guild;
     this.channel = message.channel;
     this.user = message.author;
     this.member = message.member; // 서버 닉네임을 캐릭터명으로 쓰는 폴백용
