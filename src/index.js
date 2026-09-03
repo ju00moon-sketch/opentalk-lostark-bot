@@ -19,14 +19,42 @@ for (const command of commands) {
   commandMap.set(command.data.name, command);
 }
 
-// ALLOWED_CHANNEL_IDS가 설정돼 있으면 그 채널에서만 커맨드를 허용한다.
+// ALLOWED_CHANNEL_IDS에 채널을 넣어 두면 그 채널이 속한 서버는 그 채널에서만 커맨드가 동작한다.
+// 목록에 자기 채널이 하나도 없는 서버는 제한 없이 모든 채널에서 쓸 수 있다 —
+// 그래서 서버마다 채널 ID만 추가하면 되고, 넣지 않은 서버는 그대로 자유롭다.
 const allowedChannels = (process.env.ALLOWED_CHANNEL_IDS ?? '')
   .split(',')
   .map((id) => id.trim())
   .filter(Boolean);
 
-client.once(Events.ClientReady, (readyClient) => {
+// 로그인 후 채널이 어느 서버 것인지 확인해 채운다: 서버ID → 허용 채널 ID Set
+const allowedByGuild = new Map();
+
+async function loadChannelRestrictions(client) {
+  for (const channelId of allowedChannels) {
+    try {
+      const channel = await client.channels.fetch(channelId);
+      if (!channel?.guildId) continue;
+      if (!allowedByGuild.has(channel.guildId)) allowedByGuild.set(channel.guildId, new Set());
+      allowedByGuild.get(channel.guildId).add(channelId);
+    } catch (err) {
+      // 봇이 못 보는 채널(삭제됐거나 권한 없음)은 건너뛴다 — 그 서버는 제한 없이 동작한다
+      console.error(`허용 채널 확인 실패 (${channelId}):`, err.message);
+    }
+  }
+  const summary = [...allowedByGuild.entries()].map(([g, ids]) => `${g}:${ids.size}개`).join(' · ');
+  console.log(`채널 제한: ${summary || '없음(모든 채널 허용)'}`);
+}
+
+// 이 채널에서 커맨드를 써도 되는지. 제한이 걸린 서버가 아니면 항상 true.
+function isChannelAllowed(guildId, channelId) {
+  const allowed = allowedByGuild.get(guildId);
+  return !allowed || allowed.has(channelId);
+}
+
+client.once(Events.ClientReady, async (readyClient) => {
   console.log(`로그인 완료: ${readyClient.user.tag} (커맨드 ${commandMap.size}개, 이모티콘 ${countEmoticons()}개)`);
+  await loadChannelRestrictions(readyClient);
   startIslandNotifier(readyClient);
   startUpdateNotifier(readyClient);
 });
@@ -35,11 +63,9 @@ client.once(Events.ClientReady, (readyClient) => {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
 
-  // 초성 커맨드 — 슬래시 커맨드와 같은 채널 제한 적용 (홈 서버 한정)
-  const isHomeGuild = message.guildId === process.env.HOME_GUILD_ID;
-  const channelAllowed =
-    !isHomeGuild || allowedChannels.length === 0 || allowedChannels.includes(message.channelId);
-  if (channelAllowed && (await handleTextCommand(message, commandMap))) return;
+  // 초성 커맨드 — 슬래시 커맨드와 같은 채널 제한 적용
+  if (isChannelAllowed(message.guildId, message.channelId)
+    && (await handleTextCommand(message, commandMap))) return;
 
   // 이모티콘은 채널 제한 없이 어디서든
   const keyword = parseEmoticonKeyword(message.content);
@@ -76,11 +102,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
   const command = commandMap.get(interaction.commandName);
   if (!command) return;
 
-  // 채널 제한은 운영(홈) 서버에서만 적용 — 다른 서버는 각자 서버 설정(연동)으로 제어한다.
-  const isHomeGuild = interaction.guildId === process.env.HOME_GUILD_ID;
-  if (isHomeGuild && allowedChannels.length > 0 && !allowedChannels.includes(interaction.channelId)) {
+  // 채널 제한 — ALLOWED_CHANNEL_IDS에 채널을 넣어 둔 서버만 걸린다.
+  if (!isChannelAllowed(interaction.guildId, interaction.channelId)) {
+    const [first] = allowedByGuild.get(interaction.guildId);
     await interaction.reply({
-      content: `이 채널에서는 봇을 사용할 수 없어요. <#${allowedChannels[0]}> 채널에서 이용해 주세요!`,
+      content: `이 채널에서는 봇을 사용할 수 없어요. <#${first}> 채널에서 이용해 주세요!`,
       flags: MessageFlags.Ephemeral,
     });
     return;

@@ -76,7 +76,8 @@
 
 ```
 src/
-  index.js              # 봇 본체 — 로그인, 채널 제한, 메시지 처리(초성 커맨드 → 이모티콘 순)
+  index.js              # 봇 본체 — 로그인, 채널 제한(ALLOWED_CHANNEL_IDS: 채널이 등록된 서버만 그 채널로 한정),
+                        #   메시지 처리(초성 커맨드 → 이모티콘 순)
   register-commands.js  # 슬래시 커맨드 등록 스크립트 (npm run register)
   lostark.js            # 로스트아크 오픈 API 래퍼 (armory/거래소/경매장/캘린더/뉴스)
   lopec.js              # lopec.kr 조회 — 환산 점수·순위(/로펙), 팔찌 효율 예비값. 페이지 5분 캐시
