@@ -2,6 +2,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { trunc, EMBED_COLOR } from './format.js';
 import { getAllLinks } from './user-store.js';
+import { TITLE, NOTE, row, section, blocks, wrapItems } from './kakao/layout.js';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 export const rankLabel = (i) => MEDALS[i] ?? `**${i + 1}.**`;
@@ -36,6 +37,20 @@ export async function registeredMembers(guild) {
   return entries;
 }
 
+// 카카오톡 평문 판. 제목이 "이름 — 기준" 꼴이면 기준을 따로 떼어 한 줄로 세운다.
+function kakaoBoard(board, total) {
+  const [head, ...basis] = board.title.replace(/^\p{Extended_Pictographic}+\s*/u, '').split(' — ');
+  // 순위 목록이 길면 방에 다 안 들어가고 뒤가 잘린다(전문은 전체 보기 링크로 간다).
+  // 그래서 집계 수치·조회 실패·기준 설명을 목록보다 앞에 두어 주의사항이 항상 방에 남게 한다.
+  return blocks(
+    TITLE(head),
+    section(null, [row('집계', `${total}명`), basis.length > 0 ? row('기준', basis.join(' — ')) : null]),
+    board.failed.length > 0 ? section('조회 안 됨', [...wrapItems(board.failed, 4), board.failedHint]) : null,
+    NOTE(board.footer),
+    board.sections.filter((s) => s.lines.length > 0).map((s) => section(s.name ?? '순위', s.lines)),
+  );
+}
+
 // 공통 실행 흐름: 서버 확인 → 등록자 추리기 → build(entries)로 판 만들기 → 임베드(+버튼) 응답.
 // build는 { title, footer, sections: [{ name, ranked, lines }], failed, failedHint }를 돌려준다.
 export async function runBoard(interaction, build, components = []) {
@@ -60,6 +75,13 @@ export async function runBoard(interaction, build, components = []) {
   }
 
   const total = board.sections.reduce((n, s) => n + s.ranked.length, 0);
+
+  // 카카오톡: 집계 인원을 맨 위로 올리고 구획을 항목으로 나눈 뒤, 긴 기준 설명은 맨 아래 주의줄로 내린다.
+  // 순위 줄 자체는 디스코드와 같은 문자열이라(마크다운만 벗겨진다) 수치·순위·조회 실패 목록이 그대로 남는다.
+  if (interaction.platform === 'kakao') {
+    await interaction.editReply({ content: kakaoBoard(board, total), components });
+    return;
+  }
   const [first, ...rest] = board.sections;
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)

@@ -364,7 +364,7 @@
   <section class="tab-panel" id="panel-commands">
     <h1 class="page">커맨드</h1>
     <p class="lead">슬래시(/)를 치면 목록이 떠요. 자주 쓰는 건 초성만 쳐도 되고, 서버에서 <code>/도움말</code>을 입력하면 언제든 다시 볼 수 있습니다.</p>
-    <div class="pills"><span class="pill">슬래시 53개</span><span class="pill">초성 별칭 31개</span><span class="pill">이모티콘 160종</span></div>
+    <div class="pills"><span class="pill">슬래시 53개</span><span class="pill">초성 별칭 32개</span><span class="pill">이모티콘 160종</span></div>
 
     <div class="cmd-group">
       <h2>캐릭터 조회</h2>
@@ -375,7 +375,7 @@
         <div class="cmd-row"><span class="cmd"><code>/캐릭터 닉네임</code><em>ㅋㄹㅌ</em></span><span class="desc">서버 · 직업 · 아이템 레벨 등 기본 정보</span></div>
         <div class="cmd-row"><span class="cmd"><code>/군장 닉네임</code><em>ㄱㅈ</em></span><span class="desc">장비 · 각인 · 보석 · 카드 한눈에</span></div>
         <div class="cmd-row"><span class="cmd"><code>/전투력 닉네임</code></span><span class="desc">전투력 · 전투 특성 · 공격력/생명력</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 아크패시브 · 백어택</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 아크패시브 (백어택은 기습의 대가 착용 시) · 아이덴티티·치적 시너지는 추가 확률로</span></div>
         <div class="cmd-row"><span class="cmd"><code>/로펙 닉네임</code><em>ㄹㅍ</em></span><span class="desc">로펙 환산 점수 · 전체/직업 순위 · 레벨 중앙값 대비 · 보유카드 · 팔찌/젬 효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/젬효율 닉네임</code><em>ㅈㅎㅇ</em></span><span class="desc">아크 그리드 젬 효율 — 옵션/포인트 구성과 옵션별 실효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/원정대</code> <code>/부캐 닉네임</code><em>ㅂㅋ</em></span><span class="desc">계정의 모든 캐릭터를 아이템 레벨 순으로 (서버별 묶음)</span></div>
@@ -405,9 +405,9 @@
       <p class="section-desc">거래소와 경매장은 실시간으로 조회합니다.</p>
       <div class="cmd-table">
         <div class="cmd-row"><span class="cmd"><code>/시세 아이템명</code><em>ㅅㅅ</em></span><span class="desc">거래소 가격 검색 (부분 검색 가능)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/보석 종류 레벨</code><em>ㅂㅅ</em></span><span class="desc">경매장 보석 최저가 (겁화/작열/광휘/멸화/홍염) · <code>/보석현황</code> 4티어 레벨별 표</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/보석</code><em>ㅄ · ㅂㅅ</em></span><span class="desc">겁화 · 작열 10~7레벨 최저가 시세판 + 전일 대비 · <code>/보석 종류 레벨</code> 단일 시세 · <code>/보석 닉네임</code> 그 캐릭터 장착 보석 · <code>/보석현황</code> 4티어 레벨별 표</span></div>
         <div class="cmd-row"><span class="cmd"><code>/각인서 각인명</code><em>ㄱㅇㅅ</em></span><span class="desc">각인서 시세 (등급별)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 (<code>/각인서랭킹 [등급]</code>의 단축 커맨드)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 + 전일 대비 · <code>/유각 2</code>로 다음 쪽 (<code>/각인서랭킹 [등급] [페이지]</code>의 단축 커맨드)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/생활재료</code></span><span class="desc">생활 재료 분야별 시세</span></div>
         <div class="cmd-row"><span class="cmd"><code>/분배금 가격 [인원]</code><em>ㅂㅂㄱ</em></span><span class="desc">경매 적정 입찰가 계산 (4/8/16인, 판매 수수료 5% 반영)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/악세 검색 [품질]</code></span><span class="desc">연마 조합별 경매장 최저가 — 채팅은 <code>.상상</code> <code>.상중 70</code></span></div>
@@ -527,6 +527,7 @@
 
     <div class="kakao-card">
       <div class="title"><span>카카오톡 오픈채팅방</span><span class="soon">운영 중</span></div>
+      <p><code>/정보</code>·<code>/팔찌</code>·<code>/랭킹</code>·<code>/체급</code>은 카톡 전용 양식으로 읽기 편하게 정리했습니다. 긴 결과는 <b>전체 보기</b> 링크에서 확인할 수 있어요. 링크는 30분간 유효하며 서버 재시작 시에도 만료됩니다.</p>
       <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code>로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>/ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
       <div class="actions">
         <a class="btn-kakao" href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">💬 카카오톡으로 물어보기</a>
@@ -558,8 +559,8 @@ npm install</pre>
     <div class="releases">
       <a class="release latest" href="updates/v1.2.html">
         <div class="head"><span class="ver">v1.2</span><span class="date">2026. 09. 04</span><span class="badge">최신</span></div>
-        <p class="summary">카카오톡 오픈채팅방에서도 포근해용을 쓸 수 있습니다. 디스코드 커맨드를 <code>/</code>로 시작해 그대로 치면 같은 답이 옵니다.</p>
-        <div class="chips"><span>카카오톡 오픈채팅방 연동</span><span>/커맨드 형식</span><span>카톡 닉네임으로 자동 조회</span><span>/등록 캐릭터명</span></div>
+        <p class="summary">카카오톡 오픈채팅방 연동에 더해, 카톡 전용 양식과 긴 결과 전체 보기를 제공합니다. 보석 시세판·각인서 등락 조회도 개선했습니다.</p>
+        <div class="chips"><span>카카오톡 오픈채팅방 연동</span><span>카톡 가독성·전체 보기</span><span>/보석 · /ㅄ</span><span>각인서 등락·쪽 넘김</span><span>/치적 개선</span></div>
       </a>
       <a class="release" href="updates/v1.1.html">
         <div class="head"><span class="ver">v1.1</span><span class="date">2026. 09. 02</span></div>

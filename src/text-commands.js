@@ -12,6 +12,28 @@ const GRADE_MAP = {
   7: '전설', 6: '영웅', 5: '희귀',
 };
 
+const GEM_TYPES = ['겁화', '작열', '광휘', '멸화', '홍염'];
+
+// 쪽 번호는 슬래시 옵션과 같게 1~20 정수만 받는다. 안 적으면 1쪽.
+// toInt는 "2.5"를 2로, "-1"을 -1로 통과시키므로 여기서 자릿수부터 확인한다.
+const PAGE_MAX = 20;
+const parsePage = (p) => {
+  if (p.length === 0) return {};
+  if (!/^[0-9]+$/.test(p[0])) return null;
+  const 페이지 = Number(p[0]);
+  return 페이지 >= 1 && 페이지 <= PAGE_MAX ? { 페이지 } : null;
+};
+
+// /보석 세 가지 쓰임을 한 파서에서 가른다: 인자 없음 → 시세판, "겁화 10" → 단일 보석, 그 밖 → 캐릭터 닉네임.
+const parseGemArgs = (p) => {
+  if (p.length === 0) return {};
+  if (GEM_TYPES.includes(p[0])) {
+    const 레벨 = toInt(p[1]);
+    return 레벨 ? { 종류: p[0], 레벨 } : null;
+  }
+  return { 닉네임: p.join(' ') };
+};
+
 // parse는 인자 배열을 받아 옵션 객체를 반환한다. null이면 사용법 안내.
 export const ALIASES = {
   ㅂㅂㄱ: { cmd: '분배금', usage: 'ㅂㅂㄱ 가격 [인원] (예: ㅂㅂㄱ 4000)', parse: (p) => {
@@ -31,13 +53,11 @@ export const ALIASES = {
   ㅈㄱ: { cmd: '주급', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅅㅅ: { cmd: '시세', usage: 'ㅅㅅ 아이템명 (예: ㅅㅅ 운명의 파괴석)', parse: (p) => (p[0] ? { 아이템명: p.join(' ') } : null) },
   ㄱㅇㅅ: { cmd: '각인서', usage: 'ㄱㅇㅅ 각인명 (예: ㄱㅇㅅ 원한)', parse: (p) => (p[0] ? { 각인명: p.join(' ') } : null) },
-  ㅂㅅ: { cmd: '보석', usage: 'ㅂㅅ 종류 레벨 (예: ㅂㅅ 겁화 10)', parse: (p) => {
-    const 레벨 = toInt(p[1]);
-    return p[0] && 레벨 ? { 종류: p[0], 레벨 } : null;
-  } },
+  ㅂㅅ: { cmd: '보석', usage: 'ㅂㅅ [종류 레벨 | 닉네임] (예: ㅂㅅ · ㅂㅅ 겁화 10 · ㅂㅅ 블레상돈)', parse: parseGemArgs },
+  ㅄ: { cmd: '보석', usage: 'ㅄ [종류 레벨 | 닉네임] (예: ㅄ · ㅄ 겁화 10 · ㅄ 블레상돈)', parse: parseGemArgs },
   ㅅㅋㅋㄷ: { cmd: '스킬코드', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
-  ㅇㄱ: { cmd: '유각', parse: () => ({}) },
-  ㅈㄱㅇ: { cmd: '전각', parse: () => ({}) },
+  ㅇㄱ: { cmd: '유각', usage: 'ㅇㄱ [쪽] (1~20 정수, 예: ㅇㄱ 2)', parse: parsePage },
+  ㅈㄱㅇ: { cmd: '전각', usage: 'ㅈㄱㅇ [쪽] (1~20 정수, 예: ㅈㄱㅇ 2)', parse: parsePage },
   ㄷㅈㅂ: { cmd: '딜지분', usage: 'ㄷㅈㅂ 레이드[관문] [피해량] (예: ㄷㅈㅂ 세하1관 2700억)', parse: (p) => (p[0] ? { 레이드: p.join(' ') } : null) },
   ㄷㅋ: { cmd: '딜컷', usage: 'ㄷㅋ 레이드[관문] [분] (예: ㄷㅋ 세하 10)', parse: (p) => (p[0] ? { 레이드: p.join(' ') } : null) },
   ㅋㄹㅌ: { cmd: '캐릭터', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
@@ -159,6 +179,11 @@ export function parseGenericOptions(command, tokens) {
     else if (def.type === OPT.BOOLEAN) value = /^(true|1|예|응|on|켜기)$/i.test(raw);
     if (value === null || (typeof value === 'number' && !Number.isFinite(value))) return { usage };
     if (def.choices && !def.choices.some((c) => String(c.value) === String(value))) return { usage };
+    // 슬래시 옵션에 적어 둔 범위(min_value·max_value)는 채팅·카카오에서도 똑같이 지킨다
+    if (typeof value === 'number') {
+      if (def.min_value != null && value < def.min_value) return { usage };
+      if (def.max_value != null && value > def.max_value) return { usage };
+    }
     options[def.name] = value;
   }
   return { options };

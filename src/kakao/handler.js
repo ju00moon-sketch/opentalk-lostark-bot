@@ -6,7 +6,7 @@ import { matchTextCommand } from '../text-commands.js';
 import { parseEmoticonKeyword, findEmoticonFile } from '../emoticons.js';
 import { resolveCharacter } from '../user-store.js';
 import { KakaoInteraction } from './interaction.js';
-import { toKakaoResponse, textResponse, cardLinkFor } from './render.js';
+import { toKakaoResponse, textResponse, cardLinkFor, fitBridgeMessage, CHANNEL_LIMITS } from './render.js';
 
 export const KAKAO_MATCH_OPTIONS = { prefixes: ['/'], bareChosung: false, anyCommand: true };
 // 디스코드 채널 개념이 필요한 커맨드 — 카카오에선 항상 제외
@@ -42,14 +42,15 @@ const plain = (response) => ({ response, link: null });
 
 // 발화 하나를 끝까지 실행한다 (예산과 무관). 절대 reject하지 않는다.
 // → { response: 카카오 스킬 응답 JSON, link: 방에 보낼 미리보기 카드 주소(없으면 null) }
-async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild } = {}) {
+async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits = CHANNEL_LIMITS.skill } = {}) {
+  const render = (payloads) => toKakaoResponse(payloads, { baseUrl, limits, fullTitle: utterance });
   const keyword = parseEmoticonKeyword(utterance);
   if (keyword) {
     if (!KAKAO_EMOTICONS_ENABLED) return plain(textResponse(EMOTICONS_OFF));
     const file = findEmoticonFile(keyword);
     if (!file) return plain(textResponse(`'${keyword}' 이모티콘이 없어요. /이모티콘 으로 목록을 볼 수 있어요.`));
     const payloads = [{ files: [file] }];
-    return { response: toKakaoResponse(payloads, { baseUrl }), link: cardLinkFor(payloads, { baseUrl }) };
+    return { response: render(payloads), link: cardLinkFor(payloads, { baseUrl }) };
   }
   if (!utterance.startsWith('/')) return plain(guideResponse());
 
@@ -71,7 +72,7 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
   // 캐릭터 카드용 — 커맨드가 조회한 캐릭터(입력 > 등록 > 카톡 닉네임). 캐릭터 이미지가 있는 응답에만 카드가 붙는다.
   const character = resolveCharacter(interaction);
   return {
-    response: toKakaoResponse(interaction.payloads, { baseUrl }),
+    response: render(interaction.payloads),
     link: cardLinkFor(interaction.payloads, { baseUrl, character }),
   };
 }
@@ -95,7 +96,8 @@ async function postCallback(callbackUrl, response, fetchImpl) {
 }
 
 // 공통 처리: 예산·보류 캐시·콜백. → { response, link }
-async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch } = {}) {
+async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch, channel = 'skill' } = {}) {
+  const limits = CHANNEL_LIMITS[channel] ?? CHANNEL_LIMITS.skill;
   const utterance = normalize(String(body?.userRequest?.utterance ?? ''));
   const userKey = body?.userRequest?.user?.id;
   const callbackUrl = body?.userRequest?.callbackUrl;
@@ -103,10 +105,10 @@ async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEF
   if (!utterance || !userKey) return plain(guideResponse());
 
   const started = Date.now();
-  const key = `${userKey}\n${utterance}`;
+  const key = `${channel}\n${userKey}\n${utterance}`; // 채널마다 분량 규격이 달라 보류 결과를 섞지 않는다
   let task = pending.get(key);
   if (!task) {
-    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild });
+    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits });
     pending.set(key, task);
     // 결과를 아무도 안 가져가도 3분 뒤엔 지운다
     task.finally(() => setTimeout(() => { if (pending.get(key) === task) pending.delete(key); }, PENDING_TTL_MS).unref?.());
@@ -130,7 +132,7 @@ async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEF
 
 // 오픈빌더 스킬 요청 → 카카오 스킬 응답 JSON. guild: KAKAO_GUILD_ID의 디스코드 서버(없으면 null) — 랭킹 계열 허용·집계용.
 export async function handleSkillRequest(body, commandMap, options = {}) {
-  return (await process(body, commandMap, options)).response;
+  return (await process(body, commandMap, { ...options, channel: 'skill' })).response;
 }
 
 // ── 오픈채팅방 브리지 — 폰의 메신저봇R(scripts/messengerbot-r.js)이 방 메시지를 그대로 넘기고 평문 답을 받아 방에 쓴다.
@@ -139,17 +141,26 @@ export async function handleSkillRequest(body, commandMap, options = {}) {
 // 방 이름은 키에 넣지 않는다(방을 옮기거나 제목을 바꿔도 등록이 유지되도록; 한 길드라 방 사이 닉 충돌은 없다고 본다).
 const BRIDGE_BUDGET_MS = 25_000;
 
-// 카카오 스킬 응답 JSON → 평문 한 덩어리. 바로가기는 "이어서: …" 한 줄로.
+// 카카오 스킬 응답 JSON → 방에 쓸 평문. 본문(body)과 뒤에 붙는 후속 안내(tail)를 나눠 돌려준다 —
+// 분량을 맞출 때 안내 몫을 따로 남겨 둬야 해서다(fitBridgeMessage).
 // 이미지는 URL 줄로 두되, 미리보기 카드(link)가 따로 나가면 뺀다 — 카드가 그 이미지를 보여 주니까.
-export function flattenResponse(response, { skipImages = false } = {}) {
+export function flattenParts(response, { skipImages = false } = {}) {
   const outputs = response?.template?.outputs ?? [];
   const parts = outputs
     .map((o) => o.simpleText?.text ?? (skipImages ? '' : o.simpleImage?.imageUrl ?? ''))
     .filter(Boolean);
-  const quick = (response?.template?.quickReplies ?? []).map((q) => q.messageText).filter(Boolean);
-  if (quick.length > 0) parts.push(`이어서: ${quick.join(' · ')}`);
   if (response?.useCallback && response.data?.text) parts.push(response.data.text);
-  return parts.join('\n\n') || null;
+  const quick = (response?.template?.quickReplies ?? []).map((q) => q.messageText).filter(Boolean);
+  const tail = quick.length > 0
+    ? '▸ 이어서 쓸 수 있어요\n' + quick.map((q) => `· ${q}`).join('\n')
+    : null;
+  return { body: parts.join('\n\n') || null, tail };
+}
+
+// 본문과 후속 안내를 이어 붙인 평문 한 덩어리 (분량 제한 없음).
+export function flattenResponse(response, options = {}) {
+  const { body, tail } = flattenParts(response, options);
+  return [body, tail].filter(Boolean).join('\n\n') || null;
 }
 
 // → { text, link }: text는 방에 쓸 평문(null이면 침묵), link는 먼저 보낼 미리보기 카드 주소(null이면 없음).
@@ -164,6 +175,8 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
 
   // 닉네임을 같이 넘겨 등록 없이도 "카톡 닉네임 = 캐릭터명"이면 바로 조회되게 한다 (디스코드 서버 닉네임 폴백과 동일)
   const skillBody = { userRequest: { utterance: text, user: { id: `oc:${sender}`, properties: { nickname: sender } } } };
-  const { response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs });
-  return { text: flattenResponse(response, { skipImages: Boolean(link) }), link };
+  const { response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs, channel: 'bridge' });
+  // 방에 나가는 최종 메시지는 본문 + 후속 안내다 — 둘을 합친 길이로 분량을 맞춘다.
+  const { body: message, tail } = flattenParts(response, { skipImages: Boolean(link) });
+  return { text: fitBridgeMessage(message, tail, { baseUrl, fullTitle: text }), link };
 }

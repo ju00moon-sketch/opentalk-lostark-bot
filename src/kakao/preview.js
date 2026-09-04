@@ -3,11 +3,13 @@
 //   GET /p/emo/<키워드>   이모티콘 카드 (이미지 = assets/emoticons/<키워드>.png)
 //   GET /p/chart/<이름>   차트 카드   (이미지 = assets/charts/<이름>.png, 예: chembang)
 //   GET /p/char/<닉네임>  캐릭터 카드 (이미지 = 전투정보실 캐릭터 이미지, 제목 = 칭호 + 닉네임, 설명 = 직업·서버·템렙)
+//   GET /p/full/<id>     방에 다 못 담은 결과의 전문 (result-store.js에 30분 보관 — 랭킹처럼 긴 응답용)
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findEmoticonFile, parseEmoticonKeyword } from '../emoticons.js';
 import { getCharacterProfile } from '../lostark.js';
+import { getResult } from './result-store.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CHARTS_DIR = path.join(ROOT, 'assets', 'charts');
@@ -42,6 +44,34 @@ function page({ title, description, image, url }) {
 
 const notFound = { status: 404, html: '<!DOCTYPE html><meta charset="utf-8"><title>없음</title>없는 카드예요.' };
 
+// 긴 결과 전문 페이지. 카드용 page()와 달리 og:image가 없고(그릴 그림이 없다) 본문을 그대로 편다.
+// 줄바꿈과 공백은 white-space: pre-wrap으로 살린다 — 방에서 본 그대로 이어 읽을 수 있게.
+function fullPage(title, text, url) {
+  const t = escapeHtml(title);
+  const body = escapeHtml(text);
+  const summary = escapeHtml(String(text).replace(/\s+/g, ' ').slice(0, 120));
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="포근해용">
+<meta property="og:title" content="${t}">
+<meta property="og:description" content="${summary}">
+<meta property="og:url" content="${escapeHtml(url)}">
+<title>${t} — 포근해용</title>
+<style>body{margin:0;background:#16120e;color:#f2ece3;font-family:sans-serif;padding:20px 16px;line-height:1.65}
+main{max-width:640px;margin:0 auto}h1{font-size:1.05rem;margin:0 0 14px;color:#f5a623}
+pre{white-space:pre-wrap;word-break:break-word;margin:0;font:inherit}
+footer{margin-top:20px;color:#8d8073;font-size:.8rem}</style>
+</head>
+<body><main><h1>${t}</h1><pre>${body}</pre><footer>포근해용 · 이 주소는 30분 뒤 만료돼요</footer></main></body>
+</html>
+`;
+}
+
 // kind·id로 카드 페이지를 만든다 → { status, html }. 실패는 404.
 export async function renderPreview(kind, rawId, { baseUrl, emoticonsEnabled = true }) {
   let id;
@@ -60,6 +90,12 @@ export async function renderPreview(kind, rawId, { baseUrl, emoticonsEnabled = t
     if (!/^[A-Za-z0-9_-]+$/.test(id) || !existsSync(path.join(CHARTS_DIR, `${id}.png`))) return notFound;
     const image = `${baseUrl}/assets/charts/${id}.png`;
     return { status: 200, html: page({ title: '직업별 체방 계수', description: '포근해용 · /체방', image, url: `${baseUrl}/p/chart/${id}` }) };
+  }
+
+  if (kind === 'full') {
+    const saved = getResult(id);
+    if (!saved) return notFound;
+    return { status: 200, html: fullPage(saved.title, saved.text, `${baseUrl}/p/full/${encodeURIComponent(id)}`) };
   }
 
   if (kind === 'char') {

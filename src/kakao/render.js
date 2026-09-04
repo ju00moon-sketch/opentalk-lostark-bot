@@ -3,6 +3,7 @@
 // 첨부 이미지는 우리 서버가 공개 서빙하는 URL(simpleImage)로 바꾼다.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { saveResult } from './result-store.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 // 공개 서빙을 허용하는 폴더 — 이 둘의 직접 자식 파일만 URL이 나온다 (server.js의 라우트와 짝)
@@ -11,10 +12,22 @@ const PUBLIC_DIRS = {
   charts: path.join(ROOT, 'assets', 'charts'),
 };
 
-const TEXT_MAX = 1000;     // simpleText 글자수 제한
-const OUTPUTS_MAX = 3;     // outputs 개수 제한
+const TEXT_MAX = 1000;     // 오픈빌더 simpleText 글자수 제한 (플랫폼 규격 — 늘릴 수 없다)
+const OUTPUTS_MAX = 3;     // 오픈빌더 outputs 개수 제한 (플랫폼 규격)
 const QUICK_MAX = 10;      // quickReplies 개수 제한
 const LABEL_MAX = 14;      // quickReplies label 글자수 제한
+
+// 오픈채팅 브리지는 폰 봇이 평문 한 덩어리를 그대로 방에 쓰는 구조라 오픈빌더 규격이 적용되지 않는다.
+// 그렇다고 방에 벽지 같은 메시지를 쏟으면 읽기 어려우니, 읽을 만한 분량에서 끊고
+// 넘치는 만큼은 "전체 보기" 페이지(/p/full/<id>)로 넘긴다.
+const BRIDGE_TEXT_MAX = 1500;
+
+export const CHANNEL_LIMITS = {
+  skill: { textMax: TEXT_MAX, parts: OUTPUTS_MAX, outputsMax: OUTPUTS_MAX },
+  // 브리지는 여기서 자르지 않고 한 덩어리로만 모은다. 방에 나가는 최종 메시지에는 본문 뒤에 후속 안내가
+  // 더 붙기 때문에, 길이를 맞추는 일은 그 둘을 합칠 수 있는 fitBridgeMessage에서 한 번에 한다.
+  bridge: { textMax: Infinity, parts: 1, outputsMax: 4 },
+};
 
 export function stripMarkdown(text) {
   return String(text ?? '')
@@ -58,8 +71,9 @@ export function embedToText(embed) {
   return stripMarkdown(lines.join('\n'));
 }
 
-// 줄 단위로 max자 이하 조각을 만든다. parts개를 넘기면 마지막 조각 끝을 …로 자른다.
-export function splitText(text, max = TEXT_MAX, parts = OUTPUTS_MAX) {
+// 줄 단위로 max자 이하 조각을 만든다 → { chunks, truncated, rest }.
+// rest는 parts개를 넘겨 잘려 나간 뒷부분(전체 보기 페이지에 쓸 판단 재료).
+export function splitParts(text, max, parts) {
   const chunks = [];
   let current = '';
   const push = () => { if (current) chunks.push(current); current = ''; };
@@ -74,8 +88,28 @@ export function splitText(text, max = TEXT_MAX, parts = OUTPUTS_MAX) {
     current = current ? `${current}\n${piece}` : piece;
   }
   push();
-  if (chunks.length <= parts) return chunks;
-  const kept = chunks.slice(0, parts);
+  if (chunks.length <= parts) return { chunks, truncated: false, rest: '' };
+  return { chunks: chunks.slice(0, parts), truncated: true, rest: chunks.slice(parts).join('\n') };
+}
+
+// 이어지는 줄 표시 — 이 기호로 시작하는 줄은 앞줄에 딸린 내용이다(랭킹 두 번째 줄 등).
+const CONTINUATION = '└';
+
+// 잘린 자리가 항목 한가운데면 머리줄만 덩그러니 남는다 — 딸린 줄이 잘려 나갔으면 머리줄도 같이 뺀다.
+function dropOrphanHead(chunks, rest) {
+  if (!rest.startsWith(CONTINUATION) || chunks.length === 0) return chunks;
+  const kept = [...chunks];
+  const lines = kept[kept.length - 1].split('\n');
+  lines.pop();
+  kept[kept.length - 1] = lines.join('\n');
+  return kept.filter(Boolean);
+}
+
+// 줄 단위로 max자 이하 조각을 만든다. parts개를 넘기면 마지막 조각 끝을 …로 자른다.
+export function splitText(text, max = TEXT_MAX, parts = OUTPUTS_MAX) {
+  const { chunks, truncated } = splitParts(text, max, parts);
+  if (!truncated) return chunks;
+  const kept = [...chunks];
   const last = kept[parts - 1];
   kept[parts - 1] = `${last.slice(0, max - 1).trimEnd()}…`;
   return kept;
@@ -117,6 +151,10 @@ const CHARACTER_IMAGE = /cdn-lostark\.game\.onstove\.com\/armory\//;
 export function cardLinkFor(payloads, { baseUrl, character = null }) {
   for (const raw of payloads ?? []) {
     const p = typeof raw === 'string' ? {} : raw ?? {};
+    // 카카오 전용 평문 응답은 임베드를 안 쓰므로 캐릭터 카드를 직접 지목한다 (payload.characterCard = 캐릭터명)
+    if (typeof p.characterCard === 'string' && p.characterCard) {
+      return `${baseUrl}/p/char/${encodeURIComponent(p.characterCard)}`;
+    }
     for (const file of p.files ?? []) {
       const filePath = typeof file === 'string' ? file : file?.attachment;
       if (typeof filePath !== 'string') continue;
@@ -135,6 +173,39 @@ export function cardLinkFor(payloads, { baseUrl, character = null }) {
   return null;
 }
 
+// 분량을 넘기면 읽을 만큼만 남기고 마지막 조각에 "전체 보기" 주소를 붙인다.
+// 제한을 늘려 긴 메시지를 통째로 밀어 넣는 대신, 전문은 페이지에서 보게 하는 쪽이다.
+const MORE_LABEL = '📄 뒤가 잘렸어요 · 전체 보기';
+
+function fitText(text, { textMax, parts, baseUrl, fullTitle }) {
+  const first = splitParts(text, textMax, parts);
+  if (!first.truncated) return first.chunks;
+  if (!baseUrl) return splitText(text, textMax, parts); // 주소를 못 만들면 예전처럼 …로 자른다
+
+  const linkLine = `${MORE_LABEL} ${baseUrl}/p/full/${saveResult(text, fullTitle)}`;
+  const room = Math.max(1, textMax - linkLine.length - 2); // 링크 줄이 들어갈 자리를 미리 비운다
+  const second = splitParts(text, room, parts);
+  const chunks = dropOrphanHead(second.chunks, second.rest);
+  const kept = chunks.length > 0 ? [...chunks] : [''];
+  kept[kept.length - 1] = `${kept[kept.length - 1]}
+
+${linkLine}`.trim();
+  return kept;
+}
+
+// 오픈채팅방에 나갈 최종 메시지를 BRIDGE_TEXT_MAX에 맞춘다.
+//   body — 본문(임베드·이미지 URL 등을 편 것)
+//   tail — 뒤에 붙는 후속 안내("▸ 이어서 쓸 수 있어요 …")
+// 안내는 잘리면 쓸모가 없어지므로 자리를 먼저 빼 두고 본문만 줄인다. 그래서 안내까지 합친 최종 길이가 한도를 지킨다.
+export function fitBridgeMessage(body, tail = null, { baseUrl, fullTitle = '조회 결과' } = {}) {
+  if (!body) return tail || null;
+  const reserve = tail ? tail.length + 2 : 0;
+  const [fitted] = fitText(body, {
+    textMax: Math.max(1, BRIDGE_TEXT_MAX - reserve), parts: 1, baseUrl, fullTitle,
+  });
+  return [fitted, tail].filter(Boolean).join('\n\n');
+}
+
 export function textResponse(text, quickReplies = []) {
   const template = { outputs: splitText(text).map((t) => ({ simpleText: { text: t } })) };
   if (quickReplies.length > 0) template.quickReplies = quickReplies.slice(0, QUICK_MAX);
@@ -142,7 +213,9 @@ export function textResponse(text, quickReplies = []) {
 }
 
 // reply()/editReply()에 넘겼던 페이로드 목록을 하나의 카카오 응답으로. 텍스트가 앞, 이미지가 뒤.
-export function toKakaoResponse(payloads, { baseUrl }) {
+//   limits    — 채널별 분량 규격 (CHANNEL_LIMITS.skill | CHANNEL_LIMITS.bridge)
+//   fullTitle — 분량을 넘겨 잘릴 때 만드는 "전체 보기" 페이지의 제목
+export function toKakaoResponse(payloads, { baseUrl, limits = CHANNEL_LIMITS.skill, fullTitle = '조회 결과' }) {
   const texts = [];
   const images = [];
   const links = [];
@@ -165,11 +238,12 @@ export function toKakaoResponse(payloads, { baseUrl }) {
   }
   if (links.length > 0) texts.push(links.map((l) => `🔗 ${l}`).join('\n'));
 
-  const textParts = Math.max(1, OUTPUTS_MAX - Math.min(images.length, OUTPUTS_MAX - 1));
+  const textParts = Math.max(1, limits.parts - Math.min(images.length, limits.parts - 1));
+  const full = texts.filter(Boolean).join('\n\n');
   const outputs = [
-    ...splitText(texts.filter(Boolean).join('\n\n'), TEXT_MAX, textParts).map((t) => ({ simpleText: { text: t } })),
+    ...fitText(full, { textMax: limits.textMax, parts: textParts, baseUrl, fullTitle }).map((t) => ({ simpleText: { text: t } })),
     ...images,
-  ].slice(0, OUTPUTS_MAX);
+  ].slice(0, limits.outputsMax);
   if (outputs.length === 0) outputs.push({ simpleText: { text: '(응답이 없어요)' } });
 
   const template = { outputs };

@@ -2,7 +2,7 @@
 //   POST /bridge/message/<KAKAO_SKILL_SECRET>  오픈채팅방 브리지 — 폰의 메신저봇R이 { room, sender, text }를 보내고 { text }를 받음
 //   POST /kakao/skill/<KAKAO_SKILL_SECRET>     오픈빌더 스킬 요청 (채널 1:1 챗봇용, 항상 200 + JSON — 오류도 문구로)
 //   GET  /health                               ok
-//   GET  /p/(emo|chart|char)/<id>              카톡 링크 미리보기 카드 페이지 (preview.js)
+//   GET  /p/(emo|chart|char|full)/<id>         카톡 링크 미리보기 카드 · 긴 결과 전문 페이지 (preview.js)
 //   GET  /assets/emoticons/<파일> · /assets/charts/<파일>  이미지 공개 서빙 (두 폴더의 직접 자식만)
 // 웹서버의 예외는 여기서 전부 잡아 디스코드 클라이언트에 영향을 주지 않는다.
 import { createServer } from 'node:http';
@@ -77,10 +77,13 @@ async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/health') return sendText(res, 200, 'ok');
 
-  const preview = /^\/p\/(emo|chart|char)\/([^/]+)$/.exec(url.pathname);
+  const preview = /^\/p\/(emo|chart|char|full)\/([^/]+)$/.exec(url.pathname);
   if (req.method === 'GET' && preview) {
     const { status, html } = await renderPreview(preview[1], preview[2], { baseUrl, emoticonsEnabled: KAKAO_EMOTICONS_ENABLED });
-    res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+    // 카드(emo·chart·char)는 내용이 잘 안 바뀌니 5분 캐시. 전체 보기는 30분 뒤 서버에서 지워지는 일회성 결과라
+    // 캐시에 남으면 만료 뒤에도 계속 보이게 된다 — 저장하지 않는다.
+    const cacheControl = preview[1] === 'full' ? 'no-store' : 'public, max-age=300';
+    res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cacheControl });
     return res.end(html);
   }
 

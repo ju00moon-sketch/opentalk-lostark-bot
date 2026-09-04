@@ -3,6 +3,7 @@ import { getArmory, getArmoryPart } from '../lostark.js';
 import { EMBED_COLOR, NOT_FOUND_HINT, padDisplay } from '../format.js';
 import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 import { characterButtons } from '../buttons.js';
+import { TITLE, row, section, blocks, wrapItems } from '../kakao/layout.js';
 import { stripTags } from '../tooltip.js';
 
 export const data = new SlashCommandBuilder()
@@ -65,16 +66,11 @@ export async function execute(interaction) {
 
   const header = [];
   if (stoneLevels.length > 0) header.push(`💠 ${stoneLevels.join(',')}돌 오우너`);
-  if (engravings.length > 0) {
-    header.push(
-      engravings
-        .map((e) => {
-          const ab = ENGRAVING_ABBREV[e.Name] ?? e.Name;
-          return `${ab}(${e.Level}${e.AbilityStoneLevel != null ? `,${e.AbilityStoneLevel}` : ''})`;
-        })
-        .join(' '),
-    );
-  }
+  const engravingItems = engravings.map((e) => {
+    const ab = ENGRAVING_ABBREV[e.Name] ?? e.Name;
+    return `${ab}(${e.Level}${e.AbilityStoneLevel != null ? `,${e.AbilityStoneLevel}` : ''})`;
+  });
+  if (engravingItems.length > 0) header.push(engravingItems.join(' '));
   const cardSets = (armory.ArmoryCard?.Effects ?? [])
     .map((set) => set.Items?.at(-1)?.Name)
     .filter(Boolean);
@@ -120,15 +116,15 @@ export async function execute(interaction) {
 
   // ── 수집품 한 줄 요약
   const remaining = [...(collectibles ?? [])];
-  const collectLine = COLLECTIBLE_ABBREV.map(([keyword, ab]) => {
+  const collectItems = COLLECTIBLE_ABBREV.map(([keyword, ab]) => {
     const idx = remaining.findIndex((c) => c.Type.includes(keyword));
     if (idx === -1) return null;
     const [c] = remaining.splice(idx, 1);
     return `${ab}:${c.Point}`;
   })
     .filter(Boolean)
-    .concat(remaining.map((c) => `${c.Type}:${c.Point}`))
-    .join(' ');
+    .concat(remaining.map((c) => `${c.Type}:${c.Point}`));
+  const collectLine = collectItems.join(' ');
 
   const description = [
     header.join('\n'),
@@ -138,14 +134,44 @@ export async function execute(interaction) {
     .filter(Boolean)
     .join('\n');
 
+  const followUps = characterButtons(profile.CharacterName, ['군장', '치적', '팔찌', '주급']);
+
+  // 카카오톡: 고정폭 표와 코드블록이 폰에서 어긋나므로 핵심 수치를 위로 올린 평문으로 다시 짠다.
+  // 담기는 내용은 디스코드와 같다 — 표 한 줄을 라벨별로 펴고, 나열이 긴 각인·수집품만 줄로 끊는다.
+  if (interaction.platform === 'kakao') {
+    const stat = (label, value) => (value == null ? null : row(label, value));
+    await interaction.editReply({
+      content: blocks(
+        TITLE(`${profile.CharacterName} · ${profile.CharacterClassName}`),
+        section(null, [
+          row('템렙', itemLevel),
+          stat('전투력', profile.CombatPower),
+          진깨도.every((v) => v != null) ? row('진/깨/도', 진깨도.join('/')) : null,
+          paradise > 0 ? row('낙원력', paradise.toLocaleString('ko-KR')) : null,
+          combatStats ? row('전투특성', combatStats) : null,
+          row('공격력/체력', `${stats.get('공격력') ?? '-'} / ${stats.get('최대 생명력') ?? '-'}`),
+          row('스킬포인트', `${profile.UsingSkillPoint}/${profile.TotalSkillPoint}`),
+          row('캐릭터/원정대', `Lv.${profile.CharacterLevel} / Lv.${profile.ExpeditionLevel}`),
+          row('서버/길드', `${profile.ServerName ?? '-'}/${profile.GuildName ?? '-'}`),
+        ]),
+        section('각인', [
+          stoneLevels.length > 0 ? `💠 ${stoneLevels.join(',')}돌 오우너` : null,
+          ...wrapItems(engravingItems, 3),
+        ]),
+        section('카드 세트', cardSets),
+        section('수집품', wrapItems(collectItems, 4)),
+      ),
+      components: followUps,
+      characterCard: profile.CharacterName, // 방에 먼저 보낼 캐릭터 미리보기 카드
+    });
+    return;
+  }
+
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setTitle(`${profile.CharacterName} — ${profile.CharacterClassName}`)
     .setThumbnail(profile.CharacterImage ?? null)
     .setDescription(description);
 
-  await interaction.editReply({
-    embeds: [embed],
-    components: characterButtons(profile.CharacterName, ['군장', '치적', '팔찌', '주급']),
-  });
+  await interaction.editReply({ embeds: [embed], components: followUps });
 }

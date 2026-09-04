@@ -3,8 +3,11 @@ import { showRanking } from './engraving-rank.js';
 
 export const data = new SlashCommandBuilder()
   .setName('유각')
-  .setDescription('가장 비싼 유물 각인서 TOP 10');
+  .setDescription('가장 비싼 유물 각인서 TOP 10 (전일 대비 포함)')
+  .addIntegerOption((option) =>
+    option.setName('페이지').setDescription('몇 쪽 (기본 1 · 한 쪽에 10개)').setMinValue(1).setMaxValue(20),
+  );
 
 export function execute(interaction) {
-  return showRanking(interaction, '유물');
+  return showRanking(interaction, '유물', interaction.options.getInteger('페이지') ?? 1);
 }

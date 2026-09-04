@@ -13,6 +13,7 @@ export const data = new SlashCommandBuilder()
 
 let cache = null;
 let cachedAt = 0;
+let inFlight = null; // 진행 중인 조회 — 캐시가 빈 사이 여럿이 동시에 부르면 경매장을 12번씩 거듭 두드리게 된다
 
 async function fetchBoard() {
   const board = {};
@@ -27,17 +28,28 @@ async function fetchBoard() {
   return board;
 }
 
+// 5분 캐시 + 진행 중 조회 공유. 캐시가 비었을 때 동시에 들어온 요청은 같은 조회 하나를 함께 기다린다.
+// 실패하면 진행 중 표시를 지우므로 다음 요청에서 다시 시도한다.
+function loadBoard() {
+  if (cache && Date.now() - cachedAt <= CACHE_TTL) return Promise.resolve(cache);
+  inFlight ??= fetchBoard()
+    .then((board) => {
+      cache = board;
+      cachedAt = Date.now();
+      return board;
+    })
+    .finally(() => { inFlight = null; });
+  return inFlight;
+}
+
 export async function execute(interaction) {
   await interaction.deferReply();
 
-  if (!cache || Date.now() - cachedAt > CACHE_TTL) {
-    cache = await fetchBoard();
-    cachedAt = Date.now();
-  }
+  const board = await loadBoard();
 
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('💎 보석 시세 현황 (즉시 구매 최저가)');
   for (const type of TYPES) {
-    const lines = cache[type].map(
+    const lines = board[type].map(
       (row) => `${row.level}레벨 — ${row.price === null ? '매물 없음' : `**${gold(row.price)}**`}`,
     );
     embed.addFields({ name: type, value: lines.join('\n'), inline: true });

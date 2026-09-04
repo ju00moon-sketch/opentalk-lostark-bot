@@ -4,6 +4,11 @@
 // class는 전투정보실의 직업명, node는 그 빌드를 가르는 깨달음 아크패시브 노드 이름이다.
 // (직업 각인마다 아이덴티티 효과가 달라서 노드까지 맞춰야 오탐이 없다.)
 // 확인된 것만 넣는다 — 수치를 모르는 직업은 비워 두면 그 줄이 안 나올 뿐이다.
+// 2026-09-04 조사 메모(사용자 요청 "아덴 관련 추가 치명타 확률 찾아서 저장"): 아크 패시브 시대에는 직업 각인이 깨달음 노드가
+// 되면서 광기(버서커 30%)·점화의 불씨(소서리스 30%)·충동/억제(데모닉)·두 번째 동료(호크아이)·고독한 기사(워로드)·
+// 피스메이커(건슬링어)·피냄새(리퍼)·영혼친화력(소울이터)·깨어나는 힘(가디언나이트)·가속 강화(차원술사)·깨어난 잠재력(환수사)·
+// 치명적인 투지/날카로운 타격(인파이터) 같은 수치는 전투정보실 노드 툴팁에 실려 /치적이 자동으로 읽는다. 여기엔 툴팁에
+// 수치가 없는 Z키 상태 효과만 둔다. crit.js는 같은 노드에서 이미 수치를 읽었으면 이 표 항목을 건너뛴다(패치 대비).
 export const IDENTITY_CRIT = [
   {
     class: '슬레이어',
@@ -12,13 +17,25 @@ export const IDENTITY_CRIT = [
     crit: 30,
     note: '폭주 상태에서 치명타 적중률 +30%',
   },
+  {
+    class: '창술사',
+    node: '절정',
+    label: '절정 : 난무 3단계',
+    crit: 25,
+    note: '듀얼 게이지 3단계에서 난무 스탠스 전환 시 버프 — 공속 +15% · 피해 +17% · 치명타 적중률 +25% (나무위키 창술사 문서)',
+  },
+  {
+    class: '아르카나',
+    node: '황제의 칙령',
+    label: '재상 카드 (뽑을 때, 10초)',
+    crit: 20,
+    note: '황제의 칙령 빌드의 재상 카드: 10초간 일반 스킬 치명타 적중률 +20% (나무위키 아르카나 문서)',
+  },
 ];
 
-// 캐릭터의 직업·깨달음 노드에 해당하는 항목을 찾는다. 없으면 null.
-export function findIdentityCrit(className, nodeNames) {
-  return (
-    IDENTITY_CRIT.find(
-      (entry) => entry.class === className && nodeNames.some((n) => n.includes(entry.node)),
-    ) ?? null
+// 캐릭터의 직업·깨달음 노드에 해당하는 항목을 전부 찾는다 (node가 없는 항목은 직업만 맞으면 됨). 없으면 빈 배열.
+export function findIdentityCrits(className, nodeNames) {
+  return IDENTITY_CRIT.filter(
+    (entry) => entry.class === className && (!entry.node || nodeNames.some((n) => n.includes(entry.node))),
   );
 }

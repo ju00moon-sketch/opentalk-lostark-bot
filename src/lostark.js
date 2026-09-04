@@ -57,14 +57,15 @@ export function getMarketOptions() {
   return request('/markets/options');
 }
 
-// 거래소 아이템 검색 (부분 일치 지원). opts: { grade: '유물', order: 'DESC' }
+// 거래소 아이템 검색 (부분 일치 지원). opts: { grade: '유물', order: 'DESC', page: 2 }
+// 한 쪽에 10개씩 오고 응답의 TotalCount/PageSize로 다음 쪽이 있는지 알 수 있다.
 export function searchMarketItems(categoryCode, itemName, opts = {}) {
   return request('/markets/items', {
     Sort: 'CURRENT_MIN_PRICE',
     CategoryCode: categoryCode,
     ItemName: itemName,
     ItemGrade: opts.grade ?? null,
-    PageNo: 1,
+    PageNo: opts.page ?? 1,
     SortCondition: opts.order ?? 'ASC',
   });
 }
