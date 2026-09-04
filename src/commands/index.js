@@ -72,7 +72,7 @@ const aliasCommands = Object.entries(ALIASES).flatMap(([alias, def]) => {
   return [{
     data: {
       name: alias,
-      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: `${def.cmd} 축약 커맨드` }),
+      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: def.desc ?? `${def.cmd} 축약 커맨드` }),
     },
     execute: target.execute,
   }];

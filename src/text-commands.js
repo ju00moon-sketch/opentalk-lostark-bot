@@ -56,6 +56,7 @@ export const ALIASES = {
   ㅂㅅ: { cmd: '보석', usage: 'ㅂㅅ [종류 레벨 | 닉네임] (예: ㅂㅅ · ㅂㅅ 겁화 10 · ㅂㅅ 블레상돈)', parse: parseGemArgs },
   ㅄ: { cmd: '보석', usage: 'ㅄ [종류 레벨 | 닉네임] (예: ㅄ · ㅄ 겁화 10 · ㅄ 블레상돈)', parse: parseGemArgs },
   ㅅㅋㅋㄷ: { cmd: '스킬코드', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
+  비싼유각: { cmd: '유각', desc: '유각과 같은 커맨드', usage: '.비싼유각 [쪽] (1~20 정수, 예: .비싼유각 2)', parse: parsePage },
   ㅇㄱ: { cmd: '유각', usage: 'ㅇㄱ [쪽] (1~20 정수, 예: ㅇㄱ 2)', parse: parsePage },
   ㅈㄱㅇ: { cmd: '전각', usage: 'ㅈㄱㅇ [쪽] (1~20 정수, 예: ㅈㄱㅇ 2)', parse: parsePage },
   ㄷㅈㅂ: { cmd: '딜지분', usage: 'ㄷㅈㅂ 레이드[관문] [피해량] (예: ㄷㅈㅂ 세하1관 2700억)', parse: (p) => (p[0] ? { 레이드: p.join(' ') } : null) },

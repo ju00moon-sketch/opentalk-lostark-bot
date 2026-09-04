@@ -364,7 +364,7 @@
   <section class="tab-panel" id="panel-commands">
     <h1 class="page">커맨드</h1>
     <p class="lead">슬래시(/)를 치면 목록이 떠요. 자주 쓰는 건 초성만 쳐도 되고, 서버에서 <code>/도움말</code>을 입력하면 언제든 다시 볼 수 있습니다.</p>
-    <div class="pills"><span class="pill">슬래시 53개</span><span class="pill">초성 별칭 32개</span><span class="pill">이모티콘 160종</span></div>
+    <div class="pills"><span class="pill">슬래시 53개</span><span class="pill">별칭 33개</span><span class="pill">이모티콘 160종</span></div>
 
     <div class="cmd-group">
       <h2>캐릭터 조회</h2>
@@ -375,7 +375,7 @@
         <div class="cmd-row"><span class="cmd"><code>/캐릭터 닉네임</code><em>ㅋㄹㅌ</em></span><span class="desc">서버 · 직업 · 아이템 레벨 등 기본 정보</span></div>
         <div class="cmd-row"><span class="cmd"><code>/군장 닉네임</code><em>ㄱㅈ</em></span><span class="desc">장비 · 각인 · 보석 · 카드 한눈에</span></div>
         <div class="cmd-row"><span class="cmd"><code>/전투력 닉네임</code></span><span class="desc">전투력 · 전투 특성 · 공격력/생명력</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 아크패시브 (백어택은 기습의 대가 착용 시) · 아이덴티티·치적 시너지는 추가 확률로</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 상시 아크패시브 노드 (백어택은 기습의 대가 착용 시) · 조건부 노드·아이덴티티·치적 시너지는 추가 확률로</span></div>
         <div class="cmd-row"><span class="cmd"><code>/로펙 닉네임</code><em>ㄹㅍ</em></span><span class="desc">로펙 환산 점수 · 전체/직업 순위 · 레벨 중앙값 대비 · 보유카드 · 팔찌/젬 효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/젬효율 닉네임</code><em>ㅈㅎㅇ</em></span><span class="desc">아크 그리드 젬 효율 — 옵션/포인트 구성과 옵션별 실효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/원정대</code> <code>/부캐 닉네임</code><em>ㅂㅋ</em></span><span class="desc">계정의 모든 캐릭터를 아이템 레벨 순으로 (서버별 묶음)</span></div>
@@ -407,7 +407,7 @@
         <div class="cmd-row"><span class="cmd"><code>/시세 아이템명</code><em>ㅅㅅ</em></span><span class="desc">거래소 가격 검색 (부분 검색 가능)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/보석</code><em>ㅄ · ㅂㅅ</em></span><span class="desc">겁화 · 작열 10~7레벨 최저가 시세판 + 전일 대비 · <code>/보석 종류 레벨</code> 단일 시세 · <code>/보석 닉네임</code> 그 캐릭터 장착 보석 · <code>/보석현황</code> 4티어 레벨별 표</span></div>
         <div class="cmd-row"><span class="cmd"><code>/각인서 각인명</code><em>ㄱㅇㅅ</em></span><span class="desc">각인서 시세 (등급별)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 + 전일 대비 · <code>/유각 2</code>로 다음 쪽 (<code>/각인서랭킹 [등급] [페이지]</code>의 단축 커맨드)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ · 비싼유각</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 + 전일 대비 · <code>/유각 2</code>로 다음 쪽 (<code>/각인서랭킹 [등급] [페이지]</code>의 단축 커맨드) · <code>/비싼유각</code>은 <code>/유각</code>과 같은 커맨드</span></div>
         <div class="cmd-row"><span class="cmd"><code>/생활재료</code></span><span class="desc">생활 재료 분야별 시세</span></div>
         <div class="cmd-row"><span class="cmd"><code>/분배금 가격 [인원]</code><em>ㅂㅂㄱ</em></span><span class="desc">선점 추천가·균등 분배가·재판매 원금 회수 상한을 구분 (4/8/16인). <b>균등 분배가</b>는 낙찰자의 재판매 이익과 나머지 인원의 분배금이 같아지는 금액, <b>선점 추천가</b>는 거기서 1.1로 나눠 낙찰 쪽에 여유를 둔 금액, <b>재판매 상한</b>은 판매 수수료 5%만 반영한 금액이라 분배금을 포기하는 기회비용은 빠져 있어요</span></div>
         <div class="cmd-row"><span class="cmd"><code>/악세 검색 [품질]</code></span><span class="desc">연마 조합별 경매장 최저가 — 채팅은 <code>.상상</code> <code>.상중 70</code></span></div>

@@ -39,6 +39,7 @@ function readCrit(text) {
     const after = source.slice(m.index + m[0].length);
     const stacks = Number(PER_STACK.exec(after)?.[1] ?? 1);
     out.push({
+      index: m.index,
       value: Number(m[1]),
       additive: !REPLACEMENT.test(after),
       stacks,
@@ -52,6 +53,10 @@ function readCrit(text) {
 // 기습의 대가(백어택 빌드)를 낀 캐릭터에만 더한다 — 프론트·헤드 빌드는 백어택을 노리지 않으니 (사용자 요청 2026-09-04).
 const BACK_ATTACK_CRIT = 10;
 const BACK_ATTACK_ENGRAVING = '기습의 대가';
+
+export function critFooter() {
+  return '파티 시너지는 제외';
+}
 
 // "대상이 자신 및 파티원에게 받는 치명타 저항률이 12.0초간 10.0% 감소" (급소 노출 트라이포드) — 사실상 자신·파티 치적 +N%인 시너지.
 const CRIT_RESIST = /치명타 저항률[이가]?\s*(?:[\d.]+\s*초간\s*)?([\d.]+)\s*%\s*감소/g;
@@ -97,10 +102,45 @@ function fromEngravings(engraving) {
   return found;
 }
 
+// 노드 효과에 붙은 발동 조건·적용 범위를 찾는다. 계열(깨달음이냐 진화냐)이 아니라 문장으로 가른다 —
+// 같은 깨달음이어도 가디언나이트 깨어나는 힘("치명타 적중률이 20.0% 증가한다")은 조건이 없어 상시 합산이고,
+// "샷건 스탠스로 변경 시"(피스메이커) · "광기 상태에서는"(광기) · "혼돈 게이지가 가득차면"(피냄새) ·
+// "충격 스킬의"(날카로운 타격)처럼 조건이나 적용 범위가 붙으면 "추가 치명타 확률"로 뺀다 (검토 지적 2026-09-05).
+// 각인·악세는 조건부 표기가 기본이라(아드레날린 "최대 중첩 도달 시 … 20.00% 증가") 예전처럼 그대로 합산한다.
+const NODE_CONDITIONS = [
+  /\s시[\s,]/,                                          // "스탠스 변경 시 "
+  /(?:사용|적중|변경|발동|시전|공격|타격|처치|진입)\s*시/,  // 붙여 쓴 "사용시"까지
+  /상태(?:에서|일|가|로|면|이)/,                           // "광기 상태에서는"
+  /(?:되|하|차|지|이|으|았|었)면[\s,]/,                    // "혼돈 게이지가 가득차면 "
+  /\s때[\s,]/,                                          // "최대 중첩일 때 "
+  /중첩/,
+];
+// "충격 스킬의 치명타 적중률"처럼 특정 스킬로 좁힌 효과. "모든 스킬"은 범위 제한이 아니다.
+const SKILL_SCOPE = /([가-힣]+)\s*스킬(?:의|에|만)/;
+const ALL_SKILLS = new Set(['모든', '전체']);
+
+// 판정은 치적이 실린 문장에서 치적 앞부분만 본다 — 진화 달인처럼 조건이 앞 문장에 있고 정작 치적 줄은
+// "달인 : 치명타 적중률 +1.4%"인 효과를 조건부로 오판하지 않기 위해서다.
+// 소수점("20.0%")에서 문장이 끊기지 않도록 마침표 뒤에 공백이 오는 자리만 경계로 삼는다.
+function clauseBefore(text, index) {
+  const head = text.slice(0, index);
+  let start = 0;
+  for (const m of head.matchAll(/\.\s/g)) start = m.index + m[0].length;
+  return head.slice(start);
+}
+
+function isConditionalCrit(text, index) {
+  const before = clauseBefore(text, index);
+  if (NODE_CONDITIONS.some((re) => re.test(before))) return true;
+  const scope = SKILL_SCOPE.exec(before);
+  return scope !== null && !ALL_SKILLS.has(scope[1]);
+}
+
 // 아크 패시브 노드에서 치적을 모은다. 출처는 계열(진화·깨달음·도약)로 묶는다.
 // 파생형("이속 증가량의 30% 만큼")은 합계에 못 넣으니 derived로 따로 돌려준다.
 function fromArkPassive(ark) {
   const found = [];
+  const conditional = [];
   const derived = [];
   for (const e of ark?.Effects ?? []) {
     const tooltip = parseTooltip(e.ToolTip);
@@ -112,7 +152,8 @@ function fromArkPassive(ark) {
     const category = /^(진화|깨달음|도약)/.exec(description)?.[1] ?? '아크패시브';
     const nodeName = description.replace(/^(진화|깨달음|도약)\s*\d*티어\s*/, '');
     for (const hit of readCrit(text)) {
-      found.push({ source: category, detail: nodeName, ...hit });
+      const bucket = isConditionalCrit(text, hit.index) ? conditional : found;
+      bucket.push({ source: category, detail: nodeName, ...hit });
     }
     for (const m of text.matchAll(DERIVED_CRIT)) {
       const ratio = Number(m[2]);
@@ -122,7 +163,7 @@ function fromArkPassive(ark) {
       });
     }
   }
-  return { found, derived };
+  return { found, conditional, derived };
 }
 
 // 채용한 스킬 본문·트라이포드에서 두 가지를 모은다 — 해당 스킬에만 붙는 값이라 합계에 넣지 않는다.
@@ -224,13 +265,24 @@ export async function execute(interaction) {
   // 아이덴티티(Z키) 치적은 API에 없어서 직업별 표에서 가져온다.
   // 같은 노드의 툴팁에서 이미 수치를 읽었다면(패치로 툴팁에 실린 경우) 표 항목은 빼서 두 번 세지 않는다.
   const nodeNames = (armory.ArkPassive?.Effects ?? []).map((e) => stripTags(e.Description));
-  const parsedNodes = new Set(ark.found.map((h) => h.detail.replace(/\s*Lv\.\d+$/, '')));
+  // 합계에 넣은 노드든 조건부로 뺀 노드든, 툴팁에서 수치를 이미 읽었으면 표 항목은 건너뛴다.
+  const parsedNodes = new Set(
+    [...ark.found, ...ark.conditional].map((h) => h.detail.replace(/\s*Lv\.\d+$/, '')),
+  );
   const identities = findIdentityCrits(armory.ArmoryProfile.CharacterClassName, nodeNames)
     .filter((i) => !i.node || ![...parsedNodes].some((n) => n.includes(i.node)));
   const skills = fromSkills(armory.ArmorySkills);
 
+  // 조건부 노드 — 합계 줄과 같은 표기(계열 이름·풀스택 환산)를 유지하되 여기에만 싣는다.
+  const conditionalLines = ark.conditional.map((h) => {
+    if (!h.additive) return ` •${h.source} ${h.detail}: ${trunc(h.clause, 60)}`;
+    const suffix = h.stacks > 1 ? ` (${h.value}% ×${h.stacks}중첩)` : '';
+    return ` •${h.source} ${h.detail}${suffix}: ${pct(h.value * h.stacks)}`;
+  });
+
   const extraLines = [
     ...identities.map((i) => ` •${i.label}: ${pct(i.crit)}`),
+    ...conditionalLines,
     ...ark.derived.map((d) => ` •${d.detail}: ${pct(d.value)}`),
     ...skills.synergy.map((s) => ` •${s.detail} (치적 시너지): ${pct(s.value)}`),
     ...extras.map((h) => ` •${h.detail}: ${trunc(h.clause, 60)}`),
@@ -248,7 +300,7 @@ export async function execute(interaction) {
     .setDescription(
       `${profile.CharacterClassName} (${profile.ItemAvgLevel})\n\n${trunc(lines.join('\n'), 3900)}`,
     )
-    .setFooter({ text: `백 어택 +10%는 기습의 대가 착용 시만 합산${backAttack ? '' : ' (미착용)'} · 파티 시너지·물약은 제외` });
+    .setFooter({ text: critFooter() });
 
   await interaction.editReply({ embeds: [embed] });
 }
