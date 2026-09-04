@@ -8,7 +8,11 @@ import { resolveCharacter } from '../user-store.js';
 import { KakaoInteraction } from './interaction.js';
 import { toKakaoResponse, textResponse, cardLinkFor, fitBridgeMessage, CHANNEL_LIMITS } from './render.js';
 
-export const KAKAO_MATCH_OPTIONS = { prefixes: ['/'], bareChosung: false, anyCommand: true };
+// 카톡에서 커맨드로 보는 접두사. 폰 자판에서 /보다 .이 편해 둘 다 받는다(사용자 요청 2026-09-05).
+// 초성 단독(ㅂㅂㄱ 4000)은 여전히 안 받는다 — 잡담과 구분이 안 되므로.
+export const KAKAO_PREFIXES = ['/', '.'];
+export const hasCommandPrefix = (text) => KAKAO_PREFIXES.some((p) => text.startsWith(p));
+export const KAKAO_MATCH_OPTIONS = { prefixes: KAKAO_PREFIXES, bareChosung: false, anyCommand: true };
 // 디스코드 채널 개념이 필요한 커맨드 — 카카오에선 항상 제외
 export const KAKAO_EXCLUDED = new Set(['알림설정']);
 // 디스코드 서버 멤버를 집계하는 커맨드 — KAKAO_GUILD_ID로 서버가 지정돼 있을 때만 카카오에서 허용 (별칭 ㄹㅋ·ㅊㄱ는 대상 이름으로 풀린 뒤 걸린다)
@@ -22,10 +26,10 @@ const DEFAULT_BUDGET_MS = 4500;
 const PENDING_TTL_MS = 3 * 60 * 1000;
 const TIMEOUT = Symbol('timeout');
 
-const GUIDE = '명령은 /로 시작해요. 예: /정보 닉네임 · /ㅂㅂㄱ 4000 · /도움말';
+const GUIDE = '명령은 / 또는 .으로 시작해요. 예: /정보 닉네임 · .ㅂㅂㄱ 4000 · /도움말';
 const GUIDE_REPLIES = [['도움말', '/도움말'], ['모험섬', '/모험섬'], ['가토', '/가토'], ['업데이트', '/업데이트'], ['유각', '/유각']]
   .map(([label, messageText]) => ({ label, action: 'message', messageText }));
-const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 형식만 돼요 (예: /정보 닉네임, /ㅂㅂㄱ 4000, /등록 캐릭터명). '
+const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 또는 .커맨드 형식으로 써요 (예: /정보 닉네임, .ㅂㅂㄱ 4000, /등록 캐릭터명). '
   + `${[...excludedFor(guild)].join('·')}은 디스코드 전용이에요.`
   + (guild ? ' /랭킹·/체급은 디스코드·카톡에서 /등록한 길드원을 집계해요.' : '')
   + (KAKAO_EMOTICONS_ENABLED ? '' : ' 이모티콘([키워드)은 카톡에서 잠시 꺼져 있어요.');
@@ -52,7 +56,7 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
     const payloads = [{ files: [file] }];
     return { response: render(payloads), link: cardLinkFor(payloads, { baseUrl }) };
   }
-  if (!utterance.startsWith('/')) return plain(guideResponse());
+  if (!hasCommandPrefix(utterance)) return plain(guideResponse());
 
   const match = matchTextCommand(utterance, commandMap, KAKAO_MATCH_OPTIONS);
   if (!match) return plain(guideResponse());
@@ -68,13 +72,21 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
     console.error(`[카카오 ${match.label}]`, err);
     return plain(textResponse(`오류가 발생했어요: ${err.message}`));
   }
-  if (name === '도움말') interaction.payloads.push({ content: helpNote(guild) });
-  // 캐릭터 카드용 — 커맨드가 조회한 캐릭터(입력 > 등록 > 카톡 닉네임). 캐릭터 이미지가 있는 응답에만 카드가 붙는다.
-  const character = resolveCharacter(interaction);
-  return {
-    response: render(interaction.payloads),
-    link: cardLinkFor(interaction.payloads, { baseUrl, character }),
-  };
+  // 카톡 안내(/ 또는 .으로 쓰는 법)는 맨 앞에 — 도움말 전문은 방 분량(1,500자)을 넘어 뒤가 전체 보기로 넘어가므로,
+  // 끝에 붙이면 정작 카톡에서 어떻게 치는지가 방에 안 보인다.
+  if (name === '도움말') interaction.payloads.unshift({ content: helpNote(guild) });
+  // 결과 변환에서 나는 예외도 방 응답으로 바꾼다 — 여기서 새면 위의 pending 체인으로 올라간다
+  try {
+    // 캐릭터 카드용 — 커맨드가 조회한 캐릭터(입력 > 등록 > 카톡 닉네임). 캐릭터 이미지가 있는 응답에만 카드가 붙는다.
+    const character = resolveCharacter(interaction);
+    return {
+      response: render(interaction.payloads),
+      link: cardLinkFor(interaction.payloads, { baseUrl, character }),
+    };
+  } catch (err) {
+    console.error(`[카카오 ${match.label}] 응답 변환 실패:`, err);
+    return plain(textResponse('결과를 카카오톡 형식으로 바꾸는 중 오류가 났어요. 잠시 후 다시 시도해 주세요.'));
+  }
 }
 
 const withTimeout = (promise, ms) => Promise.race([
@@ -82,12 +94,31 @@ const withTimeout = (promise, ms) => Promise.race([
   new Promise((resolve) => setTimeout(resolve, ms, TIMEOUT).unref?.()),
 ]);
 
+// 콜백은 오픈빌더가 알려 준 주소로 우리가 POST하는 것이라, 요청 본문에 실린 주소를 그대로 믿으면 내부망·로컬 주소로
+// 봇이 요청을 쏘게 만들 수 있다. https + 허용 호스트(기본 kakao.com과 그 하위) + 리다이렉트 금지로 좁힌다.
+// 이 모듈의 process()가 전역 process를 가리므로 globalThis로 명시한다
+const CALLBACK_HOSTS = (globalThis.process.env.KAKAO_CALLBACK_HOSTS ?? 'kakao.com')
+  .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+const IP_LITERAL = /^(\d{1,3}(\.\d{1,3}){3}|\[?[0-9a-f:]+\]?)$/i;
+
+export function isAllowedCallbackUrl(raw) {
+  if (typeof raw !== 'string' || raw.length > 2048) return false;
+  let url;
+  try { url = new URL(raw); } catch { return false; }
+  if (url.protocol !== 'https:' || url.username || url.password) return false;
+  const host = url.hostname.toLowerCase();
+  if (!host || host === 'localhost' || host.endsWith('.localhost') || IP_LITERAL.test(host)) return false;
+  return CALLBACK_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
+
 async function postCallback(callbackUrl, response, fetchImpl) {
   try {
     const res = await fetchImpl(callbackUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(response),
+      redirect: 'error', // 허용 호스트에서 다른 곳으로 튕기는 것도 막는다
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) console.error(`[카카오 콜백] HTTP ${res.status}`);
   } catch (err) {
@@ -98,20 +129,32 @@ async function postCallback(callbackUrl, response, fetchImpl) {
 // 공통 처리: 예산·보류 캐시·콜백. → { response, link }
 async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch, channel = 'skill' } = {}) {
   const limits = CHANNEL_LIMITS[channel] ?? CHANNEL_LIMITS.skill;
-  const utterance = normalize(String(body?.userRequest?.utterance ?? ''));
-  const userKey = body?.userRequest?.user?.id;
-  const callbackUrl = body?.userRequest?.callbackUrl;
-  const displayName = body?.userRequest?.user?.properties?.nickname; // 브리지가 넣어 주는 카톡 닉네임 (오픈빌더 요청에는 없음)
+  // 요청 필드는 전부 바깥에서 온 값이다 — 문자열이 아니면 없는 것으로 본다(객체를 넣어 예외를 일으키는 요청 등).
+  const req = body?.userRequest;
+  const utterance = typeof req?.utterance === 'string' ? normalize(req.utterance).slice(0, 500) : '';
+  const userKey = typeof req?.user?.id === 'string' ? req.user.id.slice(0, 200) : '';
+  const rawCallback = req?.callbackUrl;
+  const callbackUrl = isAllowedCallbackUrl(rawCallback) ? rawCallback : null;
+  if (rawCallback && !callbackUrl) console.error('[카카오] 허용되지 않은 콜백 주소 무시:', String(rawCallback).slice(0, 120));
+  const nickname = req?.user?.properties?.nickname; // 브리지가 넣어 주는 카톡 닉네임 (오픈빌더 요청에는 없음)
+  const displayName = typeof nickname === 'string' && nickname.trim() ? nickname.trim().slice(0, 100) : undefined;
   if (!utterance || !userKey) return plain(guideResponse());
 
   const started = Date.now();
   const key = `${channel}\n${userKey}\n${utterance}`; // 채널마다 분량 규격이 달라 보류 결과를 섞지 않는다
   let task = pending.get(key);
   if (!task) {
-    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits });
+    // runUtterance는 절대 reject하지 않도록 만들어 두었지만, 여기서 한 번 더 감싼다 — 이 Promise는 pending에 담겨
+    // 여러 요청이 기다리므로, 거절이 처리되지 않은 채 남으면 Node가 프로세스를 통째로 끝내 버린다(디스코드 봇까지).
+    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits })
+      .catch((err) => {
+        console.error(`[카카오] 처리 실패 "${utterance}":`, err);
+        return plain(textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.'));
+      });
     pending.set(key, task);
-    // 결과를 아무도 안 가져가도 3분 뒤엔 지운다
-    task.finally(() => setTimeout(() => { if (pending.get(key) === task) pending.delete(key); }, PENDING_TTL_MS).unref?.());
+    // 결과를 아무도 안 가져가도 3분 뒤엔 지운다 (finally가 만드는 새 Promise에도 catch를 달아 둔다)
+    task.finally(() => setTimeout(() => { if (pending.get(key) === task) pending.delete(key); }, PENDING_TTL_MS).unref?.())
+      .catch(() => {});
   }
 
   const result = await withTimeout(task, budgetMs);
@@ -123,7 +166,9 @@ async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEF
   }
   if (callbackUrl) {
     console.log(`[카카오] ${shortKey(userKey)} "${utterance}" ${elapsed} (콜백)`);
-    task.then(({ response }) => postCallback(callbackUrl, response, fetchImpl)).finally(() => pending.delete(key));
+    task.then(({ response }) => postCallback(callbackUrl, response, fetchImpl))
+      .catch((err) => console.error('[카카오 콜백]', err?.message ?? err))
+      .finally(() => pending.delete(key));
     return plain({ version: '2.0', useCallback: true, data: { text: WAIT_CALLBACK } });
   }
   console.log(`[카카오] ${shortKey(userKey)} "${utterance}" ${elapsed} (보류)`);
@@ -132,7 +177,12 @@ async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEF
 
 // 오픈빌더 스킬 요청 → 카카오 스킬 응답 JSON. guild: KAKAO_GUILD_ID의 디스코드 서버(없으면 null) — 랭킹 계열 허용·집계용.
 export async function handleSkillRequest(body, commandMap, options = {}) {
-  return (await process(body, commandMap, { ...options, channel: 'skill' })).response;
+  try {
+    return (await process(body, commandMap, { ...options, channel: 'skill' })).response;
+  } catch (err) {
+    console.error('[카카오 스킬] 처리 실패:', err);
+    return textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+  }
 }
 
 // ── 오픈채팅방 브리지 — 폰의 메신저봇R(scripts/messengerbot-r.js)이 방 메시지를 그대로 넘기고 평문 답을 받아 방에 쓴다.
@@ -169,13 +219,23 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
   const room = String(body?.room ?? '').trim();
   const sender = String(body?.sender ?? '').trim();
   if (!text || !room || !sender) return { text: null, link: null };
-  // 방에서는 /커맨드와 (켜져 있을 때) [이모티콘에만 반응. 이모티콘이 잠겨 있으면 [따봉도 그냥 지나간다 — 방에 안내문을 띄우지 않는다.
+  // 방에서는 /커맨드·.커맨드와 (켜져 있을 때) [이모티콘에만 반응. 이모티콘이 잠겨 있으면 [따봉도 그냥 지나간다 — 방에 안내문을 띄우지 않는다.
   const isEmoticon = KAKAO_EMOTICONS_ENABLED && parseEmoticonKeyword(text);
-  if (!text.startsWith('/') && !isEmoticon) return { text: null, link: null };
+  if (!hasCommandPrefix(text) && !isEmoticon) return { text: null, link: null };
+  // "..."·".ㅋㅋ"처럼 점으로 시작하는 잡담은 흔하다 — .으로 시작했는데 커맨드가 아니면 안내문 없이 침묵한다.
+  // (/로 시작하는 오타는 예전처럼 안내문을 준다.)
+  if (text.startsWith('.') && !isEmoticon && !matchTextCommand(text, commandMap, KAKAO_MATCH_OPTIONS)) return { text: null, link: null };
 
   // 닉네임을 같이 넘겨 등록 없이도 "카톡 닉네임 = 캐릭터명"이면 바로 조회되게 한다 (디스코드 서버 닉네임 폴백과 동일)
   const skillBody = { userRequest: { utterance: text, user: { id: `oc:${sender}`, properties: { nickname: sender } } } };
-  const { response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs, channel: 'bridge' });
+  let response;
+  let link = null;
+  try {
+    ({ response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs, channel: 'bridge' }));
+  } catch (err) {
+    console.error('[카카오 브리지] 처리 실패:', err);
+    response = textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+  }
   // 방에 나가는 최종 메시지는 본문 + 후속 안내다 — 둘을 합친 길이로 분량을 맞춘다.
   const { body: message, tail } = flattenParts(response, { skipImages: Boolean(link) });
   return { text: fitBridgeMessage(message, tail, { baseUrl, fullTitle: text }), link };

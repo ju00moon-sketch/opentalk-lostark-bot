@@ -7,7 +7,6 @@ const MARKET_FEE_PERCENT = 5;                             // 거래소 판매 �
 const NET_PERCENT = 100 - MARKET_FEE_PERCENT;             // 되팔았을 때 손에 남는 비율(%)
 const PREEMPT_NUMER = 10;                                 // 선점 기준 = 균등 분배 기준값 ÷ 1.1 = × 10/11
 const PREEMPT_DENOM = 11;
-const PREEMPT_DIVISOR = PREEMPT_DENOM / PREEMPT_NUMER;    // 안내 문구에 적는 1.1
 
 export const data = new SlashCommandBuilder()
   .setName('분배금')
@@ -55,12 +54,6 @@ const SECTION = {
   cap: '재판매 원금 회수 상한',
 };
 
-const NOTES = [
-  `추천가는 균등 분배 기준에서 ${PREEMPT_DIVISOR}로 나눈 금액입니다.`,
-  '균등 분배는 낙찰자의 재판매 이익과 나머지 인원의 분배금이 같아지는 기준입니다.',
-  `재판매 상한은 판매 수수료 ${MARKET_FEE_PERCENT}%를 반영한 금액이며, 분배금을 포기하는 기회비용은 포함하지 않습니다.`,
-];
-
 // "4인: 30,225G" 줄 묶음 — 인원을 지정하면 그 인원 한 줄만.
 const bidLines = (price, sizes, calc) => sizes.map((n) => `${n}인: ${gold(calc(price, n))}`);
 
@@ -83,7 +76,6 @@ export async function execute(interaction) {
         [`❙ ${SECTION.preempt}`, ...preempt].join('\n'),
         [`❙ ${SECTION.even}`, ...even].join('\n'),
         [`❙ ${SECTION.cap}`, cap].join('\n'),
-        NOTES.map((note) => `※ ${note}`).join('\n'),
       ),
     });
     return;
@@ -96,8 +88,7 @@ export async function execute(interaction) {
       { name: `❙ ${SECTION.preempt}`, value: preempt.join('\n') },
       { name: `❙ ${SECTION.even}`, value: even.join('\n') },
       { name: `❙ ${SECTION.cap}`, value: cap },
-    )
-    .setFooter({ text: NOTES.map((note) => `※ ${note}`).join('\n') });
+    );
 
   await interaction.reply({ embeds: [embed] });
 }

@@ -8,7 +8,10 @@ import { commandButtons } from '../buttons.js';
 // 흔들리지 않는다. 서폿은 점수 스케일이 달라 딜러와 나눠서 보여 준다. 원정대 체급은 /체급.
 export const data = new SlashCommandBuilder()
   .setName('랭킹')
-  .setDescription('길드 내 스펙 랭킹 — 등록된 길드원의 로펙 달성 최고 점수 순 (딜러/서포터 구분)');
+  .setDescription('길드 내 스펙 랭킹 — 등록된 길드원의 로펙 달성 최고 점수 순 (딜러/서포터 구분)')
+  .addIntegerOption((option) =>
+    option.setName('페이지').setDescription('몇 쪽 (한 쪽에 25명)').setMinValue(1).setMaxValue(20),
+  );
 
 // 같은 레벨 로펙 중앙값 대비 최고 점수가 얼마나 위/아래인지
 const medianDiff = (s) => (s.median ? ` · 중앙값 ${signed(s.dbScore - s.median)}` : '');
@@ -48,5 +51,5 @@ export async function specBoard(entries) {
 }
 
 export async function execute(interaction) {
-  await runBoard(interaction, specBoard, commandButtons([{ cmd: '체급', label: '원정대 체급 랭킹 보기' }]));
+  await runBoard(interaction, specBoard, commandButtons([{ cmd: '체급', label: '원정대 체급 랭킹 보기' }]), { command: '랭킹' });
 }

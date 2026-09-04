@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { DATA_DATE } from '../data/raidhp.js';
 import {
-  resolveRaid, parseArgs, computeGate, damageText, dpsText, timeText, shortName,
+  resolveRaid, parseArgs, parseDamage, parseTime, computeGate, damageText, dpsText, timeText, shortName,
 } from '../dealshare.js';
 import { trunc, EMBED_COLOR, padDisplay } from '../format.js';
 
@@ -27,16 +27,32 @@ const UNSUPPORTED_MSG =
   '1~3막은 아직 보스 체력 데이터가 없어요. 현재 지원: `4막` `종막` `세르카` `성당` `벨가르딘`';
 
 // 슬래시 옵션과 채팅 인자를 같은 형태로 맞춘다.
+// 자유 형식 파서(parseArgs)는 "세나1관 2700억 10분"처럼 한 줄에 섞인 채팅 입력을 추측으로 가른다.
+// 이름을 붙여 준 슬래시 옵션(관문·피해량·시간)은 추측할 이유가 없으므로 그 뜻 그대로 덮어쓴다 —
+// 예전엔 값만 떼어 파서에 넘겨 "시간:5"가 무시되거나 "시간:10"이 10관문으로 읽혔다.
 function readInput(interaction, mode) {
-  const raid = interaction.options.getString('레이드');
-  const rest = [
-    interaction.options.getInteger?.('관문') ?? null,
-    interaction.options.getString('피해량'),
-    interaction.options.getString('시간'),
-  ].filter((v) => v != null && v !== '');
-  // 관문은 정수 옵션이므로 "N관"으로 바꿔 파서가 관문으로 읽게 한다
-  const tokens = [raid, ...rest.map((v, i) => (i === 0 && typeof v === 'number' ? `${v}관` : String(v)))];
-  return parseArgs(tokens, mode);
+  const parsed = parseArgs([interaction.options.getString('레이드')], mode);
+
+  const gate = interaction.options.getInteger?.('관문');
+  if (gate != null) parsed.gate = gate;
+
+  // 사용자가 값을 적었는데 읽지 못하면 조용히 기본값으로 계산하지 않고 오류로 돌려준다 — 잘못된 값으로 낸 결과는 정상처럼 보여 더 해롭다.
+  const damage = interaction.options.getString('피해량');
+  if (damage) {
+    const plain = damage.replace(/,/g, '').trim();
+    const d = parseDamage(plain) ?? (/^[0-9]+(?:[.][0-9]+)?$/.test(plain) ? Number(plain) * 1e8 : null); // 단위 없으면 억
+    if (d === null) return { error: `피해량 \`${damage}\`을(를) 읽지 못했어요. 예: 2700억 · 1조2000억 · 2700(억 단위)` };
+    parsed.damage = d;
+  }
+
+  const time = interaction.options.getString('시간');
+  if (time) {
+    const s = parseTime(time);
+    if (s === null) return { error: `시간 \`${time}\`을(를) 읽지 못했어요. 예: 10 · 10:00 · 10분 · 10분30초 · 300초` };
+    parsed.seconds = s;
+  }
+
+  return parsed;
 }
 
 function gateField(entry, gate, parsed) {
@@ -77,6 +93,10 @@ function gateField(entry, gate, parsed) {
 
 export async function run(interaction, mode) {
   const parsed = readInput(interaction, mode);
+  if (parsed.error) {
+    await interaction.reply(parsed.error);
+    return;
+  }
   const resolved = resolveRaid(parsed.raid);
 
   if (!resolved) {

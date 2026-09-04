@@ -68,8 +68,8 @@ export const ALIASES = {
   ㅂㅋ: { cmd: '부캐', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅈㅎㅇ: { cmd: '젬효율', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄱㅈ: { cmd: '군장', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
-  ㄹㅋ: { cmd: '랭킹', parse: () => ({}) },
-  ㅊㄱ: { cmd: '체급', parse: () => ({}) },
+  ㄹㅋ: { cmd: '랭킹', usage: 'ㄹㅋ [쪽] (예: ㄹㅋ 2)', parse: parsePage },
+  ㅊㄱ: { cmd: '체급', usage: 'ㅊㄱ [쪽] (예: ㅊㄱ 2)', parse: parsePage },
   ㅇㄷㅇㅌ: { cmd: '업데이트', parse: () => ({}) },
   업뎃: { cmd: '업데이트', parse: () => ({}) },
   시전: { cmd: 'cpm', usage: '.cpm 횟수 시간 [목표] (예: .cpm 35 7분)', parse: (p) => {
@@ -189,14 +189,16 @@ export function parseGenericOptions(command, tokens) {
   return { options };
 }
 
-// 사용법 문구는 디스코드 채팅 기준(초성은 바로, 단어는 .)으로 적혀 있다. 카카오처럼 접두사가 "/"인 곳에서는
-// 문구 속 별칭·".단어"에 슬래시를 붙여 그대로 따라 쳐도 동작하게 바꿔 준다: "ㅂㅂㄱ 가격 (예: ㅂㅂㄱ 4000)" → "/ㅂㅂㄱ 가격 (예: /ㅂㅂㄱ 4000)"
+// 사용법 문구는 디스코드 채팅 기준(초성은 바로, 단어는 .)으로 적혀 있다. 초성을 접두사 없이 못 쓰는 곳(카카오)에서는
+// 문구 속 별칭·".단어"에 사용자가 친 접두사를 붙여 그대로 따라 쳐도 동작하게 바꿔 준다:
+//   "/"로 쳤으면 "ㅂㅂㄱ 가격 (예: ㅂㅂㄱ 4000)" → "/ㅂㅂㄱ 가격 (예: /ㅂㅂㄱ 4000)", "."로 쳤으면 ".ㅂㅂㄱ 가격 (예: .ㅂㅂㄱ 4000)"
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function usageForPrefix(usage, key, prefix) {
-  if (!usage || prefix !== '/') return usage;
+  if (!usage || !prefix) return usage;
+  const p = prefix.replace(/\$/g, '$$$$'); // 치환 문자열 안의 $ 보호
   return usage
-    .replace(/(^|[\s(])[.!](?=\S)/g, '$1/')                                        // ".cpm" → "/cpm"
-    .replace(new RegExp(`(^|[\\s(])(${escapeRegExp(key)})(?=[\\s)]|$)`, 'g'), '$1/$2'); // "ㅂㅂㄱ" → "/ㅂㅂㄱ"
+    .replace(/(^|[\s(])[.!](?=\S)/g, `$1${p}`)                                        // ".cpm" → "/cpm" 또는 ".cpm"
+    .replace(new RegExp(`(^|[\\s(])(${escapeRegExp(key)})(?=[\\s)]|$)`, 'g'), `$1${p}$2`); // "ㅂㅂㄱ" → "/ㅂㅂㄱ" 또는 ".ㅂㅂㄱ"
 }
 
 // 발화를 (커맨드, 옵션)으로 해석한다. 처리 대상이 아니면 null, 옵션이 부족하면 { command, usage }.
@@ -229,7 +231,8 @@ export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], b
     const options = alias.parse(params);
     if (options === null) {
       const key = Object.keys(ALIASES).find((k) => ALIASES[k] === alias) ?? token;
-      return { command, usage: usageForPrefix(alias.usage, key, prefix), label: raw };
+      // 초성을 접두사 없이 쓸 수 있는 곳(디스코드)은 문구 그대로, 아니면(카카오) 친 접두사를 붙인 문구로
+      return { command, usage: bareChosung ? alias.usage : usageForPrefix(alias.usage, key, prefix), label: raw };
     }
     return { command, options, label: raw };
   }

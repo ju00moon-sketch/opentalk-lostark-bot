@@ -78,7 +78,12 @@ export async function execute(interaction) {
     .setDescription(lines.join('\n'));
 
   if (target) {
-    const needed = Math.ceil(target * minutes);
+    // 필요한 횟수 = "횟수 ÷ 분 ≥ 목표"가 되는 가장 작은 정수. 곱셈 결과를 그대로 올리면 소수 오차로
+    // 55.00000000000001 → 56(목표 2.2)이 되고, 반올림해 버리면 55.00000025 → 55(목표 2.20000001)로 틀린다.
+    // 그래서 화면에 보이는 비교식과 같은 나눗셈으로 앞뒤 한 칸씩 확인해 맞춘다.
+    let needed = Math.max(1, Math.ceil(target * minutes));
+    while (needed > 1 && (needed - 1) / minutes >= target) needed--;
+    while (needed / minutes < target) needed++;
     const diff = needed - count;
     embed.addFields({
       name: `목표 ${target} CPM`,

@@ -29,31 +29,59 @@ export function commandButtons(items) {
   return [row];
 }
 
-// 슬래시 옵션 흉내 — 닉네임은 버튼에 새겨진 값(없으면 null)으로 고정한다.
-const fakeOptions = (characterName) => ({
-  getString: (name) => (name === '닉네임' ? characterName : null),
-  getInteger: () => null,
-  getBoolean: () => null,
-  getChannel: () => null,
-  getSubcommand: () => null,
-});
+// 옵션 몇 개를 실은 버튼 (예: 랭킹 쪽 넘김). customId "opt:커맨드명:이름=값&이름=값" — 값은 URL 인코딩.
+// disabled 버튼은 현재 위치 표시용(누를 수 없다).
+export function optionButtons(cmd, items) {
+  const row = new ActionRowBuilder();
+  for (const { label, options, disabled = false, style = ButtonStyle.Secondary } of items) {
+    const query = Object.entries(options ?? {})
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&');
+    row.addComponents(
+      new ButtonBuilder().setCustomId(`opt:${cmd}:${query}`).setLabel(label).setStyle(style).setDisabled(disabled),
+    );
+  }
+  return [row];
+}
+
+// "이름=값&이름=값" → { 이름: 값 } (값은 문자열 그대로)
+function parseQuery(query) {
+  const out = {};
+  for (const pair of String(query ?? '').split('&')) {
+    if (!pair) continue;
+    const at = pair.indexOf('=');
+    const key = decodeURIComponent(at === -1 ? pair : pair.slice(0, at));
+    out[key] = at === -1 ? '' : decodeURIComponent(pair.slice(at + 1));
+  }
+  return out;
+}
+
+// 슬래시 옵션 흉내 — 버튼에 새겨진 값들로 고정한다. 정수·숫자는 문자열에서 바꿔 준다.
+const fakeOptions = (values) => {
+  const get = (name) => (name in values ? values[name] : null);
+  return {
+    getString: (name) => (get(name) === null ? null : String(get(name))),
+    getInteger: (name) => { const n = Number(get(name)); return get(name) !== null && Number.isInteger(n) ? n : null; },
+    getNumber: (name) => { const n = Number(get(name)); return get(name) !== null && Number.isFinite(n) ? n : null; },
+    getBoolean: (name) => (get(name) === null ? null : String(get(name)) === 'true'),
+    getChannel: () => null,
+    getSubcommand: () => null,
+  };
+};
 
 // 버튼 인터랙션이면 해당 커맨드를 실행한다. 처리했으면 true.
 export async function handleButton(interaction, commandMap) {
-  const [tag, cmdName, characterName] = interaction.customId.split(':');
-  if (tag === 'cmd') {
-    const command = commandMap.get(cmdName);
-    if (!command) return false;
-    interaction.options = fakeOptions(null);
-    await command.execute(interaction);
-    return true;
-  }
-
-  if (tag !== 'run' || !characterName) return false;
+  const raw = interaction.customId;
+  const [tag, cmdName] = raw.split(':');
+  const rest = raw.slice(tag.length + 1 + (cmdName?.length ?? 0) + 1); // 세 번째 칸 이후 전부 (값에 ':'가 있어도 안전)
   const command = commandMap.get(cmdName);
   if (!command) return false;
 
-  interaction.options = fakeOptions(characterName);
+  if (tag === 'cmd') interaction.options = fakeOptions({});
+  else if (tag === 'run' && rest) interaction.options = fakeOptions({ 닉네임: rest });
+  else if (tag === 'opt') interaction.options = fakeOptions(parseQuery(rest));
+  else return false;
+
   await command.execute(interaction);
   return true;
 }

@@ -31,7 +31,13 @@ export const CHANNEL_LIMITS = {
 
 export function stripMarkdown(text) {
   return String(text ?? '')
-    .replace(/```[^\n]*\n?/g, '')                          // 코드블록 펜스 (언어 표기 포함)
+    // 코드블록 펜스: 구분자(```)와 언어 표기만 지우고 내용은 남긴다. "```코드```안내"처럼 한 줄에 붙어 있으면
+    // 줄바꿈으로 바꿔 내용이 앞뒤 글과 붙지 않게 한다 — 예전엔 줄 끝까지 지워 스킬코드가 통째로 사라졌다.
+    .replace(/```(?:[A-Za-z0-9_+-]+(?=\n))?\n?/g, (fence, at, whole) => {
+      const atLineStart = at === 0 || whole[at - 1] === '\n';
+      const endsLine = fence.endsWith('\n') || at + fence.length >= whole.length || whole[at + fence.length] === '\n';
+      return atLineStart && endsLine ? '' : '\n';
+    })
     .replace(/\*\*|__|~~/g, '')
     .replace(/`/g, '')
     .replace(/^-# /gm, '')                                 // 작은 글씨
@@ -40,6 +46,7 @@ export function stripMarkdown(text) {
     .replace(/<#\d+>|<@[!&]?\d+>/g, '')                    // 채널·유저·역할 멘션
     .replace(/[^\S\n]{2,}/g, ' ')                          // 표 정렬용 연속 공백 → 한 칸 (줄바꿈은 유지)
     .replace(/^[^\S\n]+|[^\S\n]+$/gm, '')                  // 줄 앞뒤 공백
+    .replace(/\n{3,}/g, '\n\n')                              // 펜스를 줄바꿈으로 바꾸며 생긴 빈 줄 겹침 정리
     .trim();
 }
 
@@ -124,9 +131,18 @@ export function buttonsToQuickReplies(rows = []) {
     for (const c of asJson(row).components ?? []) {
       const label = String(c.label ?? '').slice(0, LABEL_MAX);
       if (c.url) { links.push(`${c.label ?? '링크'}: ${c.url}`); continue; }
-      const [tag, cmd, nick] = String(c.custom_id ?? c.customId ?? '').split(':');
-      if (!cmd || (tag !== 'run' && tag !== 'cmd')) continue;
-      const messageText = tag === 'run' && nick ? `/${cmd} ${nick}` : `/${cmd}`;
+      if (c.disabled) continue; // 현재 위치 표시 같은 눌리지 않는 버튼
+      const id = String(c.custom_id ?? c.customId ?? '');
+      const [tag, cmd] = id.split(':');
+      const rest = id.slice(tag.length + 1 + (cmd?.length ?? 0) + 1);
+      if (!cmd || !['run', 'cmd', 'opt'].includes(tag)) continue;
+      let messageText = `/${cmd}`;
+      if (tag === 'run' && rest) messageText = `/${cmd} ${rest}`;
+      if (tag === 'opt' && rest) {
+        // "이름=값&이름=값"의 값들만 순서대로 — 채팅 파서는 위치 인자로 받는다 (예: /랭킹 2)
+        const values = rest.split('&').filter(Boolean).map((kv) => decodeURIComponent(kv.slice(kv.indexOf('=') + 1)));
+        messageText = `/${cmd} ${values.join(' ')}`.trim();
+      }
       quickReplies.push({ label: label || cmd, action: 'message', messageText });
     }
   }

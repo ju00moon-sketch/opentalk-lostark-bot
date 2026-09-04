@@ -2,9 +2,9 @@
 // 거래소 API(각인서 등)는 전일 평균가(YDayAvgPrice)를 주지만 경매장 API(보석)에는 전일 가격이 아예 없다.
 // 그래서 보석은 조회할 때마다 그날의 최저가를 적어 두었다가 다음 날 비교한다.
 // 배포는 src/만 갈아 끼우므로 다른 런타임 상태 파일과 같이 저장소 루트에 둔다.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readJson, writeJsonAtomic } from './json-store.js';
 
 const STORE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'price-history.json');
 const KEEP_DAYS = 3; // 전일 비교에 필요한 건 어제뿐 — 하루 이틀 봇이 쉬어도 되게 사흘만 남긴다
@@ -14,18 +14,19 @@ export function kstDate(now = Date.now()) {
   return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+// 깨진 파일은 null — 그 회차는 기록도 비교도 건너뛴다. 빈 상태로 덮어쓰면 어제 기록이 사라진다.
 function load() {
   try {
-    if (existsSync(STORE_PATH)) return JSON.parse(readFileSync(STORE_PATH, 'utf8'));
+    return readJson(STORE_PATH, {});
   } catch (err) {
-    console.error('시세 기록 파일 읽기 실패:', err.message);
+    console.error('시세 기록 파일 읽기 실패 — 이번 회차는 기록을 건너뜁니다:', err.message);
+    return null;
   }
-  return {};
 }
 
 function save(store) {
   try {
-    writeFileSync(STORE_PATH, JSON.stringify(store));
+    writeJsonAtomic(STORE_PATH, store, { pretty: false });
   } catch (err) {
     // 기록에 실패해도 시세 자체는 보여 줘야 하므로 삼킨다 (다음 조회 때 다시 시도된다)
     console.error('시세 기록 파일 쓰기 실패:', err.message);
@@ -39,6 +40,7 @@ function save(store) {
 export function recordAndCompare(group, entries) {
   const today = kstDate();
   const store = load();
+  if (!store) return {};
   const bucket = store[group] ?? (store[group] = {});
   const baseline = {};
   let dirty = false;

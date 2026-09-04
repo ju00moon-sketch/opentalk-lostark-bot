@@ -14,6 +14,9 @@ notify-channels.json
 user-links.json
 update-notify.json
 price-history.json
+island-notify.json
+*.json.bak
+*.json.tmp
 
 # 세션 운영 가이드 (서버 접속 정보 포함 — 공개 저장소 제외)
 CLAUDE.md

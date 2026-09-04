@@ -1,23 +1,17 @@
 // 디스코드 유저 ↔ 로스트아크 캐릭터 연결 저장소.
 // notify-store와 같은 방식 — 배포(scp)가 src/만 교체해도 유지되게 루트 JSON에 저장한다.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readJson, readJsonLenient, writeJsonAtomic } from './json-store.js';
 
 const STORE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'user-links.json');
 
-function load() {
-  try {
-    if (existsSync(STORE_PATH)) return JSON.parse(readFileSync(STORE_PATH, 'utf8'));
-  } catch (err) {
-    console.error('캐릭터 등록 파일 읽기 실패:', err.message);
-  }
-  return {};
-}
+// 조회용 — 파일이 깨져 있어도 커맨드는 돌아가야 하므로 빈 상태로 대신한다(저장은 하지 않는다).
+const load = () => readJsonLenient(STORE_PATH, {}, '캐릭터 등록 파일');
 
-function save(store) {
-  writeFileSync(STORE_PATH, JSON.stringify(store, null, 2));
-}
+// 저장용 — 깨진 파일은 CorruptStoreError를 던져 저장을 막는다. 빈 상태로 덮어쓰면 등록 전부가 날아간다.
+const loadForWrite = () => readJson(STORE_PATH, {});
+const save = (store) => writeJsonAtomic(STORE_PATH, store);
 
 export function getLinkedCharacter(userId) {
   return userId ? load()[userId] ?? null : null;
@@ -29,13 +23,13 @@ export function getAllLinks() {
 }
 
 export function linkCharacter(userId, characterName) {
-  const store = load();
+  const store = loadForWrite();
   store[userId] = characterName;
   save(store);
 }
 
 export function unlinkCharacter(userId) {
-  const store = load();
+  const store = loadForWrite();
   const had = userId in store;
   delete store[userId];
   save(store);

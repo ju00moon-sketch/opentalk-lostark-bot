@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
-import { getCharacterProfile } from '../lostark.js';
+import { getCharacterProfile, isTransientError } from '../lostark.js';
 import { EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
 import {
   getLinkedCharacter, linkCharacter, unlinkCharacter, discordNameCandidates,
@@ -18,16 +18,39 @@ export const data = new SlashCommandBuilder()
 const EPHEMERAL = { flags: MessageFlags.Ephemeral };
 
 // 후보를 순서대로 조회해 처음 찾아지는 캐릭터를 쓴다.
+// "없는 캐릭터"(null)와 "지금 API가 안 됨"(429·5xx·통신 오류)은 다르다 — 후자에서 다음 후보로 넘어가면
+// 앞 후보가 진짜 캐릭터였는데도 뒤 후보(흔한 사람 이름 등)가 등록돼 버린다. 일시 오류는 그 자리에서 멈춘다.
 async function findFirstProfile(candidates) {
   for (const candidate of candidates) {
     try {
       const profile = await getCharacterProfile(candidate);
       if (profile) return profile;
-    } catch {
+    } catch (err) {
+      if (isTransientError(err)) throw new RetryLaterError(err);
       // 닉네임에 못 쓰는 문자가 섞이면 API가 4xx를 낸다 — 다음 후보로 넘어간다
     }
   }
   return null;
+}
+
+class RetryLaterError extends Error {
+  constructor(cause) {
+    super('지금은 전투정보실 조회가 안 돼서 등록을 진행하지 않았어요. 잠시 후 다시 시도해 주세요.');
+    this.name = 'RetryLaterError';
+    this.cause = cause;
+  }
+}
+
+// 등록 흐름 공통: 일시 오류면 기존 등록을 그대로 두고 재시도 안내만 한다.
+async function lookup(interaction, candidates, reply) {
+  try {
+    return await findFirstProfile(candidates);
+  } catch (err) {
+    if (!(err instanceof RetryLaterError)) throw err;
+    console.error('[등록] 일시 오류로 중단:', err.cause?.message);
+    await reply(err.message);
+    return undefined; // null(없음)과 구분 — 호출한 쪽은 그냥 끝낸다
+  }
 }
 
 export async function execute(interaction) {
@@ -62,7 +85,8 @@ export async function execute(interaction) {
   }
 
   await interaction.deferReply();
-  const profile = await findFirstProfile(candidates);
+  const profile = await lookup(interaction, candidates, (m) => interaction.editReply(m));
+  if (profile === undefined) return;
   if (!profile) {
     await interaction.editReply(
       `디스코드 닉네임 \`${candidates[0]}\`으로 캐릭터를 찾지 못했어요.\n`
@@ -105,7 +129,8 @@ async function executeKakao(interaction, userId) {
     return;
   }
 
-  const profile = await findFirstProfile([typed]);
+  const profile = await lookup(interaction, [typed], (m) => interaction.reply(m));
+  if (profile === undefined) return;
   if (!profile) {
     await interaction.reply(`\`${typed}\` — ${NOT_FOUND_HINT}`);
     return;

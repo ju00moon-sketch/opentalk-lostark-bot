@@ -64,8 +64,20 @@ export async function execute(interaction) {
     return;
   }
 
-  // 2. 직업명 → 각인 2종의 코어 목록
-  const cls = Object.keys(CLASS_ENGRAVINGS).find((c) => c === raw || c.includes(raw));
+  // 정확히 같은 이름이 있으면 부분 일치보다 먼저 — "일격"은 일격필살 각인이 아니라 '일격' 코어를 뜻한다.
+  const exactCores = [];
+  for (const [eng, cores] of Object.entries(ENGRAVING_CORES)) {
+    for (const core of cores) if (core.name === raw) exactCores.push([core, eng]);
+  }
+  for (const core of CHAOS_CORES) if (core.name === raw) exactCores.push([core, '공용']);
+  if (exactCores.length > 0 && exactCores.length <= 3) {
+    await interaction.reply({ embeds: exactCores.map(([core, src]) => coreDetailEmbed(core, src)) });
+    return;
+  }
+
+  // 2. 직업명 → 각인 2종의 코어 목록 (정확한 이름 우선, 그다음 부분 일치)
+  const classNames = Object.keys(CLASS_ENGRAVINGS);
+  const cls = classNames.find((c) => c === raw) ?? classNames.find((c) => c.includes(raw));
   if (cls) {
     const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle(`🔮 ${cls} — 아크 그리드 코어`);
     for (const eng of CLASS_ENGRAVINGS[cls]) {
@@ -81,8 +93,9 @@ export async function execute(interaction) {
     return;
   }
 
-  // 3. 각인명 → 그 각인의 코어 목록
-  const engName = Object.keys(ENGRAVING_CORES).find((e) => e === raw || e.includes(raw));
+  // 3. 각인명 → 그 각인의 코어 목록 (정확한 이름 우선)
+  const engNames = Object.keys(ENGRAVING_CORES);
+  const engName = engNames.find((e) => e === raw) ?? engNames.find((e) => e.includes(raw));
   if (engName) {
     await interaction.reply({
       embeds: [coreListEmbed(`🔮 ${engName} — 코어 목록`, groupCores(ENGRAVING_CORES[engName]))],

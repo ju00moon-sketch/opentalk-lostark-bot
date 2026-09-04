@@ -35,13 +35,14 @@ function agoLabel(date) {
 const stripDate = (title) => title.replace(/^\d+월\s*\d+일\s*\([일월화수목금토]\)\s*/, '').trim();
 
 // /업데이트 응답 본문. 자동 알림(update-notify.js)도 같은 화면을 보낸다. 업데이트 글이 없으면 null.
-export function buildUpdateMessage(notices) {
+// target을 주면 최신 글이 아니라 그 공지를 본문으로 만든다 — 알림 재발송이 실패했던 바로 그 공지를 다시 보내기 위한 것.
+export function buildUpdateMessage(notices, target = null) {
   const updates = notices
     .filter((n) => UPDATE_TITLE.test(n.Title))
     .sort((a, b) => new Date(b.Date) - new Date(a.Date));
-  if (updates.length === 0) return null;
+  if (updates.length === 0 && !target) return null;
 
-  const latest = updates[0];
+  const latest = target ?? updates[0];
   const fresh = Date.now() - new Date(latest.Date).getTime() < 7 * 86400000;
 
   const embed = new EmbedBuilder()
@@ -66,7 +67,9 @@ export function buildUpdateMessage(notices) {
     embed.addFields({ name: '\u200b', value: `**함께 올라온 공지**\n${trunc(lines.join('\n'), 1000)}` });
   }
 
-  const previous = updates.slice(1, 4);
+  const previous = (target
+    ? updates.filter((n) => n.Link !== latest.Link && new Date(n.Date) <= new Date(latest.Date))
+    : updates.slice(1)).slice(0, 3);
   if (previous.length > 0) {
     const lines = previous.map((n) => `[\`${dateLabel(n.Date)}\`](${n.Link})`).join('  ·  ');
     embed.addFields({ name: '\u200b', value: `**지난 업데이트**\n${lines}` });

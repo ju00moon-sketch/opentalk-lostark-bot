@@ -19,5 +19,7 @@ try {
     console.log(`글로벌 커맨드 ${body.length}개 등록 완료! (안 보이면 디스코드에서 Ctrl+R 새로고침)`);
   }
 } catch (err) {
-  console.error(err);
+  // 배포 스크립트가 실패를 알아채도록 종료 코드를 실패로 둔다 — 출력만 하고 0으로 끝나면 배포가 성공한 줄 안다
+  console.error('커맨드 등록 실패:', err);
+  process.exitCode = 1;
 }

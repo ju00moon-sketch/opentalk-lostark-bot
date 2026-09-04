@@ -55,9 +55,24 @@ export function resolveRaid(input) {
 
 // "2700억", "1조", "1조2000억", "5000만" → 숫자. 단위가 없으면 null.
 export function parseDamage(token) {
-  const m = /^(?:(\d+(?:\.\d+)?)조)?(?:(\d+(?:\.\d+)?)억)?(?:(\d+(?:\.\d+)?)만)?$/.exec(token);
+  // "2,700억"처럼 천 단위 쉼표가 섞여도 읽는다
+  const m = /^(?:(\d+(?:\.\d+)?)조)?(?:(\d+(?:\.\d+)?)억)?(?:(\d+(?:\.\d+)?)만)?$/.exec(String(token ?? '').replace(/,/g, ''));
   if (!m || (!m[1] && !m[2] && !m[3])) return null;
   return Number(m[1] ?? 0) * 1e12 + Number(m[2] ?? 0) * 1e8 + Number(m[3] ?? 0) * 1e4;
+}
+
+// 시간 표기 하나를 초로. "10" · "10:00" · "10분" · "10분30초" · "300초" — 그 외는 null.
+// 슬래시 옵션 "시간"처럼 이미 시간인 걸 아는 값에 쓴다(자유 형식 파서는 숫자만 있으면 관문인지 분인지 추측한다).
+export function parseTime(token) {
+  const t = String(token ?? '').trim();
+  let m = /^(\d+):(\d{1,2})$/.exec(t);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  m = /^(\d+)분(?:(\d+)초)?$/.exec(t);
+  if (m) return Number(m[1]) * 60 + Number(m[2] ?? 0);
+  m = /^(\d+)초$/.exec(t);
+  if (m) return Number(m[1]);
+  if (/^\d+(\.\d+)?$/.test(t)) return Number(t) * 60;
+  return null;
 }
 
 // 인자 배열을 { 레이드, 관문, 피해량, 시간(초) }로 해석한다.
@@ -84,14 +99,10 @@ export function parseArgs(parts, mode = 'share') {
       if (!token) continue;
     }
 
-    let m = /^(\d+):(\d{1,2})$/.exec(token); // 10:00
-    if (m) {
-      seconds ??= Number(m[1]) * 60 + Number(m[2]);
-      continue;
-    }
-    m = /^(\d+)분(?:(\d+)초)?$/.exec(token); // 10분 / 10분30초
-    if (m) {
-      seconds ??= Number(m[1]) * 60 + Number(m[2] ?? 0);
+    // 단위가 있는 시간만 공용 파서로 읽는다. 단독 숫자는 아래의 관문·분·피해량 규칙을 유지한다.
+    const time = /[:분초]/.test(token) ? parseTime(token) : null;
+    if (time !== null) {
+      seconds ??= time;
       continue;
     }
     const dmg = parseDamage(token);
@@ -114,9 +125,10 @@ export function parseArgs(parts, mode = 'share') {
   } else if (bare.length === 1) {
     const n = bare[0];
     if (mode === 'cut') seconds ??= n * 60;
-    else if (damage !== null) gate ??= n;
+    // 피해량이 있고 관문이 아직 없으면 관문(1~3)으로, 관문까지 있으면 남은 숫자는 분이다 — "세하1관 2700억 5"의 5는 5분
+    else if (damage !== null && gate === null && n >= 1 && n <= 3) gate = n;
     else if (n <= 30) seconds ??= n * 60;
-    else damage = n * 1e8;
+    else damage ??= n * 1e8;
   }
 
   return { raid, gate, damage, seconds };

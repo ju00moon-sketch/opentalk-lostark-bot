@@ -13,13 +13,25 @@ async function request(path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (res.status === 429) {
-    throw new Error('API 요청 한도(분당 100회)를 초과했어요. 잠시 후 다시 시도해 주세요.');
+    throw apiError('API 요청 한도(분당 100회)를 초과했어요. 잠시 후 다시 시도해 주세요.', res.status);
   }
   if (!res.ok) {
-    throw new Error(`로스트아크 API 오류 (HTTP ${res.status})`);
+    throw apiError(`로스트아크 API 오류 (HTTP ${res.status})`, res.status);
   }
   return res.json();
 }
+
+// 호출한 쪽이 "잠시 후 다시"와 "잘못된 입력"을 가를 수 있게 상태 코드를 붙인다.
+// 429·5xx는 일시적(transient) — 재시도 대상. 4xx는 요청 자체의 문제(닉네임에 못 쓰는 문자 등).
+function apiError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  err.transient = status === 429 || status >= 500;
+  return err;
+}
+
+// fetch 자체가 실패한 경우(네트워크·타임아웃)도 일시적 오류로 본다.
+export const isTransientError = (err) => err?.transient === true || err?.status === undefined;
 
 // 캐릭터 기본 프로필. 존재하지 않거나 비공개면 null.
 export function getCharacterProfile(characterName) {

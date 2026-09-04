@@ -8,7 +8,10 @@ import { commandButtons } from '../buttons.js';
 // 반영된 값이라 "여러 직업을 키우고 각각 세팅까지 맞춘 사람"이 위로 간다. 개인 스펙은 /랭킹.
 export const data = new SlashCommandBuilder()
   .setName('체급')
-  .setDescription('길드 내 원정대 체급 랭킹 — 등록된 길드원의 1720 이상 캐릭터 로펙 점수 합 (딜러·서포터 같은 척도)');
+  .setDescription('길드 내 원정대 체급 랭킹 — 등록된 길드원의 1720 이상 캐릭터 로펙 점수 합 (딜러·서포터 같은 척도)')
+  .addIntegerOption((option) =>
+    option.setName('페이지').setDescription('몇 쪽 (한 쪽에 25명)').setMinValue(1).setMaxValue(20),
+  );
 
 const RAID_LEVEL = 1720; // 원정대 체급에 넣는 최소 레벨
 
@@ -58,5 +61,5 @@ export async function expeditionBoard(entries) {
 }
 
 export async function execute(interaction) {
-  await runBoard(interaction, expeditionBoard, commandButtons([{ cmd: '랭킹', label: '길드 스펙 랭킹 보기' }]));
+  await runBoard(interaction, expeditionBoard, commandButtons([{ cmd: '랭킹', label: '길드 스펙 랭킹 보기' }]), { command: '체급' });
 }
