@@ -5,6 +5,7 @@ import { startUpdateNotifier } from './update-notify.js';
 import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
 import { handleTextCommand } from './text-commands.js';
 import { handleButton } from './buttons.js';
+import { startKakaoServer } from './kakao/server.js';
 
 const client = new Client({
   intents: [
@@ -57,6 +58,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   await loadChannelRestrictions(readyClient);
   startIslandNotifier(readyClient);
   startUpdateNotifier(readyClient);
+  startKakaoServer(commandMap); // KAKAO_PORT가 있을 때만 켜진다
 });
 
 // 텍스트 메시지 처리: ① 초성 커맨드 (ㅂㅂㄱ 4000 등) ② 이모티콘 ([따봉 등)

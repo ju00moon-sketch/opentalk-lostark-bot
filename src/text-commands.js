@@ -113,6 +113,98 @@ function matchRefinePattern(token, params) {
   return { cmd: '악세', options: { 검색: token, 품질: 품질 ?? null } };
 }
 
+// ── 슬래시 옵션 정의로 범용 파싱 (별칭이 없는 커맨드용 — 카카오에서 /장비 닉네임 같은 형태)
+const OPT = { SUB: 1, SUB_GROUP: 2, STRING: 3, INTEGER: 4, BOOLEAN: 5, CHANNEL: 7, NUMBER: 10 };
+
+function usageOf(name, defs) {
+  const parts = defs.map((o) => {
+    const label = o.choices ? o.choices.map((c) => c.value).join('|') : o.name;
+    return o.required ? label : `[${label}]`;
+  });
+  return `/${name} ${parts.join(' ')}`.trim();
+}
+
+// tokens를 옵션 정의 순서대로 채운다. "옵션명:값"으로 특정 옵션을 지정할 수도 있다.
+// 마지막에 남은 옵션이 문자열이면 남은 토큰을 통째로 받는다(닉네임·검색어에 띄어쓰기 허용).
+export function parseGenericOptions(command, tokens) {
+  const json = command.data.toJSON();
+  const defs = (json.options ?? []).filter((o) => ![OPT.SUB, OPT.SUB_GROUP, OPT.CHANNEL].includes(o.type));
+  if (defs.length === 0) return { options: {} };
+  const usage = usageOf(json.name, defs);
+  const options = {};
+  const rest = [];
+  for (const token of tokens) {
+    const m = /^([^:]+):(.+)$/.exec(token);
+    const def = m && defs.find((o) => o.name === m[1]);
+    if (def) options[def.name] = m[2];
+    else rest.push(token);
+  }
+  const unfilled = defs.filter((o) => !(o.name in options));
+  unfilled.forEach((def, i) => {
+    if (rest.length === 0) return;
+    const isLastString = i === unfilled.length - 1 && def.type === OPT.STRING;
+    options[def.name] = isLastString ? rest.splice(0).join(' ') : rest.shift();
+  });
+  for (const def of defs) {
+    const raw = options[def.name];
+    if (raw === undefined) {
+      if (def.required) return { usage };
+      options[def.name] = null;
+      continue;
+    }
+    let value = raw;
+    if (def.type === OPT.INTEGER) value = toInt(raw);
+    else if (def.type === OPT.NUMBER) value = Number(String(raw).replace(/,/g, ''));
+    else if (def.type === OPT.BOOLEAN) value = /^(true|1|예|응|on|켜기)$/i.test(raw);
+    if (value === null || (typeof value === 'number' && !Number.isFinite(value))) return { usage };
+    if (def.choices && !def.choices.some((c) => String(c.value) === String(value))) return { usage };
+    options[def.name] = value;
+  }
+  return { options };
+}
+
+// 발화를 (커맨드, 옵션)으로 해석한다. 처리 대상이 아니면 null, 옵션이 부족하면 { command, usage }.
+//   prefixes    — 단어형 커맨드(정보·상상)에 요구하는 접두사. 디스코드는 . ! / 카카오는 /
+//   bareChosung — 초성 별칭을 접두사 없이 허용할지 (디스코드 true, 카카오 false)
+//   anyCommand  — 별칭이 없는 커맨드도 슬래시 옵션 정의로 파싱해 허용할지 (카카오 true)
+export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], bareChosung = true, anyCommand = false } = {}) {
+  const parts = content.trim().split(/\s+/);
+  const raw = parts[0] ?? '';
+  const prefix = prefixes.find((p) => raw.startsWith(p));
+  const hasPrefix = prefix !== undefined;
+  const token = hasPrefix ? raw.slice(prefix.length) : raw;
+  const params = parts.slice(1);
+  if (!token) return null;
+
+  // 악세 연마 조합(.상상)은 단어형이라 접두사가 필요하다
+  const refine = hasPrefix ? matchRefinePattern(token, params) : null;
+  if (refine) {
+    const command = commandMap.get(refine.cmd);
+    return command ? { command, options: refine.options, label: raw } : null;
+  }
+
+  // 초성은 (허용 시) 접두사 유무 무관, 단어형 축약은 접두사 필수
+  let alias = null;
+  if (ALIASES[token] && ((bareChosung && CHOSUNG_ONLY.test(token)) || hasPrefix)) alias = ALIASES[token];
+  if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 원래 커맨드명
+  if (alias) {
+    const command = commandMap.get(alias.cmd);
+    if (!command) return null;
+    const options = alias.parse(params);
+    if (options === null) return { command, usage: alias.usage, label: raw };
+    return { command, options, label: raw };
+  }
+
+  // 별칭이 없는 커맨드 — 카카오처럼 모든 커맨드를 /이름 인자 형태로 받을 때만
+  if (anyCommand && hasPrefix && commandMap.has(token)) {
+    const command = commandMap.get(token);
+    const parsed = parseGenericOptions(command, params);
+    if (parsed.usage) return { command, usage: parsed.usage, label: raw };
+    return { command, options: parsed.options, label: raw };
+  }
+  return null;
+}
+
 // 어댑터를 만들어 커맨드를 실행한다. 항상 true(처리함)를 반환한다.
 async function runCommand(command, message, options, label) {
   const fake = new TextInteraction(message, options);
@@ -127,32 +219,11 @@ async function runCommand(command, message, options, label) {
 
 // 처리했으면 true를 반환한다.
 export async function handleTextCommand(message, commandMap) {
-  const parts = message.content.trim().split(/\s+/);
-  const raw = parts[0] ?? '';
-  const hasPrefix = /^[.!]/.test(raw);
-  const token = raw.replace(/^[.!]/, '');
-
-  // 악세 연마 조합(.상상)은 단어형이라 접두사가 필요하다
-  const refine = hasPrefix ? matchRefinePattern(token, parts.slice(1)) : null;
-  if (refine) {
-    const command = commandMap.get(refine.cmd);
-    if (!command) return false;
-    return runCommand(command, message, refine.options, raw);
-  }
-
-  // 초성은 접두사 유무 무관, 단어형 축약은 접두사 필수
-  let alias = ALIASES[token] && (CHOSUNG_ONLY.test(token) || hasPrefix) ? ALIASES[token] : null;
-  if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 원래 커맨드명
-  if (!alias) return false;
-
-  const command = commandMap.get(alias.cmd);
-  if (!command) return false;
-
-  const options = alias.parse(parts.slice(1));
-  if (options === null) {
-    await message.reply(`사용법: \`${alias.usage}\``).catch(() => {});
+  const match = matchTextCommand(message.content, commandMap);
+  if (!match) return false;
+  if (match.usage) {
+    await message.reply(`사용법: \`${match.usage}\``).catch(() => {});
     return true;
   }
-
-  return runCommand(command, message, options, raw);
+  return runCommand(match.command, message, match.options, match.label);
 }

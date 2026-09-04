@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { getCharacterProfile } from '../lostark.js';
-import { EMBED_COLOR } from '../format.js';
+import { EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
 import {
   getLinkedCharacter, linkCharacter, unlinkCharacter, discordNameCandidates,
 } from '../user-store.js';
@@ -34,6 +34,12 @@ export async function execute(interaction) {
   const userId = interaction.user?.id;
   if (!userId) {
     await interaction.reply('유저 정보를 확인할 수 없어요.');
+    return;
+  }
+
+  // 카카오톡은 사용자 닉네임을 주지 않으므로 캐릭터명을 직접 받는다 (1:1 채팅이라 남의 캐릭터를 넣어도 본인 기본값만 바뀜)
+  if (interaction.platform === 'kakao') {
+    await executeKakao(interaction, userId);
     return;
   }
 
@@ -84,4 +90,37 @@ export async function execute(interaction) {
     .setDescription(lines.join('\n'));
 
   await interaction.editReply({ embeds: [embed] });
+}
+
+// 카카오톡: "/등록 캐릭터명" · "/등록 해제"
+async function executeKakao(interaction, userId) {
+  const typed = interaction.options.getString('닉네임')?.trim();
+  if (!typed) {
+    await interaction.reply('사용법: /등록 캐릭터명 (해제는 /등록 해제)');
+    return;
+  }
+  if (typed === '해제') {
+    const had = unlinkCharacter(userId);
+    await interaction.reply(had ? '캐릭터 등록을 해제했어요.' : '등록된 캐릭터가 없어요.');
+    return;
+  }
+
+  const profile = await findFirstProfile([typed]);
+  if (!profile) {
+    await interaction.reply(`\`${typed}\` — ${NOT_FOUND_HINT}`);
+    return;
+  }
+
+  const previous = getLinkedCharacter(userId);
+  linkCharacter(userId, profile.CharacterName);
+
+  const lines = [`${profile.ServerName} · ${profile.CharacterClassName} · ${profile.ItemAvgLevel}`];
+  if (previous && previous !== profile.CharacterName) lines.push(`(이전 등록: ${previous})`);
+  lines.push('', '이제 /정보 /군장 /주급 등을 닉네임 없이 쓸 수 있어요!');
+
+  const embed = new EmbedBuilder()
+    .setColor(EMBED_COLOR)
+    .setTitle(`✅ ${profile.CharacterName} 등록 완료`)
+    .setDescription(lines.join('\n'));
+  await interaction.reply({ embeds: [embed] });
 }
