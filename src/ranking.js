@@ -11,17 +11,29 @@ export const num = (n, digits = 1) =>
   Number(n).toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 export const signed = (n, digits = 1) => `${n >= 0 ? '+' : '-'}${num(Math.abs(n), digits)}`;
 
-// 서버 멤버인 등록자만 고른다 → [{ userId, character }]
+// 집계 대상 → [{ userId, character }]: 이 서버 멤버인 디스코드 등록자 + 카카오톡(kakao:…)에서 등록한 사람.
 // 게이트웨이 멤버 요청은 특정 ID 조회라 GUILD_MEMBERS 인텐트가 없어도 되지만, 목록에 스노플레이크가 아닌 값이
 // 하나라도 섞이면 응답이 안 와서 기본 120초를 기다리다 죽는다 — ID를 걸러 보내고 대기 시간도 짧게 잡는다.
 const SNOWFLAKE = /^\d{17,20}$/;
+const KAKAO_KEY = /^kakao:/;
 
 export async function registeredMembers(guild) {
   const links = getAllLinks();
   const ids = Object.keys(links).filter((id) => SNOWFLAKE.test(id));
-  if (ids.length === 0) return [];
-  const members = await guild.members.fetch({ user: ids, time: 15_000 });
-  return [...members.keys()].map((userId) => ({ userId, character: links[userId] }));
+  const entries = [];
+  if (ids.length > 0) {
+    const members = await guild.members.fetch({ user: ids, time: 15_000 });
+    entries.push(...[...members.keys()].map((userId) => ({ userId, character: links[userId] })));
+  }
+  // 카카오톡에서 /등록한 사람도 같은 판에 (사용자 요청 2026-09-04). 카톡 등록은 서버 멤버 여부를 알 수 없으니 전부 넣고,
+  // 같은 캐릭터가 디스코드로도 등록돼 있으면 디스코드 쪽 하나만 남긴다(← 나 표시가 디스코드 사용자에게 붙도록).
+  const seen = new Set(entries.map((e) => e.character));
+  for (const [key, character] of Object.entries(links)) {
+    if (!KAKAO_KEY.test(key) || seen.has(character)) continue;
+    seen.add(character);
+    entries.push({ userId: key, character });
+  }
+  return entries;
 }
 
 // 공통 실행 흐름: 서버 확인 → 등록자 추리기 → build(entries)로 판 만들기 → 임베드(+버튼) 응답.

@@ -12,6 +12,9 @@ export const KAKAO_MATCH_OPTIONS = { prefixes: ['/'], bareChosung: false, anyCom
 export const KAKAO_EXCLUDED = new Set(['알림설정']);
 // 디스코드 서버 멤버를 집계하는 커맨드 — KAKAO_GUILD_ID로 서버가 지정돼 있을 때만 카카오에서 허용 (별칭 ㄹㅋ·ㅊㄱ는 대상 이름으로 풀린 뒤 걸린다)
 export const KAKAO_GUILD_ONLY = new Set(['랭킹', '체급']);
+// 카카오톡 이모티콘([키워드 → 이미지 URL) 스위치 — 사용자 요청(2026-09-04)으로 잠시 잠금, 나중에 true로 되돌리면 방·이미지 서빙 모두 다시 열린다.
+export const KAKAO_EMOTICONS_ENABLED = false;
+const EMOTICONS_OFF = '카카오톡에서는 이모티콘이 잠시 꺼져 있어요. 디스코드에서 [키워드로 쓸 수 있어요.';
 const excludedFor = (guild) => (guild ? KAKAO_EXCLUDED : new Set([...KAKAO_EXCLUDED, ...KAKAO_GUILD_ONLY]));
 
 const DEFAULT_BUDGET_MS = 4500;
@@ -23,7 +26,8 @@ const GUIDE_REPLIES = [['도움말', '/도움말'], ['모험섬', '/모험섬'],
   .map(([label, messageText]) => ({ label, action: 'message', messageText }));
 const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 형식만 돼요 (예: /정보 닉네임, /ㅂㅂㄱ 4000, /등록 캐릭터명). '
   + `${[...excludedFor(guild)].join('·')}은 디스코드 전용이에요.`
-  + (guild ? ' /랭킹·/체급은 디스코드 서버에 /등록한 길드원을 집계해요.' : '');
+  + (guild ? ' /랭킹·/체급은 디스코드·카톡에서 /등록한 길드원을 집계해요.' : '')
+  + (KAKAO_EMOTICONS_ENABLED ? '' : ' 이모티콘([키워드)은 카톡에서 잠시 꺼져 있어요.');
 const WAIT_RETRY = '⏳ 조회에 시간이 걸려요. 잠시 후 같은 명령을 다시 보내 주세요.';
 const WAIT_CALLBACK = '⏳ 조회 중이에요…';
 
@@ -38,6 +42,7 @@ const guideResponse = () => textResponse(GUIDE, GUIDE_REPLIES);
 async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild } = {}) {
   const keyword = parseEmoticonKeyword(utterance);
   if (keyword) {
+    if (!KAKAO_EMOTICONS_ENABLED) return textResponse(EMOTICONS_OFF);
     const file = findEmoticonFile(keyword);
     return file
       ? toKakaoResponse([{ files: [file] }], { baseUrl })
@@ -50,6 +55,7 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
   if (match.usage) return textResponse(`사용법: ${match.usage}`);
   const name = match.command.data.name;
   if (excludedFor(guild).has(name)) return textResponse('이 커맨드는 디스코드에서만 쓸 수 있어요.');
+  if (name === '이모티콘' && !KAKAO_EMOTICONS_ENABLED) return textResponse(EMOTICONS_OFF);
 
   const interaction = new KakaoInteraction(userKey, match.options, { displayName, guild });
   try {
@@ -135,7 +141,9 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
   const room = String(body?.room ?? '').trim();
   const sender = String(body?.sender ?? '').trim();
   if (!text || !room || !sender) return { text: null };
-  if (!text.startsWith('/') && !parseEmoticonKeyword(text)) return { text: null };
+  // 방에서는 /커맨드와 (켜져 있을 때) [이모티콘에만 반응. 이모티콘이 잠겨 있으면 [따봉도 그냥 지나간다 — 방에 안내문을 띄우지 않는다.
+  const isEmoticon = KAKAO_EMOTICONS_ENABLED && parseEmoticonKeyword(text);
+  if (!text.startsWith('/') && !isEmoticon) return { text: null };
 
   // 닉네임을 같이 넘겨 등록 없이도 "카톡 닉네임 = 캐릭터명"이면 바로 조회되게 한다 (디스코드 서버 닉네임 폴백과 동일)
   const skillBody = { userRequest: { utterance: text, user: { id: `oc:${sender}`, properties: { nickname: sender } } } };

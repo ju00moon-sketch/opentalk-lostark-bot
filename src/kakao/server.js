@@ -8,7 +8,7 @@ import { createServer } from 'node:http';
 import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleSkillRequest, handleBridgeMessage } from './handler.js';
+import { handleSkillRequest, handleBridgeMessage, KAKAO_EMOTICONS_ENABLED } from './handler.js';
 import { textResponse } from './render.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -76,7 +76,11 @@ async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
   if (req.method === 'GET' && url.pathname === '/health') return sendText(res, 200, 'ok');
 
   const asset = /^\/assets\/(emoticons|charts)\/([^/]+)$/.exec(url.pathname);
-  if (req.method === 'GET' && asset) return serveAsset(res, PUBLIC_DIRS[asset[1]], asset[2]);
+  if (req.method === 'GET' && asset) {
+    // 이모티콘이 잠겨 있으면 이미지 폴더도 밖에 내놓지 않는다 (공식 이미지 재배포 방지)
+    if (asset[1] === 'emoticons' && !KAKAO_EMOTICONS_ENABLED) return sendText(res, 404, 'not found');
+    return serveAsset(res, PUBLIC_DIRS[asset[1]], asset[2]);
+  }
 
   const isSkill = url.pathname === `/kakao/skill/${secret}`;
   const isBridge = url.pathname === `/bridge/message/${secret}`;
