@@ -8,6 +8,7 @@ DOCS = Path(__file__).resolve().parent.parent / 'docs'
 
 # 최신이 위. id = updates.html의 article id, file = 버전 페이지 파일명
 VERSIONS = [
+    {'id': 'v1-2',       'file': 'v1.2.html',       'badge': 'v1.2', 'title': '카카오톡 오픈채팅방 연동', 'date': '2026. 09. 04'},
     {'id': 'v1-1',       'file': 'v1.1.html',       'badge': 'v1.1', 'title': '길드원 랭킹 추가',  'date': '2026. 09. 02'},
     {'id': '2026-08-31', 'file': '2026-08-31.html', 'badge': '기능',  'title': '캐릭터 분석 확장',  'date': '2026. 08. 31'},
     {'id': 'v0-1',       'file': 'v0.1.html',       'badge': 'v0.1', 'title': '첫 공개',          'date': '2026. 08. 30'},

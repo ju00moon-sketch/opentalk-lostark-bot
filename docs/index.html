@@ -200,6 +200,13 @@
   .kakao-card .title span:first-child { font-family: var(--display); font-size: 1.3rem; }
   .soon { background: rgba(254, 229, 0, 0.12); color: var(--kakao); font-size: 0.75rem; font-weight: 700; padding: 3px 12px; border-radius: 99px; }
   .kakao-card p { color: var(--text-dim); font-size: 0.93rem; }
+  .kakao-card .actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+  .btn-kakao {
+    display: inline-block; background: var(--kakao); color: #1a1a1a; font-weight: 700; padding: 11px 22px; border-radius: 12px;
+    text-decoration: none; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-kakao:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(254,229,0,0.28); color: #1a1a1a; }
+  .kakao-card .actions small { color: var(--text-dim); font-size: 0.85rem; }
   details.selfhost { margin-top: 36px; }
   details.selfhost summary { cursor: pointer; color: var(--text-dim); font-size: 0.95rem; }
   details.selfhost[open] summary { margin-bottom: 12px; }
@@ -299,7 +306,7 @@
           <div class="stat"><div class="num">53</div><div class="label">커맨드</div></div>
           <div class="stat"><div class="num">160</div><div class="label">이모티콘</div></div>
           <div class="stat"><div class="num">24h</div><div class="label">상시 가동</div></div>
-          <div class="stat"><div class="num">v1.1</div><div class="label">최신 버전</div></div>
+          <div class="stat"><div class="num">v1.2</div><div class="label">최신 버전</div></div>
         </div>
       </div>
 
@@ -419,7 +426,7 @@
         <div class="cmd-row"><span class="cmd"><code>/주급 닉네임</code><em>ㅈㄱ</em></span><span class="desc">원정대 주간 골드 수입 추정 (상위 6캐릭 × 3레이드)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/시너지 [검색]</code><em>ㅅㄴㅈ</em></span><span class="desc">직업별 파티 시너지 (방깎/치적/피증 검색 가능)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/체방</code><em>ㅊㅂ</em></span><span class="desc">직업별 체방 계수표 (이미지)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/지옥</code> <code>/나락</code><em>ㅈㅇ · ㄴㄹ</em></span><span class="desc">강하 선택 추천 경로 (등급별)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/지옥</code> <code>/나락</code><em>ㅈㅇ · ㄴㄹ</em></span><span class="desc">강하 선택 추천 경로 (등급 필수 · 예: /지옥 전설)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/효율 콘텐츠 단계 [레벨]</code></span><span class="desc">보상 선택지 가치 랭킹 (실시간 시세)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/코어 검색</code></span><span class="desc">아크 그리드 코어 정보 (직업/코어명/혼돈)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/가토</code><em>ㄱㅌ</em></span><span class="desc">이번 주 잔영 가디언 + 속성 취약 + 추천 카드</span></div>
@@ -519,8 +526,12 @@
     </ol>
 
     <div class="kakao-card">
-      <div class="title"><span>카카오톡 연동</span><span class="soon">준비 중</span></div>
-      <p>길드 카카오톡 채팅방에서도 캐릭터 조회와 시세 검색 같은 핵심 기능을 쓸 수 있도록 준비하고 있어요. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서, 어느 쪽에서 물어봐도 같은 정보를 받게 됩니다. 자세한 사용법은 준비가 끝나면 이곳에 공개할게요.</p>
+      <div class="title"><span>카카오톡 오픈채팅방</span><span class="soon">운영 중</span></div>
+      <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code>로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>/ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드 서버에 <code>/등록</code>한 길드원 집계), 이미지는 링크로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
+      <div class="actions">
+        <a class="btn-kakao" href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">💬 카카오톡으로 물어보기</a>
+        <small>봇과 1:1 채팅이 열려요 — 방 밖에서도 <code>/정보 닉네임</code>처럼 바로 물어볼 수 있습니다.</small>
+      </div>
     </div>
 
     <div class="cards tight">
@@ -545,8 +556,13 @@ npm install</pre>
     <p class="lead">카드를 누르면 그 버전의 자세한 노트로 넘어갑니다. <a href="updates.html">전체 노트 보기 →</a></p>
 
     <div class="releases">
-      <a class="release latest" href="updates/v1.1.html">
-        <div class="head"><span class="ver">v1.1</span><span class="date">2026. 09. 02</span><span class="badge">최신</span></div>
+      <a class="release latest" href="updates/v1.2.html">
+        <div class="head"><span class="ver">v1.2</span><span class="date">2026. 09. 04</span><span class="badge">최신</span></div>
+        <p class="summary">카카오톡 오픈채팅방에서도 포근해용을 쓸 수 있습니다. 디스코드 커맨드를 <code>/</code>로 시작해 그대로 치면 같은 답이 옵니다.</p>
+        <div class="chips"><span>카카오톡 오픈채팅방 연동</span><span>/커맨드 형식</span><span>카톡 닉네임으로 자동 조회</span><span>/등록 캐릭터명</span></div>
+      </a>
+      <a class="release" href="updates/v1.1.html">
+        <div class="head"><span class="ver">v1.1</span><span class="date">2026. 09. 02</span></div>
         <p class="summary">길드원끼리 비교하는 랭킹 두 종이 들어왔고, 수요일 업데이트 공지가 자동으로 채널에 올라옵니다.</p>
         <div class="chips"><span>/랭킹 길드 내 스펙 랭킹</span><span>/체급 원정대 체급 랭킹</span><span>업데이트 공지 자동 알림</span><span>/cpm</span><span>이모티콘 160종</span></div>
       </a>

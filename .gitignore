@@ -16,3 +16,6 @@ update-notify.json
 
 # 세션 운영 가이드 (서버 접속 정보 포함 — 공개 저장소 제외)
 CLAUDE.md
+
+# Codex용 세션 운영 가이드 (CLAUDE.md와 같은 내용 — 서버 접속 정보 포함, 공개 금지)
+AGENTS.md

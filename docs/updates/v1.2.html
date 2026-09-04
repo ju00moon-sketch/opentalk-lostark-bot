@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<link rel="stylesheet" href="../updates.css">
+<title>v1.2 카카오톡 오픈채팅방 연동 — 포근해용 업데이트 노트</title>
+<meta name="description" content="포근해용 v1.2 업데이트 노트 (2026. 09. 04) — 카카오톡 오픈채팅방 연동.">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="nav-row">
+      <a class="back" href="../index.html#updates">← 포근해용 홈으로</a>
+      <a class="back" href="../updates.html">전체 노트 보기 →</a>
+    </div>
+    <h1>업데이트 <span class="accent">노트</span></h1>
+    <p class="lead">v1.2 · 2026. 09. 04</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <article class="release" id="v1-2">
+    <div class="release-head">
+      <h2><span class="ver">v1.2</span> 카카오톡 오픈채팅방 연동</h2>
+      <span class="date">2026. 09. 04</span>
+    </div>
+    <p class="summary">길드 <b>카카오톡 오픈채팅방</b>에서도 포근해용을 쓸 수 있습니다. 디스코드에서 쓰던 커맨드를 <code>/</code>로 시작해 그대로 치면, 디스코드 봇과 같은 두뇌가 같은 답을 방에 올려요.</p>
+
+    <h3><span class="emoji">💬</span>이렇게 씁니다</h3>
+    <ul>
+      <li>방에서 <b><code>/</code>로 시작하는 메시지</b>만 봇이 봅니다 — <code>/정보 블레상돈</code> <code>/군장 닉네임</code> <code>/시세 운명의 파괴석</code> <code>/모험섬</code> <code>/가토</code> <code>/도움말</code></li>
+      <li>초성 별칭도 슬래시를 붙여서: <code>/ㅂㅂㄱ 4000</code> <code>/ㅈㅂ 닉네임</code> <code>/ㅅㅅ 아이템</code>. 디스코드 채팅처럼 초성만 치거나 <code>.분배금</code>처럼 쓰는 건 카톡에선 아직 안 돼요</li>
+      <li><b>카톡 닉네임이 캐릭터명이면 닉네임 생략</b> — 디스코드의 서버 닉네임 규칙과 같습니다. <code>본명/캐릭명</code>처럼 구분자가 섞인 닉은 추측하지 않으니 <code>/등록 캐릭터명</code> 한 번(해제는 <code>/등록 해제</code>)</li>
+      <li>결과 끝의 <b>"이어서:"</b> 줄에 다음에 칠 커맨드가 적혀 있어요 — 디스코드의 버튼 대신입니다</li>
+      <li>이미지(<code>/체방</code> 차트, <code>[따봉</code> 이모티콘)는 <b>링크</b>로 옵니다</li>
+      <li>방 밖에서도 됩니다 — <a href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">봇 오픈프로필</a>을 열어 <b>1:1 채팅</b>으로 물어보면 같은 답을 나만 볼 수 있어요</li>
+    </ul>
+
+    <h3><span class="emoji">🔀</span>디스코드와 다른 점</h3>
+    <ul>
+      <li><code>/랭킹</code> <code>/체급</code>은 카톡에서도 됩니다 — 집계 대상은 <b>디스코드 서버에 <code>/등록</code>한 길드원</b>(디스코드에서 보는 판과 같음). 카톡에서만 등록한 캐릭터는 아직 랭킹에 들어가지 않아요</li>
+      <li><code>/알림설정</code>과 모험섬 아침 알림·업데이트 자동 알림은 디스코드 채널로만</li>
+      <li>등록은 카톡 닉네임에 묶여요 — 닉네임을 바꾸면 <code>/등록</code> 다시. 디스코드 등록과는 별개지만, 닉네임이 캐릭터명이면 어느 쪽에서 물어도 같은 캐릭터가 나옵니다</li>
+    </ul>
+
+    <h3><span class="emoji">⚙️</span>어떻게 돌아가나</h3>
+    <p>카카오 공식 챗봇은 오픈채팅방에 들어갈 수 없어서, 방에 참여한 <b>봇 계정</b>이 메시지를 받아 디스코드 봇과 같은 서버에 물어보고 답을 대신 올리는 방식입니다. 그래서 답이 봇 계정 이름으로 나가고, 봇 계정 기기가 꺼져 있으면 잠시 답이 없을 수 있어요. 잡담에는 끼어들지 않도록 <code>/</code>와 <code>[</code>로 시작하는 메시지에만 반응합니다.</p>
+
+    <h3><span class="emoji">🕳️</span>그 외 — <code>/지옥</code> <code>/나락</code>은 등급 필수</h3>
+    <p>등급 없이 치면 기본값으로 뽑아 주던 것을 바꿔, 이제 <code>/지옥 전설</code> <code>/나락 5회</code>처럼 <b>등급(전설·영웅·희귀 또는 7회·6회·5회)을 꼭 넣어야</b> 합니다. 빈 채로 치면 사용법이 나와요. 디스코드·카톡 공통.</p>
+
+    <div class="tip">💡 처음이면 방에서 <code>/도움말</code> 한 번 — 카톡에서 되는 것과 안 되는 것을 끝에 정리해 줍니다.</div>
+  </article>
+
+  <nav class="pager" aria-label="이전 · 다음 글">
+    <a class="pager-item prev" href="v1.1.html"><span class="k">이전 글</span><span class="t">v1.1 · 길드원 랭킹 추가</span></a>
+    <span class="pager-item empty" aria-hidden="true"></span>
+  </nav>
+
+  <section class="board" aria-label="전체 업데이트 목록">
+    <div class="board-head">전체 업데이트</div>
+    <a class="row current" href="v1.2.html"><span class="badge">v1.2</span><span class="title">카카오톡 오픈채팅방 연동</span><span class="date">2026. 09. 04</span></a>
+    <a class="row" href="v1.1.html"><span class="badge">v1.1</span><span class="title">길드원 랭킹 추가</span><span class="date">2026. 09. 02</span></a>
+    <a class="row" href="2026-08-31.html"><span class="badge">기능</span><span class="title">캐릭터 분석 확장</span><span class="date">2026. 08. 31</span></a>
+    <a class="row" href="v0.1.html"><span class="badge">v0.1</span><span class="title">첫 공개</span><span class="date">2026. 08. 30</span></a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>🌱 <a href="../index.html">포근해용 홈</a> · <a href="../updates.html">전체 업데이트 노트</a> · <a href="https://github.com/ju00moon-sketch/opentalk-lostark-bot">GitHub</a> · MIT License</p>
+  </div>
+</footer>
+
+</body>
+</html>

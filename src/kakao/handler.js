@@ -8,8 +8,11 @@ import { KakaoInteraction } from './interaction.js';
 import { toKakaoResponse, textResponse } from './render.js';
 
 export const KAKAO_MATCH_OPTIONS = { prefixes: ['/'], bareChosung: false, anyCommand: true };
-// 디스코드 서버(채널·멤버) 개념이 필요한 커맨드 — 별칭(ㄹㅋ·ㅊㄱ)은 대상 이름으로 풀린 뒤 걸린다
-export const KAKAO_EXCLUDED = new Set(['알림설정', '랭킹', '체급']);
+// 디스코드 채널 개념이 필요한 커맨드 — 카카오에선 항상 제외
+export const KAKAO_EXCLUDED = new Set(['알림설정']);
+// 디스코드 서버 멤버를 집계하는 커맨드 — KAKAO_GUILD_ID로 서버가 지정돼 있을 때만 카카오에서 허용 (별칭 ㄹㅋ·ㅊㄱ는 대상 이름으로 풀린 뒤 걸린다)
+export const KAKAO_GUILD_ONLY = new Set(['랭킹', '체급']);
+const excludedFor = (guild) => (guild ? KAKAO_EXCLUDED : new Set([...KAKAO_EXCLUDED, ...KAKAO_GUILD_ONLY]));
 
 const DEFAULT_BUDGET_MS = 4500;
 const PENDING_TTL_MS = 3 * 60 * 1000;
@@ -18,8 +21,9 @@ const TIMEOUT = Symbol('timeout');
 const GUIDE = '명령은 /로 시작해요. 예: /정보 닉네임 · /ㅂㅂㄱ 4000 · /도움말';
 const GUIDE_REPLIES = [['도움말', '/도움말'], ['모험섬', '/모험섬'], ['가토', '/가토'], ['업데이트', '/업데이트'], ['유각', '/유각']]
   .map(([label, messageText]) => ({ label, action: 'message', messageText }));
-const HELP_NOTE = '💬 카카오톡에서는 /커맨드 형식만 돼요 (예: /정보 닉네임, /ㅂㅂㄱ 4000, /등록 캐릭터명). '
-  + '랭킹·체급·알림설정은 디스코드 전용이에요.';
+const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 형식만 돼요 (예: /정보 닉네임, /ㅂㅂㄱ 4000, /등록 캐릭터명). '
+  + `${[...excludedFor(guild)].join('·')}은 디스코드 전용이에요.`
+  + (guild ? ' /랭킹·/체급은 디스코드 서버에 /등록한 길드원을 집계해요.' : '');
 const WAIT_RETRY = '⏳ 조회에 시간이 걸려요. 잠시 후 같은 명령을 다시 보내 주세요.';
 const WAIT_CALLBACK = '⏳ 조회 중이에요…';
 
@@ -31,7 +35,7 @@ const shortKey = (key) => `${String(key).slice(0, 8)}…`;
 const guideResponse = () => textResponse(GUIDE, GUIDE_REPLIES);
 
 // 발화 하나를 끝까지 실행해 카카오 응답을 만든다 (예산과 무관). 절대 reject하지 않는다.
-async function runUtterance(utterance, userKey, commandMap, baseUrl, displayName) {
+async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild } = {}) {
   const keyword = parseEmoticonKeyword(utterance);
   if (keyword) {
     const file = findEmoticonFile(keyword);
@@ -45,16 +49,16 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, displayName
   if (!match) return guideResponse();
   if (match.usage) return textResponse(`사용법: ${match.usage}`);
   const name = match.command.data.name;
-  if (KAKAO_EXCLUDED.has(name)) return textResponse('이 커맨드는 디스코드에서만 쓸 수 있어요.');
+  if (excludedFor(guild).has(name)) return textResponse('이 커맨드는 디스코드에서만 쓸 수 있어요.');
 
-  const interaction = new KakaoInteraction(userKey, match.options, { displayName });
+  const interaction = new KakaoInteraction(userKey, match.options, { displayName, guild });
   try {
     await match.command.execute(interaction);
   } catch (err) {
     console.error(`[카카오 ${match.label}]`, err);
     return textResponse(`오류가 발생했어요: ${err.message}`);
   }
-  if (name === '도움말') interaction.payloads.push({ content: HELP_NOTE });
+  if (name === '도움말') interaction.payloads.push({ content: helpNote(guild) });
   return toKakaoResponse(interaction.payloads, { baseUrl });
 }
 
@@ -76,7 +80,8 @@ async function postCallback(callbackUrl, response, fetchImpl) {
   }
 }
 
-export async function handleSkillRequest(body, commandMap, { baseUrl, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch } = {}) {
+// guild: KAKAO_GUILD_ID의 디스코드 서버(없으면 null) — 랭킹 계열을 허용하고 그 서버 등록자를 집계하는 데 쓴다.
+export async function handleSkillRequest(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch } = {}) {
   const utterance = normalize(String(body?.userRequest?.utterance ?? ''));
   const userKey = body?.userRequest?.user?.id;
   const callbackUrl = body?.userRequest?.callbackUrl;
@@ -87,7 +92,7 @@ export async function handleSkillRequest(body, commandMap, { baseUrl, budgetMs =
   const key = `${userKey}\n${utterance}`;
   let task = pending.get(key);
   if (!task) {
-    task = runUtterance(utterance, userKey, commandMap, baseUrl, displayName);
+    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild });
     pending.set(key, task);
     // 결과를 아무도 안 가져가도 3분 뒤엔 지운다
     task.finally(() => setTimeout(() => { if (pending.get(key) === task) pending.delete(key); }, PENDING_TTL_MS).unref?.());
@@ -125,7 +130,7 @@ export function flattenResponse(response) {
   return parts.join('\n\n') || null;
 }
 
-export async function handleBridgeMessage(body, commandMap, { baseUrl, budgetMs = BRIDGE_BUDGET_MS } = {}) {
+export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = null, budgetMs = BRIDGE_BUDGET_MS } = {}) {
   const text = normalize(String(body?.text ?? ''));
   const room = String(body?.room ?? '').trim();
   const sender = String(body?.sender ?? '').trim();
@@ -134,6 +139,6 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, budgetMs 
 
   // 닉네임을 같이 넘겨 등록 없이도 "카톡 닉네임 = 캐릭터명"이면 바로 조회되게 한다 (디스코드 서버 닉네임 폴백과 동일)
   const skillBody = { userRequest: { utterance: text, user: { id: `oc:${sender}`, properties: { nickname: sender } } } };
-  const response = await handleSkillRequest(skillBody, commandMap, { baseUrl, budgetMs });
+  const response = await handleSkillRequest(skillBody, commandMap, { baseUrl, guild, budgetMs });
   return { text: flattenResponse(response) };
 }

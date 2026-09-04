@@ -71,7 +71,7 @@ async function serveAsset(res, dir, rawName) {
   createReadStream(real).pipe(res);
 }
 
-async function route(req, res, { commandMap, secret, baseUrl }) {
+async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/health') return sendText(res, 200, 'ok');
 
@@ -84,15 +84,17 @@ async function route(req, res, { commandMap, secret, baseUrl }) {
     const body = await readJson(req);
     if (body === TOO_LARGE) return sendText(res, 413, 'payload too large');
     if (body === undefined || typeof body !== 'object') return sendText(res, 400, 'invalid json');
+    const guild = await getGuild();
     const response = isSkill
-      ? await handleSkillRequest(body, commandMap, { baseUrl })
-      : await handleBridgeMessage(body, commandMap, { baseUrl });
+      ? await handleSkillRequest(body, commandMap, { baseUrl, guild })
+      : await handleBridgeMessage(body, commandMap, { baseUrl, guild });
     return sendJson(res, 200, response);
   }
   return sendText(res, 404, 'not found');
 }
 
-export function startKakaoServer(commandMap, env = process.env) {
+// client: 디스코드 클라이언트 — KAKAO_GUILD_ID가 있으면 그 서버를 찾아 /랭킹·/체급 집계 대상으로 넘긴다.
+export function startKakaoServer(commandMap, env = process.env, { client = null } = {}) {
   const port = Number(env.KAKAO_PORT);
   if (!port) {
     console.log('카카오 스킬 서버: 꺼짐(KAKAO_PORT 없음)');
@@ -105,14 +107,27 @@ export function startKakaoServer(commandMap, env = process.env) {
     return null;
   }
 
+  // 랭킹용 서버는 요청 때마다 조회하지 않고 한 번 찾아 둔다. 못 찾으면(봇이 그 서버에 없음) 랭킹은 디스코드 전용으로 남는다.
+  const guildId = env.KAKAO_GUILD_ID;
+  let guildPromise = null;
+  const getGuild = () => {
+    if (!guildId || !client) return Promise.resolve(null);
+    guildPromise ??= client.guilds.fetch(guildId).catch((err) => {
+      console.error(`카카오 랭킹 서버(${guildId}) 조회 실패:`, err.message);
+      guildPromise = null; // 다음 요청에서 다시 시도
+      return null;
+    });
+    return guildPromise;
+  };
+
   const server = createServer((req, res) => {
-    route(req, res, { commandMap, secret, baseUrl }).catch((err) => {
+    route(req, res, { commandMap, secret, baseUrl, getGuild }).catch((err) => {
       console.error('[카카오 서버]', err);
       if (!res.headersSent) sendJson(res, 200, textResponse(`오류가 발생했어요: ${err.message}`));
       else res.end();
     });
   });
   server.on('error', (err) => console.error('카카오 스킬 서버 오류:', err.message));
-  server.listen(port, () => console.log(`카카오 스킬 서버: :${port} (이미지 ${baseUrl})`));
+  server.listen(port, () => console.log(`카카오 스킬 서버: :${port} (이미지 ${baseUrl}${guildId ? ` · 랭킹 서버 ${guildId}` : ' · 랭킹 없음'})`));
   return server;
 }

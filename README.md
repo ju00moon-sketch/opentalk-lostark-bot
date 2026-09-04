@@ -1,6 +1,6 @@
 # 포근해용 — 로스트아크 디스코드 봇
 
-포근해 길드(루페온) 전용 로스트아크 정보 조회 봇. **v1.1**
+포근해 길드(루페온) 전용 로스트아크 정보 조회 봇. **v1.2** — 디스코드 + 카카오톡 오픈채팅방
 
 🌐 **홈페이지: https://ju00moon-sketch.github.io/opentalk-lostark-bot/** — 커맨드 목록 · 이모티콘 키워드 · 봇 초대하기 · [업데이트 노트](https://ju00moon-sketch.github.io/opentalk-lostark-bot/updates.html)
 
@@ -11,6 +11,7 @@
 - **봇 호스팅**: Oracle Cloud 무료 티어 VM (Ubuntu 24.04) — `pm2`로 24시간 상시 실행, 크래시 자동 재시작, 재부팅 시 자동 기동
 - **홈페이지**: [GitHub Pages](https://ju00moon-sketch.github.io/opentalk-lostark-bot/) — `docs/` 폴더가 main 브랜치에서 자동 배포
 - **데이터**: 캐릭터/시세는 로스트아크 오픈 API 실시간 조회, 게임 상수(골드표·시너지 등)는 `src/data/` 파일로 관리
+- **카카오톡**: 같은 프로세스 안의 HTTP 서버가 오픈채팅방 브리지 역할 — 아래 [카카오톡 오픈채팅방 연동](#카카오톡-오픈채팅방-연동-선택) 참고
 
 ## 커맨드
 
@@ -56,7 +57,7 @@
 | `/주급 닉네임` | 원정대 주간 골드 수입 추정 (상위 6캐릭 × 3레이드) |
 | `/시너지 [검색]` | 직업별 파티 시너지 ([src/data/synergies.js](src/data/synergies.js) 수정으로 갱신) |
 | `/체방` | 직업별 체방 계수표 이미지 (scripts/chembang-chart.html 렌더링으로 생성) |
-| `/지옥` `/나락` | 강하 선택 추천 경로 ([src/data/descent.js](src/data/descent.js)) |
+| `/지옥 등급` `/나락 등급` | 강하 선택 추천 경로 — 등급(전설·영웅·희귀) 필수, 없으면 사용법 ([src/data/descent.js](src/data/descent.js)) |
 | `/효율 콘텐츠 단계 [레벨]` | 보상 선택지 가치 랭킹 — 실시간 시세 반영 ([src/data/efficiency.js](src/data/efficiency.js)) |
 | `/연마표` | 악세서리 연마 효과 수치표 |
 | `/악세 검색 [품질]` | 연마 조합별 경매장 최저가 — 채팅은 `.상상` `.상중 70` ([src/data/refine.js](src/data/refine.js)) |
@@ -72,6 +73,39 @@
 - **이모티콘** — 채팅에 `[키워드` 입력 시 이미지 응답. `assets/emoticons/`에 `키워드.png`를 넣으면 등록됨 (Message Content Intent 필요)
 - **채팅 커맨드** — 초성은 바로(`ㅂㅂㄱ 4000`), 단어형은 `.` 필수(`.분배금 4000`, `.업뎃`), 슬래시 별칭(`/ㅂㅂㄱ`, `/업뎃`)도 지원 ([src/text-commands.js](src/text-commands.js)의 ALIASES에서 추가)
 
+## 카카오톡 오픈채팅방 연동 (선택)
+
+카카오 공식 챗봇(카카오 i 오픈빌더)은 채널 1:1 채팅에서만 동작하고 오픈채팅방에는 들어갈 수 없다. 그래서 방에 참여한 **봇 전용 카카오
+계정의 안드로이드 폰**이 메시지를 읽어 이 봇 서버에 넘기고 답을 대신 쓰는 브리지 방식을 쓴다. 폰 쪽은
+[메신저봇R](https://play.google.com/store/apps/details?id=com.xfl.msgbot) 앱, 서버 쪽은 봇 프로세스 안의 HTTP 서버(`src/kakao/`)다.
+
+⚠️ 비공식 방식이라 카카오 약관에 어긋나고 봇 계정이 제재될 수 있으며, 카카오톡 앱 업데이트로 알림 형식이 바뀌면 멈출 수 있다.
+감수할 수 있을 때만 켤 것. 환경 변수를 넣지 않으면 이 서버는 켜지지 않고 디스코드 봇만 동작한다.
+
+**방에서 쓰는 법**: `/`로 시작하는 커맨드만 반응 — `/정보 닉네임` `/ㅂㅂㄱ 4000` `/도움말`. 카톡 닉네임이 캐릭터명이면 닉네임 생략(디스코드
+서버 닉네임 규칙과 동일), 아니면 `/등록 캐릭터명`(해제 `/등록 해제`). 결과 끝 "이어서:" 줄이 디스코드의 버튼 대신이고, 이미지는 링크로
+온다. `/랭킹` `/체급`은 `KAKAO_GUILD_ID`로 지정한 디스코드 서버에 `/등록`한 길드원을 집계한다(카톡에서만 등록한 캐릭터는 미포함).
+`/알림설정`과 아침 알림은 디스코드 전용. 봇 계정과의 **1:1 채팅**에서도 똑같이 동작하므로(방 목록 `ROOMS`를 비워 두면), 봇 계정의
+오픈프로필 링크를 공개하면 방 밖에서도 물어볼 수 있다.
+
+**설정**
+
+1. `.env`에 세 줄 추가 후 재시작:
+   ```
+   KAKAO_PORT=8080                       # 스킬 서버 포트
+   KAKAO_SKILL_SECRET=긴_무작위_문자열     # URL 비밀 경로 — node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
+   PUBLIC_BASE_URL=http://서버주소         # 이미지 링크 앞부분 (끝 슬래시 없이). 서버는 공인 IP/도메인으로 접근 가능해야 함
+   KAKAO_GUILD_ID=디스코드_서버_ID          # (선택) 카톡 /랭킹·/체급이 집계할 디스코드 서버. 없으면 두 커맨드는 카톡에서 안내만
+   ```
+2. 방화벽·클라우드 보안 규칙에서 포트를 열고(80→8080 리다이렉트를 쓰면 80) 밖에서 `curl http://서버주소/health` → `ok` 확인.
+3. 봇 계정으로 로그인한 안드로이드 폰에 메신저봇R 설치 → 알림 접근 권한 허용, 카카오톡 알림 **내용 미리보기** 켬, 배터리 최적화에서
+   메신저봇R·카카오톡 제외 → 새 스크립트(**"레거시 API를 사용합니다"** 체크)에 `scripts/messengerbot-r.js` 내용을 붙여 넣고 `SERVER`를
+   `http://서버주소/bridge/message/<KAKAO_SKILL_SECRET>`으로 바꿈 → 컴파일 → 스크립트·봇 전원 켬.
+4. 봇 계정을 오픈채팅방에 참여시키고(방 알림 켠 채로) 방에서 `/도움말`.
+
+**엔드포인트**: `POST /bridge/message/<secret>` `{ room, sender, text }` → `{ text }`(null이면 침묵) · `POST /kakao/skill/<secret>`은
+카카오 i 오픈빌더 스킬 형식(채널 1:1 챗봇)도 받는다 · `GET /assets/emoticons/<파일>` `GET /assets/charts/<파일>` 이미지 공개 서빙 · `GET /health`.
+
 ## 프로젝트 구조
 
 ```
@@ -85,7 +119,13 @@ src/
                         #   로펙 스크립트 모듈을 런타임에 받아 node:vm 격리 컨텍스트에서 실행
   format.js             # 임베드 공용 포맷터 (trunc, gold, 색상)
   tooltip.js            # 장비 툴팁(JSON) 파서 — 품질/연마/세공/낙원력 추출
-  text-commands.js      # 채팅 커맨드 — 초성(ㅂㅂㄱ)은 바로, 단어는 "." 필수. 슬래시 별칭도 여기서 생성
+  text-commands.js      # 채팅 커맨드 — 초성(ㅂㅂㄱ)은 바로, 단어는 "." 필수. 슬래시 별칭도 여기서 생성.
+                        #   매처 matchTextCommand()는 카카오와 공유(접두사·초성 허용을 옵션으로)
+  kakao/                # 카카오톡 연동 HTTP 서버 — KAKAO_PORT 등 환경 변수가 있을 때만 켜짐
+    server.js           #   라우팅: 오픈채팅방 브리지 · 오픈빌더 스킬 · /health · 이미지 공개 서빙
+    handler.js          #   발화 → 커맨드 실행 → 응답 (예산 초과 시 보류 캐시/콜백), 브리지용 평문화
+    interaction.js      #   슬래시 인터랙션 흉내 어댑터 (사용자 키 kakao:…, 카톡 닉네임 폴백)
+    render.js           #   디스코드 임베드·버튼·첨부 → 카카오 JSON
   emoticons.js          # 이모티콘 — assets/emoticons/의 파일명 = 키워드, 재시작 없이 인식
   notify.js             # 모험섬 아침 알림 (매일 08:00 KST, 등록된 모든 채널로 발송)
   update-notify.js      # 업데이트 공지 자동 알림 (3분마다 새 공지 확인 → 업데이트 내역·점검 연장 발송, update-notify.json)
@@ -116,6 +156,8 @@ assets/
 scripts/
   chembang-chart.html   # 체방 차트 원본 — 수정 후 렌더링 캡처로 assets/charts 갱신
   build-update-pages.py # docs/updates.html의 버전별 <article>로 docs/updates/<버전>.html 생성
+  messengerbot-r.js     # 카카오톡 오픈채팅방 브리지용 메신저봇R 폰 스크립트 (SERVER만 채워서 사용)
+specs/                  # 설계·구현 계획 문서 (카카오톡 연동)
 docs/
   index.html            # 홈페이지 (GitHub Pages, main 브랜치에서 자동 배포)
 ```
@@ -155,6 +197,7 @@ LOSTARK_API_KEY=로스트아크 API 키
 ```
 
 ⚠️ `.env`는 절대 다른 사람에게 보여주거나 깃허브에 올리지 말 것.
+카카오톡 연동까지 쓰려면 위 [카카오톡 오픈채팅방 연동](#카카오톡-오픈채팅방-연동-선택)의 환경 변수 3개를 추가한다(선택).
 
 ### 5. 슬래시 커맨드 등록 (커맨드 추가/수정 때마다)
 

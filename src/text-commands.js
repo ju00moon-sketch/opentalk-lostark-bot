@@ -22,8 +22,9 @@ export const ALIASES = {
   } },
   ㅁㅎㅅ: { cmd: '모험섬', parse: () => ({}) },
   ㄱㅌ: { cmd: '가토', parse: (p) => ({ 전체: /전체/.test(p.join(' ')) ? '전체' : null }) },
-  ㅈㅇ: { cmd: '지옥', parse: (p) => ({ 등급: GRADE_MAP[p[0]] ?? null }) },
-  ㄴㄹ: { cmd: '나락', parse: (p) => ({ 등급: GRADE_MAP[p[0]] ?? null }) },
+  // 등급은 필수 — 없으면 사용법 (사용자 요청 2026-09-04: 등급 없이 결과가 나오지 않게)
+  ㅈㅇ: { cmd: '지옥', usage: 'ㅈㅇ 등급 (전설·영웅·희귀 또는 7회·6회·5회) (예: ㅈㅇ 전설)', parse: (p) => (GRADE_MAP[p[0]] ? { 등급: GRADE_MAP[p[0]] } : null) },
+  ㄴㄹ: { cmd: '나락', usage: 'ㄴㄹ 등급 (전설·영웅·희귀 또는 7회·6회·5회) (예: ㄴㄹ 전설)', parse: (p) => (GRADE_MAP[p[0]] ? { 등급: GRADE_MAP[p[0]] } : null) },
   ㅅㄴㅈ: { cmd: '시너지', parse: (p) => ({ 검색: p.join(' ') || null }) },
   ㅊㅂ: { cmd: '체방', parse: () => ({}) },
   ㅋㄱ: { cmd: '클골', parse: (p) => ({ 레이드명: p.join(' ') || null }) },
@@ -163,6 +164,16 @@ export function parseGenericOptions(command, tokens) {
   return { options };
 }
 
+// 사용법 문구는 디스코드 채팅 기준(초성은 바로, 단어는 .)으로 적혀 있다. 카카오처럼 접두사가 "/"인 곳에서는
+// 문구 속 별칭·".단어"에 슬래시를 붙여 그대로 따라 쳐도 동작하게 바꿔 준다: "ㅂㅂㄱ 가격 (예: ㅂㅂㄱ 4000)" → "/ㅂㅂㄱ 가격 (예: /ㅂㅂㄱ 4000)"
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function usageForPrefix(usage, key, prefix) {
+  if (!usage || prefix !== '/') return usage;
+  return usage
+    .replace(/(^|[\s(])[.!](?=\S)/g, '$1/')                                        // ".cpm" → "/cpm"
+    .replace(new RegExp(`(^|[\\s(])(${escapeRegExp(key)})(?=[\\s)]|$)`, 'g'), '$1/$2'); // "ㅂㅂㄱ" → "/ㅂㅂㄱ"
+}
+
 // 발화를 (커맨드, 옵션)으로 해석한다. 처리 대상이 아니면 null, 옵션이 부족하면 { command, usage }.
 //   prefixes    — 단어형 커맨드(정보·상상)에 요구하는 접두사. 디스코드는 . ! / 카카오는 /
 //   bareChosung — 초성 별칭을 접두사 없이 허용할지 (디스코드 true, 카카오 false)
@@ -191,7 +202,10 @@ export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], b
     const command = commandMap.get(alias.cmd);
     if (!command) return null;
     const options = alias.parse(params);
-    if (options === null) return { command, usage: alias.usage, label: raw };
+    if (options === null) {
+      const key = Object.keys(ALIASES).find((k) => ALIASES[k] === alias) ?? token;
+      return { command, usage: usageForPrefix(alias.usage, key, prefix), label: raw };
+    }
     return { command, options, label: raw };
   }
 

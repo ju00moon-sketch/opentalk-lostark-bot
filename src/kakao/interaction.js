@@ -1,7 +1,7 @@
 // 카카오 스킬 요청을 슬래시 인터랙션처럼 보이게 하는 어댑터 (text-commands.js의 TextInteraction과 같은 역할).
 // 커맨드가 reply/editReply로 보낸 페이로드를 모아 두고, handler가 한 번에 카카오 응답으로 바꾼다.
 export class KakaoInteraction {
-  constructor(userKey, options = {}, { displayName } = {}) {
+  constructor(userKey, options = {}, { displayName, guild = null } = {}) {
     this.platform = 'kakao';
     // 카카오 사용자 키에 접두사를 붙여 user-links.json에 디스코드 ID와 함께 저장한다.
     // 랭킹 집계는 스노플레이크만 골라 쓰므로 섞여도 영향이 없다.
@@ -9,9 +9,10 @@ export class KakaoInteraction {
     // 디스코드와 똑같이 "등록 없으면 닉네임을 캐릭터명으로" 폴백한다. 1:1 채널 봇은 닉네임이 없어 그대로 undefined.
     this.user = { id: `kakao:${userKey}`, username: displayName || undefined };
     this.member = null;
-    this.guild = null;
+    // guild: KAKAO_GUILD_ID로 지정한 디스코드 서버 — /랭킹·/체급이 "그 서버에 등록한 길드원"을 집계하는 데 쓴다. 없으면 랭킹 불가.
+    this.guild = guild;
     this.channel = null;
-    this.guildId = null;
+    this.guildId = guild?.id ?? null;
     this.channelId = null;
     this.deferred = false;
     this.replied = false;
