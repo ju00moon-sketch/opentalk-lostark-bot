@@ -2,6 +2,7 @@
 //   POST /bridge/message/<KAKAO_SKILL_SECRET>  오픈채팅방 브리지 — 폰의 메신저봇R이 { room, sender, text }를 보내고 { text }를 받음
 //   POST /kakao/skill/<KAKAO_SKILL_SECRET>     오픈빌더 스킬 요청 (채널 1:1 챗봇용, 항상 200 + JSON — 오류도 문구로)
 //   GET  /health                               ok
+//   GET  /p/(emo|chart|char)/<id>              카톡 링크 미리보기 카드 페이지 (preview.js)
 //   GET  /assets/emoticons/<파일> · /assets/charts/<파일>  이미지 공개 서빙 (두 폴더의 직접 자식만)
 // 웹서버의 예외는 여기서 전부 잡아 디스코드 클라이언트에 영향을 주지 않는다.
 import { createServer } from 'node:http';
@@ -10,6 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleSkillRequest, handleBridgeMessage, KAKAO_EMOTICONS_ENABLED } from './handler.js';
 import { textResponse } from './render.js';
+import { renderPreview } from './preview.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PUBLIC_DIRS = {
@@ -74,6 +76,13 @@ async function serveAsset(res, dir, rawName) {
 async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/health') return sendText(res, 200, 'ok');
+
+  const preview = /^\/p\/(emo|chart|char)\/([^/]+)$/.exec(url.pathname);
+  if (req.method === 'GET' && preview) {
+    const { status, html } = await renderPreview(preview[1], preview[2], { baseUrl, emoticonsEnabled: KAKAO_EMOTICONS_ENABLED });
+    res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+    return res.end(html);
+  }
 
   const asset = /^\/assets\/(emoticons|charts)\/([^/]+)$/.exec(url.pathname);
   if (req.method === 'GET' && asset) {

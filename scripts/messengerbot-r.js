@@ -7,7 +7,7 @@
 //
 // 동작: "/"로 시작하는 메시지(커맨드)와 "["로 시작하는 메시지(이모티콘)만 서버에 보내고,
 //       서버가 준 답을 그 방에 쓴다. 나머지 메시지는 서버로 보내지 않는다. 답은 최대 30초까지 기다린다.
-//       이미지(체방 차트·이모티콘)는 폰 봇이 그림을 못 보내므로 URL로 온다.
+//       이미지(캐릭터·체방 차트·이모티콘)는 폰 봇이 그림을 못 보내므로 미리보기 카드 링크(link)로 먼저 보내고 본문(text)을 이어 보낸다.
 //       /등록은 보낸 사람의 카톡 닉네임에 묶인다 — 닉네임을 바꾸면 다시 /등록.
 //
 // 폰 준비:
@@ -30,7 +30,7 @@ function askServer(room, sender, msg) {
     .method(org.jsoup.Connection.Method.POST)
     .execute()
     .body(); // .post().text()는 줄바꿈을 지워 버리므로 응답 원문을 그대로 받는다
-  return JSON.parse(raw).text;
+  return JSON.parse(raw); // { text, link } — link는 카톡이 미리보기 카드로 그려 줄 페이지 주소(캐릭터 이미지·이모티콘·차트)
 }
 
 // 메신저봇R 레거시 API — 메시지가 올 때마다 호출된다
@@ -41,7 +41,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   if (first !== "/" && first !== "[") return;
   try {
     var answer = askServer(room, sender, msg);
-    if (answer) replier.reply(answer);
+    if (answer.link) replier.reply(answer.link); // 카드 먼저 (엉뚱한 글자 없이 주소만 보내야 카톡이 카드로 접어 준다)
+    if (answer.text) replier.reply(answer.text);
   } catch (e) {
     replier.reply("봇 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.");
     try { Log.e("포근해용 서버 오류: " + e); } catch (ignored) {}

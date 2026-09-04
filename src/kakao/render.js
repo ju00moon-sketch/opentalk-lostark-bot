@@ -109,6 +109,32 @@ export function publicUrlFor(filePath, baseUrl) {
   return null;
 }
 
+// 전투정보실 캐릭터 이미지 — 임베드 썸네일이 이거면 캐릭터 카드를 붙인다 (아이템 아이콘 썸네일에는 안 붙임)
+const CHARACTER_IMAGE = /cdn-lostark\.game\.onstove\.com\/armory\//;
+
+// 방에 먼저 보낼 미리보기 카드 페이지 주소(preview.js). 첨부 이모티콘/차트 → /p/emo·/p/chart, 캐릭터 썸네일 → /p/char/<캐릭터>.
+// 카톡이 URL의 og:image를 카드로 그려 주므로 폰 봇이 그림을 못 보내도 이미지가 보인다. 해당 없으면 null.
+export function cardLinkFor(payloads, { baseUrl, character = null }) {
+  for (const raw of payloads ?? []) {
+    const p = typeof raw === 'string' ? {} : raw ?? {};
+    for (const file of p.files ?? []) {
+      const filePath = typeof file === 'string' ? file : file?.attachment;
+      if (typeof filePath !== 'string') continue;
+      const abs = path.resolve(filePath);
+      const name = path.basename(abs).replace(/\.[^.]+$/, '');
+      if (path.dirname(abs) === PUBLIC_DIRS.emoticons) return `${baseUrl}/p/emo/${encodeURIComponent(name)}`;
+      if (path.dirname(abs) === PUBLIC_DIRS.charts) return `${baseUrl}/p/chart/${encodeURIComponent(name)}`;
+    }
+    if (character) {
+      for (const embed of p.embeds ?? []) {
+        const url = asJson(embed).thumbnail?.url ?? '';
+        if (CHARACTER_IMAGE.test(url)) return `${baseUrl}/p/char/${encodeURIComponent(character)}`;
+      }
+    }
+  }
+  return null;
+}
+
 export function textResponse(text, quickReplies = []) {
   const template = { outputs: splitText(text).map((t) => ({ simpleText: { text: t } })) };
   if (quickReplies.length > 0) template.quickReplies = quickReplies.slice(0, QUICK_MAX);
