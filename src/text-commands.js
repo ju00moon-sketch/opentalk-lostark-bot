@@ -205,8 +205,9 @@ function usageForPrefix(usage, key, prefix) {
 // 발화를 (커맨드, 옵션)으로 해석한다. 처리 대상이 아니면 null, 옵션이 부족하면 { command, usage }.
 //   prefixes    — 단어형 커맨드(정보·상상)에 요구하는 접두사. 디스코드는 . ! / 카카오는 /
 //   bareChosung — 초성 별칭을 접두사 없이 허용할지 (디스코드 true, 카카오 false)
+//   bareAliases — 접두사 없이 허용할 별칭의 예외 목록
 //   anyCommand  — 별칭이 없는 커맨드도 슬래시 옵션 정의로 파싱해 허용할지 (카카오 true)
-export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], bareChosung = true, anyCommand = false } = {}) {
+export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], bareChosung = true, bareAliases = [], anyCommand = false } = {}) {
   const parts = content.trim().split(/\s+/);
   const raw = parts[0] ?? '';
   const prefix = prefixes.find((p) => raw.startsWith(p));
@@ -222,9 +223,9 @@ export function matchTextCommand(content, commandMap, { prefixes = ['.', '!'], b
     return command ? { command, options: refine.options, label: raw } : null;
   }
 
-  // 초성은 (허용 시) 접두사 유무 무관, 단어형 축약은 접두사 필수
+  // 초성은 허용 시 접두사 유무 무관. 개별 예외가 아니면 다른 별칭은 접두사 필수.
   let alias = null;
-  if (ALIASES[token] && ((bareChosung && CHOSUNG_ONLY.test(token)) || hasPrefix)) alias = ALIASES[token];
+  if (ALIASES[token] && ((bareChosung && CHOSUNG_ONLY.test(token)) || bareAliases.includes(token) || hasPrefix)) alias = ALIASES[token];
   if (!alias && hasPrefix && WORD_CMDS.has(token)) alias = WORD_CMDS.get(token); // 원래 커맨드명
   if (alias) {
     const command = commandMap.get(alias.cmd);

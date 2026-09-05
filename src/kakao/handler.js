@@ -9,10 +9,11 @@ import { KakaoInteraction } from './interaction.js';
 import { toKakaoResponse, textResponse, cardLinkFor, fitBridgeMessage, CHANNEL_LIMITS } from './render.js';
 
 // 카톡에서 커맨드로 보는 접두사. 폰 자판에서 /보다 .이 편해 둘 다 받는다(사용자 요청 2026-09-05).
-// 초성 단독(ㅂㅂㄱ 4000)은 여전히 안 받는다 — 잡담과 구분이 안 되므로.
+// 접두사 없는 초성은 ㅂㅂㄱ만 예외로 받는다. 첫 단어가 정확히 일치해야 한다.
 export const KAKAO_PREFIXES = ['/', '.'];
 export const hasCommandPrefix = (text) => KAKAO_PREFIXES.some((p) => text.startsWith(p));
-export const KAKAO_MATCH_OPTIONS = { prefixes: KAKAO_PREFIXES, bareChosung: false, anyCommand: true };
+export const KAKAO_MATCH_OPTIONS = { prefixes: KAKAO_PREFIXES, bareChosung: false, bareAliases: ['ㅂㅂㄱ'], anyCommand: true };
+const isCommandInput = (text) => hasCommandPrefix(text) || KAKAO_MATCH_OPTIONS.bareAliases.includes(text.trim().split(/\s+/, 1)[0]);
 // 디스코드 채널 개념이 필요한 커맨드 — 카카오에선 항상 제외
 export const KAKAO_EXCLUDED = new Set(['알림설정']);
 // 디스코드 서버 멤버를 집계하는 커맨드 — KAKAO_GUILD_ID로 서버가 지정돼 있을 때만 카카오에서 허용 (별칭 ㄹㅋ·ㅊㄱ는 대상 이름으로 풀린 뒤 걸린다)
@@ -26,10 +27,11 @@ const DEFAULT_BUDGET_MS = 4500;
 const PENDING_TTL_MS = 3 * 60 * 1000;
 const TIMEOUT = Symbol('timeout');
 
-const GUIDE = '명령은 / 또는 .으로 시작해요. 예: /정보 닉네임 · .ㅂㅂㄱ 4000 · /도움말';
+const GUIDE = '명령은 / 또는 .으로 시작해요. 예: /정보 닉네임 · /도움말. 분배금은 ㅂㅂㄱ 4000처럼 접두사 없이도 쓸 수 있어요.';
 const GUIDE_REPLIES = [['도움말', '/도움말'], ['모험섬', '/모험섬'], ['가토', '/가토'], ['업데이트', '/업데이트'], ['유각', '/유각']]
   .map(([label, messageText]) => ({ label, action: 'message', messageText }));
 const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 또는 .커맨드 형식으로 써요 (예: /정보 닉네임, .ㅂㅂㄱ 4000, /등록 캐릭터명). '
+  + '분배금은 ㅂㅂㄱ 4000처럼 접두사 없이도 쓸 수 있어요. 다른 초성은 / 또는 .을 붙여 주세요. '
   + `${[...excludedFor(guild)].join('·')}은 디스코드 전용이에요.`
   + (guild ? ' /랭킹·/체급은 디스코드·카톡에서 /등록한 길드원을 집계해요.' : '')
   + (KAKAO_EMOTICONS_ENABLED ? '' : ' 이모티콘([키워드)은 카톡에서 잠시 꺼져 있어요.');
@@ -56,7 +58,7 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
     const payloads = [{ files: [file] }];
     return { response: render(payloads), link: cardLinkFor(payloads, { baseUrl }) };
   }
-  if (!hasCommandPrefix(utterance)) return plain(guideResponse());
+  if (!isCommandInput(utterance)) return plain(guideResponse());
 
   const match = matchTextCommand(utterance, commandMap, KAKAO_MATCH_OPTIONS);
   if (!match) return plain(guideResponse());
@@ -186,7 +188,7 @@ export async function handleSkillRequest(body, commandMap, options = {}) {
 }
 
 // ── 오픈채팅방 브리지 — 폰의 메신저봇R(scripts/messengerbot-r.js)이 방 메시지를 그대로 넘기고 평문 답을 받아 방에 쓴다.
-// 방에서는 /커맨드와 [이모티콘에만 반응하고 나머지는 침묵(null) — 잡담마다 안내문을 띄우면 방이 시끄러워진다.
+// 방에서는 /커맨드·.커맨드·ㅂㅂㄱ와 [이모티콘에만 반응하고 나머지는 침묵(null).
 // 카카오 5초 제한이 없으므로 예산은 넉넉히. 사람 식별은 닉네임밖에 없어 닉네임으로 등록을 구분한다 —
 // 방 이름은 키에 넣지 않는다(방을 옮기거나 제목을 바꿔도 등록이 유지되도록; 한 길드라 방 사이 닉 충돌은 없다고 본다).
 const BRIDGE_BUDGET_MS = 25_000;
@@ -219,9 +221,9 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
   const room = String(body?.room ?? '').trim();
   const sender = String(body?.sender ?? '').trim();
   if (!text || !room || !sender) return { text: null, link: null };
-  // 방에서는 /커맨드·.커맨드와 (켜져 있을 때) [이모티콘에만 반응. 이모티콘이 잠겨 있으면 [따봉도 그냥 지나간다 — 방에 안내문을 띄우지 않는다.
+  // 접두사 있는 명령·ㅂㅂㄱ와 (켜져 있을 때) [이모티콘만 받는다.
   const isEmoticon = KAKAO_EMOTICONS_ENABLED && parseEmoticonKeyword(text);
-  if (!hasCommandPrefix(text) && !isEmoticon) return { text: null, link: null };
+  if (!isCommandInput(text) && !isEmoticon) return { text: null, link: null };
   // "..."·".ㅋㅋ"처럼 점으로 시작하는 잡담은 흔하다 — .으로 시작했는데 커맨드가 아니면 안내문 없이 침묵한다.
   // (/로 시작하는 오타는 예전처럼 안내문을 준다.)
   if (text.startsWith('.') && !isEmoticon && !matchTextCommand(text, commandMap, KAKAO_MATCH_OPTIONS)) return { text: null, link: null };

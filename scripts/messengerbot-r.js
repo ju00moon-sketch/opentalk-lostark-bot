@@ -5,7 +5,7 @@
 //   2) ROOMS  : (선택) 봇이 반응할 방 제목 목록. 비워 두면([]) 봇 계정이 들어가 있는 모든 방·1:1 채팅에서 동작한다.
 //               방을 옮기거나 제목을 바꿔도 손댈 게 없도록 기본은 비움. 특정 방만 원하면 ["포근해"]처럼 적는다.
 //
-// 동작: "/" 또는 "."로 시작하는 메시지(커맨드)와 "["로 시작하는 메시지(이모티콘)만 서버에 보내고,
+// 동작: "/"·"."로 시작하는 커맨드, 접두사 없는 "ㅂㅂㄱ", "["로 시작하는 이모티콘만 서버에 보내고,
 //       서버가 준 답을 그 방에 쓴다. 나머지 메시지는 서버로 보내지 않는다. 답은 최대 30초까지 기다린다.
 //       이미지(캐릭터·체방 차트·이모티콘)는 폰 봇이 그림을 못 보내므로 미리보기 카드 링크(link)로 먼저 보내고 본문(text)을 이어 보낸다.
 //       /등록은 보낸 사람의 카톡 닉네임에 묶인다 — 닉네임을 바꾸면 다시 /등록.
@@ -43,7 +43,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   if (ROOMS.length > 0 && ROOMS.indexOf(room) === -1) return;
   if (!msg) return;
   var first = msg.charAt(0);
-  if (first !== "/" && first !== "." && first !== "[") return; // "..." 같은 잡담은 서버가 커맨드가 아니면 침묵으로 처리한다
+  var isBareBid = /^\s*ㅂㅂㄱ(?:\s|$)/.test(msg);
+  if (first !== "/" && first !== "." && first !== "[" && !isBareBid) return; // "..." 같은 잡담은 서버가 커맨드가 아니면 침묵으로 처리한다
   if (SERVER_NOT_SET) {
     replier.reply("스크립트의 SERVER 값(17번째 줄)을 아직 채우지 않았어요. http://서버주소/bridge/message/비밀경로 형식으로 넣고 다시 컴파일해 주세요.");
     return;
