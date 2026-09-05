@@ -57,7 +57,7 @@
 | `/딜컷 레이드 [관문] [분]` | 관문별 강투/1인분/잔혈 컷과 필요 DPS (기준 시간 변경 가능) |
 | `/클골 [레이드명]` | 레이드 클리어 골드표 ([src/data/raids.js](src/data/raids.js) 수정으로 갱신) |
 | `/주급 닉네임` | 원정대 주간 골드 수입 추정 (상위 6캐릭 × 3레이드) |
-| `/시너지 [검색]` | 직업별 파티 시너지 ([src/data/synergies.js](src/data/synergies.js) 수정으로 갱신) |
+| `/시너지 [검색]` | 계열별 직업·빌드 시너지 수치 안내. 전태/고기·질풍/이슬비·딜러 세팅 서포터 구분, 직업명·축약명·시너지 종류 검색 ([src/data/synergies.js](src/data/synergies.js) 수정으로 갱신) |
 | `/체방` | 직업별 체방 계수표 이미지 (scripts/chembang-chart.html 렌더링으로 생성) |
 | `/지옥 등급` `/나락 등급` | 강하 선택 추천 경로 — 등급(전설·영웅·희귀) 필수, 없으면 사용법 ([src/data/descent.js](src/data/descent.js)) |
 | `/효율 콘텐츠 단계 [레벨]` | 보상 선택지 가치 랭킹 — 실시간 시세 반영 ([src/data/efficiency.js](src/data/efficiency.js)) |

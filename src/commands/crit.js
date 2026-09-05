@@ -296,7 +296,7 @@ export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setTitle(`❙ ${profile.CharacterName}님의 치적 정보`)
-    .setThumbnail(profile.CharacterImage ?? null)
+    .setThumbnail(interaction.platform === 'kakao' ? null : profile.CharacterImage ?? null)
     .setDescription(
       `${profile.CharacterClassName} (${profile.ItemAvgLevel})\n\n${trunc(lines.join('\n'), 3900)}`,
     )
