@@ -68,6 +68,7 @@ export const ALIASES = {
   ㄹㅍ: { cmd: '로펙', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅂㅋ: { cmd: '부캐', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅈㅎㅇ: { cmd: '젬효율', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
+  ㅅㅍㅇ: { cmd: '스펙업', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄱㅈ: { cmd: '군장', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄹㅋ: { cmd: '랭킹', usage: 'ㄹㅋ [쪽] (예: ㄹㅋ 2)', parse: parsePage },
   ㅊㄱ: { cmd: '체급', usage: 'ㅊㄱ [쪽] (예: ㅊㄱ 2)', parse: parsePage },

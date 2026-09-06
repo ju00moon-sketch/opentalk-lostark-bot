@@ -206,7 +206,11 @@ export function flattenParts(response, { skipImages = false } = {}) {
   const tail = quick.length > 0
     ? '▸ 이어서 쓸 수 있어요\n' + quick.map((q) => `· ${q}`).join('\n')
     : null;
-  return { body: parts.join('\n\n') || null, tail };
+  return {
+    body: parts.join('\n\n') || null,
+    tail,
+    full: typeof response?.full === 'string' && response.full.trim() ? response.full : null, // 미리보기와 다른 전체 보기 본문(있을 때만)
+  };
 }
 
 // 본문과 후속 안내를 이어 붙인 평문 한 덩어리 (분량 제한 없음).
@@ -239,6 +243,6 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
     response = textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
   }
   // 방에 나가는 최종 메시지는 본문 + 후속 안내다 — 둘을 합친 길이로 분량을 맞춘다.
-  const { body: message, tail } = flattenParts(response, { skipImages: Boolean(link) });
-  return { text: fitBridgeMessage(message, tail, { baseUrl, fullTitle: text }), link };
+  const { body: message, tail, full } = flattenParts(response, { skipImages: Boolean(link) });
+  return { text: fitBridgeMessage(message, tail, { baseUrl, fullTitle: text, fullText: full }), link };
 }

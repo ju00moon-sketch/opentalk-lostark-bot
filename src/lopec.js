@@ -18,6 +18,29 @@ export async function fetchText(url) {
   return res.text();
 }
 
+// 공개 시세는 JSON 데이터로만 읽는다. 실패는 호출자가 처리하고 캐시하지 않는다.
+async function lopecPriceJson(path, field, body) {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: { accept: 'application/json', ...(body ? { 'content-type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`로펙 시세 API 오류 (HTTP ${res.status})`);
+  const data = await res.json();
+  const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (!record(data) || !record(data.snapshot) || !record(data.snapshot[field])
+    || (data.snapshot.snapshotId != null && typeof data.snapshot.snapshotId !== 'string')
+    || (data.isStale != null && typeof data.isStale !== 'boolean')
+    || (data.staleReason != null && typeof data.staleReason !== 'string')) {
+    throw new Error('로펙 시세 응답 형식 오류');
+  }
+  return data;
+}
+
+export const getLopecEnhancementSnapshot = () => lopecPriceJson('/api/auction/enhancement', 'prices');
+export const postLopecAuctionPrices = (targets) => lopecPriceJson('/api/auction/prices', 'pricesByTarget', { targets });
+
 // 문자열과 중첩 괄호를 건너뛰며 여는 괄호의 짝을 찾는다.
 export function matchBrace(source, openIndex) {
   let depth = 0;

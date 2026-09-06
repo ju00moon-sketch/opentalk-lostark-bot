@@ -192,6 +192,7 @@ export function cardLinkFor(payloads, { baseUrl, character = null }) {
 // 분량을 넘기면 읽을 만큼만 남기고 마지막 조각에 "전체 보기" 주소를 붙인다.
 // 제한을 늘려 긴 메시지를 통째로 밀어 넣는 대신, 전문은 페이지에서 보게 하는 쪽이다.
 const MORE_LABEL = '📄 뒤가 잘렸어요 · 전체 보기';
+const REST_LABEL = '📄 나머지 항목 · 전체 보기'; // 본문은 다 들어갔지만 전체 보기에 더 있는 경우(스펙업 상위 10개 미리보기)
 
 function fitText(text, { textMax, parts, baseUrl, fullTitle }) {
   const first = splitParts(text, textMax, parts);
@@ -210,16 +211,30 @@ ${linkLine}`.trim();
 }
 
 // 오픈채팅방에 나갈 최종 메시지를 BRIDGE_TEXT_MAX에 맞춘다.
-//   body — 본문(임베드·이미지 URL 등을 편 것)
-//   tail — 뒤에 붙는 후속 안내("▸ 이어서 쓸 수 있어요 …")
+//   body     — 본문(임베드·이미지 URL 등을 편 것)
+//   tail     — 뒤에 붙는 후속 안내("▸ 이어서 쓸 수 있어요 …")
+//   fullText — 본문과 다른 전체 보기 본문(스펙업처럼 미리보기는 10개, 전체 보기는 전부일 때). 있고 본문과 다르면 링크를 반드시 붙인다.
 // 안내는 잘리면 쓸모가 없어지므로 자리를 먼저 빼 두고 본문만 줄인다. 그래서 안내까지 합친 최종 길이가 한도를 지킨다.
-export function fitBridgeMessage(body, tail = null, { baseUrl, fullTitle = '조회 결과' } = {}) {
+export function fitBridgeMessage(body, tail = null, { baseUrl, fullTitle = '조회 결과', fullText = null } = {}) {
   if (!body) return tail || null;
   const reserve = tail ? tail.length + 2 : 0;
-  const [fitted] = fitText(body, {
-    textMax: Math.max(1, BRIDGE_TEXT_MAX - reserve), parts: 1, baseUrl, fullTitle,
-  });
+  const textMax = Math.max(1, BRIDGE_TEXT_MAX - reserve);
+  const fitted = fullText && fullText !== body && baseUrl
+    ? fitWithFull(body, fullText, { textMax, baseUrl, fullTitle })
+    : fitText(body, { textMax, parts: 1, baseUrl, fullTitle })[0];
   return [fitted, tail].filter(Boolean).join('\n\n');
+}
+
+// 전체 보기에는 fullText를 저장하고 링크 줄을 붙인다. 본문이 한도를 넘으면 링크 자리를 빼고 자른다(잘렸으면 MORE_LABEL, 아니면 REST_LABEL).
+function fitWithFull(body, fullText, { textMax, baseUrl, fullTitle }) {
+  const id = saveResult(fullText, fullTitle);
+  const longest = Math.max(MORE_LABEL.length, REST_LABEL.length);
+  const room = Math.max(1, textMax - (longest + 1 + `${baseUrl}/p/full/${id}`.length) - 2);
+  const parts = splitParts(body, room, 1);
+  const chunks = parts.truncated ? dropOrphanHead(parts.chunks, parts.rest) : parts.chunks;
+  const kept = chunks.length > 0 ? chunks[0] : '';
+  const label = parts.truncated ? MORE_LABEL : REST_LABEL;
+  return `${kept}\n\n${label} ${baseUrl}/p/full/${id}`.trim();
 }
 
 export function textResponse(text, quickReplies = []) {
@@ -236,8 +251,10 @@ export function toKakaoResponse(payloads, { baseUrl, limits = CHANNEL_LIMITS.ski
   const images = [];
   const links = [];
   let quickReplies = [];
+  let fullText = null; // 미리보기와 다른 "전체 보기" 본문(카톡 전용 선택 필드) — 스킬 JSON에는 싣지 않는다
   for (const raw of payloads ?? []) {
     const p = typeof raw === 'string' ? { content: raw } : raw ?? {};
+    if (typeof p.kakaoFull === 'string' && p.kakaoFull.trim()) fullText = p.kakaoFull;
     if (p.content) texts.push(stripMarkdown(p.content));
     for (const embed of p.embeds ?? []) {
       const text = embedToText(embed);
@@ -264,5 +281,8 @@ export function toKakaoResponse(payloads, { baseUrl, limits = CHANNEL_LIMITS.ski
 
   const template = { outputs };
   if (quickReplies.length > 0) template.quickReplies = quickReplies.slice(0, QUICK_MAX);
-  return { version: '2.0', template };
+  const response = { version: '2.0', template };
+  // 비열거 속성이라 JSON.stringify(오픈빌더 응답·콜백 POST)에는 안 나가고, 브리지 handler만 response.full로 읽는다
+  if (fullText) Object.defineProperty(response, 'full', { value: fullText, enumerable: false });
+  return response;
 }
