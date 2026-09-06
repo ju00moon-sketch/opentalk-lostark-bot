@@ -34,7 +34,7 @@ export async function execute(interaction) {
       embeds: [
         new EmbedBuilder()
           .setColor(EMBED_COLOR)
-          .setDescription(`✅ 매일 아침 8시에 <#${channel.id}> 채널로 오늘의 모험 섬을 알려드릴게요!`),
+          .setDescription(`✅ <#${channel.id}> 채널로 매일 아침 8시 모험 섬, 업데이트 공지, 떠돌이 상인 출현(하루 4번, 출현 5분 뒤)을 알려드릴게요!`),
       ],
     });
     return;
@@ -52,7 +52,7 @@ export async function execute(interaction) {
   const channelId = getNotifyChannels()[interaction.guildId];
   await interaction.reply({
     content: channelId
-      ? `🔔 현재 <#${channelId}> 채널로 매일 아침 8시에 알림이 발송돼요.`
+      ? `🔔 현재 <#${channelId}> 채널로 모험섬 아침 알림 · 업데이트 공지 · 떠상 출현 알림이 발송돼요.`
       : '이 서버에는 설정된 알림이 없어요. `/알림설정 켜기`로 켤 수 있어요.',
     flags: MessageFlags.Ephemeral,
   });

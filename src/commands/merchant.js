@@ -35,9 +35,9 @@ export function nextText(next, now) {
 export const noMerchantText = (next, now) => `지금은 떠돌이 상인이 없어요\n${nextText(next, now)}`;
 const activeWindow = (data, now) => (data.window && data.window.startsAt <= now && now < data.window.endsAt ? data.window : null);
 
-// 전체 요약 한 줄: "루페온: 전설호감도 1개, 에스더 시엔". 조회 실패 서버는 "조회 실패".
+// 전체 요약 한 줄: "카단: 전설호감도 0개, 에스더 시엔, 태초의 주머니" — 전설 호감도는 개수, 전설 카드·기타 전설은 이름. 조회 실패 서버는 "조회 실패".
 export const serverLine = (s) => (s.ok
-  ? `${s.name}: 전설호감도 ${s.legendaryRapport}개${s.legendaryCards.length ? `, ${s.legendaryCards.join(', ')}` : ''}`
+  ? [`${s.name}: 전설호감도 ${s.legendaryRapport}개`, ...s.legendaryCards, ...(s.legendaryEtc ?? [])].join(', ')
   : `${s.name}: 조회 실패`);
 
 const latestOf = (times) => times.filter((t) => Number.isFinite(t)).reduce((a, b) => Math.max(a, b), 0);
@@ -69,17 +69,30 @@ export function detailTexts(detail, now) {
   };
 }
 
+const boardEmbed = (texts) => new EmbedBuilder()
+  .setColor(EMBED_COLOR)
+  .setTitle(`🧭 ${texts.title}`)
+  .setDescription(trunc(texts.body.join('\n\n'), 4096))
+  .setFooter({ text: texts.note });
+
 async function send(interaction, texts) {
   if (interaction.platform === 'kakao') {
     await interaction.editReply({ content: blocks(TITLE(texts.title), ...texts.body, NOTE(texts.note)) });
     return;
   }
-  const embed = new EmbedBuilder()
-    .setColor(EMBED_COLOR)
-    .setTitle(`🧭 ${texts.title}`)
-    .setDescription(trunc(texts.body.join('\n\n'), 4096))
-    .setFooter({ text: texts.note });
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [boardEmbed(texts)] });
+}
+
+// 자동 알림(merchant-notify.js)이 보낼 페이로드 — /떠상 전체 판과 같은 임베드.
+// 판을 못 만들거나 판매 창 밖이거나 제보된 대륙이 한 곳도 없으면 null — 빈 판을 보내고 끝내는 대신 알림 쪽 재시도가 제보를 기다린다.
+// (수동 /떠상은 빈 판도 그대로 보여 준다.)
+export const NOTICE_CONTENT = '🧭 떠돌이 상인이 왔어요!';
+export async function buildMerchantNotice({ getMerchantBoard: loadBoard = getMerchantBoard, now = Date.now } = {}) {
+  const board = await loadBoard();
+  const at = now();
+  if (!board || !activeWindow(board, at)) return null;
+  if (!board.servers.some((s) => s.ok && s.reportedRegions > 0)) return null;
+  return { content: NOTICE_CONTENT, embeds: [boardEmbed(boardTexts(board, at))] };
 }
 
 // 의존성을 주입할 수 있게 실행 함수를 만드는 공장 — 테스트에서 코어와 현재 시각을 대역으로 바꾼다.

@@ -115,7 +115,7 @@ function readLopec(raw, field, allowEmpty) {
 
 // ① 후보 선택용. 강화는 전역, 거래는 중복 제거한 정렬 target 묶음으로 5분간 공유한다.
 export async function getLopecSnapshots(targets, { now = Date.now, lopec = defaultLopec } = {}) {
-  const sorted = uniqueKeys(targets).filter((t) => !t.startsWith('gem.작열.')).sort();
+  const sorted = uniqueKeys(targets).sort();
   const requests = [
     ['enhancement', 'prices', () => lopec.enhancement(), false],
     [`auction:${JSON.stringify(sorted)}`, 'pricesByTarget', () => lopec.auction(sorted), sorted.length === 0],
@@ -173,7 +173,7 @@ function usableResponse(query, response) {
 // ② 비용 재평가용. 조회 우선순위는 보석 → 각인서 → 재료 페이지, 악세는 로펙 시세를 유지한다.
 export async function buildSnapshots(needs, lopecSnapshots, { fetchers = defaultFetchers, now = Date.now, budget = API_BUDGET } = {}) {
   const materialIds = uniqueKeys(needs.materialIds);
-  const targets = uniqueKeys(needs.targets).filter((t) => !t.startsWith('gem.작열.'));
+  const targets = uniqueKeys(needs.targets);
   const prices = positivePrices(lopecSnapshots.enhancement.prices);
   const pricesByTarget = positivePrices(lopecSnapshots.auction.pricesByTarget);
   const sourceByKey = {};
@@ -203,7 +203,7 @@ export async function buildSnapshots(needs, lopecSnapshots, { fetchers = default
   };
 
   for (const target of targets) {
-    const match = /^gem\.(겁화|멸화|홍염)\.([1-9]|10)$/.exec(target);
+    const match = /^gem\.(겁화|작열|멸화|홍염)\.([1-9]|10)$/.exec(target);
     if (!match) continue;
     const entry = await call(`auction:${match[2]}레벨 ${match[1]}의 보석`);
     take(target, gemPrice(entry?.value), entry, pricesByTarget);

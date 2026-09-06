@@ -16,6 +16,7 @@ update-notify.json
 price-history.json
 crystal-price.json
 island-notify.json
+merchant-notify.json
 *.json.bak
 *.json.tmp
 

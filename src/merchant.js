@@ -97,6 +97,19 @@ function nextWindow(scheme, now) {
   return next;
 }
 
+// 시간표만으로 지금 열려 있는 창을 찾는다(제보 응답과 무관). 창이 자정을 넘기므로 어제 시작한 회차도 본다.
+function currentWindow(scheme, now) {
+  for (const schedule of scheme.schedules) {
+    for (const back of [0, 1]) {
+      const { day, midnight } = kstDay(now - back * DAY);
+      if (schedule.day !== day) continue;
+      const startsAt = midnight + schedule.start;
+      if (startsAt <= now && now < startsAt + schedule.duration) return { startsAt, endsAt: startsAt + schedule.duration };
+    }
+  }
+  return null;
+}
+
 function reportExpiry(value, at, scheme) {
   let until = at + REPORT_TTL;
   const next = nextWindow(scheme, at);
@@ -184,16 +197,22 @@ function detailFor(server, snapshot, scheme, now) {
   return { ...server, fetchedAt: snapshot.at, window: windowOf(period), next: nextWindow(scheme, now), regions, unreportedRegions };
 }
 
+// 전설(grade 4)만 센다: 호감도는 아이템 수, 카드·기타는 이름(대륙 id 순, 중복 제거). 모르는 아이템은 grade 0이라 빠진다.
 function summarize(server, detail) {
   const cards = new Set();
+  const etc = new Set();
   let legendaryRapport = 0;
   let latestReportAt = null;
   for (const region of detail?.regions ?? []) {
-    if (region.items.some(item => item.kind === 'rapport' && item.grade === 4)) legendaryRapport++;
-    for (const item of region.items) if (item.kind === 'card' && item.grade === 4) cards.add(item.name);
+    for (const item of region.items) {
+      if (item.grade !== 4) continue;
+      if (item.kind === 'rapport') legendaryRapport++;
+      else if (item.kind === 'card') cards.add(item.name);
+      else etc.add(item.name);
+    }
     latestReportAt = Math.max(latestReportAt ?? -Infinity, region.reportedAt);
   }
-  return { ...server, ok: detail !== null, legendaryRapport, legendaryCards: [...cards], reportedRegions: detail?.regions.length ?? 0,
+  return { ...server, ok: detail !== null, legendaryRapport, legendaryCards: [...cards], legendaryEtc: [...etc], reportedRegions: detail?.regions.length ?? 0,
     totalRegions: detail ? detail.regions.length + detail.unreportedRegions.length : 0, latestReportAt };
 }
 
@@ -210,6 +229,13 @@ export async function getMerchantBoard() {
     next: nextWindow(scheme.value, now),
     servers: SERVERS.map((server, i) => summarize(server, details[i])),
   };
+}
+
+// 알림 예약용: 시간표 기준 현재 창·다음 창. 시간표를 못 받으면 null.
+export async function getMerchantWindows(now = Date.now()) {
+  const scheme = await loadScheme();
+  if (!scheme) return null;
+  return { current: currentWindow(scheme.value, now), next: nextWindow(scheme.value, now) };
 }
 
 export async function getMerchantServer(serverId) {

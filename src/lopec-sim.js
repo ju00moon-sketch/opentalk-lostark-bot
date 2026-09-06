@@ -15,6 +15,10 @@ import {
   fetchText, flightPayload, objectAfter, matchBrace, getSpecPointHtml,
 } from './lopec.js';
 import { getLopecSnapshots, buildSnapshots } from './specup-prices.js';
+import { estimateGemGain } from './gem-model.js';
+import { SKILL_SHARES } from './data/skill-shares.js';
+import { GEM_STATS } from './data/gems.js';
+import { stripTags } from './tooltip.js';
 
 const BASE_URL = 'https://lopec.kr';
 const RESULT_TTL = 5 * 60 * 1000;
@@ -59,6 +63,102 @@ function createLimiter(size) {
 const limitSandbox = createLimiter(2);
 const limitSpecup = createLimiter(1);
 
+// 보석 자료 조회는 연결부터 본문 해석까지 한 번의 제한을 적용한다.
+async function fetchGemArmoryPart(name, part, {
+  fetcher = fetch, apiKey = process.env.LOSTARK_API_KEY, timeoutMs = 5_000,
+} = {}) {
+  if (!apiKey) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetcher(`https://developer-lostark.game.onstove.com/armories/characters/${encodeURIComponent(name)}/${part}`, {
+      headers: { accept: 'application/json', authorization: `bearer ${apiKey}` }, signal: controller.signal,
+    });
+    return response.ok ? await response.json() : null;
+  } catch { return null; }
+  finally { clearTimeout(timer); }
+}
+
+function parseGemContext(skills, armory, arkpassive) {
+  try {
+    if (!Array.isArray(skills) || !Array.isArray(armory?.Gems) || !armory.Gems.length
+      || !Array.isArray(armory.Effects?.Skills) || !Array.isArray(arkpassive?.Effects)) return null;
+    const effects = new Map(armory.Effects.Skills.map((effect) => [effect.GemSlot, effect]));
+    if (effects.size !== armory.Effects.Skills.length || effects.size !== armory.Gems.length
+      || new Set(armory.Gems.map((gem) => gem.Slot)).size !== armory.Gems.length) return null;
+    const gems = [];
+    for (const gem of armory.Gems) {
+      const effect = effects.get(gem.Slot);
+      if (!Number.isInteger(gem.Slot) || !Number.isInteger(gem.Level) || !GEM_STATS[gem.Level]
+        || !/광휘의 보석|겁화의 보석|작열의 보석/.test(stripTags(gem.Name))
+        || typeof effect?.Name !== 'string' || !effect.Name.trim() || !Array.isArray(effect.Description)) return null;
+      const description = stripTags(effect.Description.join('\n'));
+      const damage = description.match(/피해\s*([\d.]+)%\s*증가/);
+      const cooldown = description.match(/재사용 대기시간\s*([\d.]+)%\s*감소/);
+      if (!!damage === !!cooldown) return null;
+      const type = damage ? '피해' : '쿨감';
+      const key = damage ? 'damagePercent' : 'cooldownPercent';
+      const percent = Number((damage ?? cooldown)[1]);
+      const attack = stripTags(effect.Option).match(/기본 공격력\s*([\d.]+)%\s*증가/);
+      const attackPercent = attack ? Number(attack[1]) : GEM_STATS[gem.Level].attackPercent;
+      if (!Number.isFinite(percent) || percent < 0 || (cooldown && percent >= 100)
+        || !Number.isFinite(attackPercent) || attackPercent < 0) return null;
+      gems.push({ skill: effect.Name, type, level: gem.Level, [key]: percent, attackPercent });
+    }
+    const total = stripTags(armory.Effects.Description).match(/기본 공격력 총합\s*:\s*([\d.]+)%/);
+    if (!total || !Number.isFinite(Number(total[1]))
+      || Math.abs(gems.reduce((sum, gem) => sum + gem.attackPercent, 0) - Number(total[1])) > 0.005) return null;
+    const nodeNames = arkpassive.Effects.map((effect) => stripTags(effect.Description)
+      .replace(/^(?:진화|깨달음|도약)\s*\d+티어\s*/, '')).filter(Boolean);
+    return { skills, gems, nodeNames };
+  } catch { return null; }
+}
+
+function createGemContextLoader({ request = fetchGemArmoryPart, now = Date.now } = {}) {
+  const results = new Map();
+  const pending = new Map();
+  return function load(name) {
+    for (const [key, value] of results) if (now() - value.at >= RESULT_TTL) results.delete(key);
+    if (results.has(name)) return Promise.resolve(results.get(name).value);
+    if (pending.has(name)) return pending.get(name);
+    const promise = (async () => {
+      try {
+        const parts = await Promise.all(['combat-skills', 'gems', 'arkpassive'].map((part) => request(name, part)));
+        const value = parseGemContext(...parts);
+        if (value) results.set(name, { at: now(), value });
+        return value;
+      } catch { return null; }
+    })();
+    pending.set(name, promise);
+    promise.finally(() => pending.delete(name));
+    return promise;
+  };
+}
+
+function gemChangeFor(row) {
+  if (row.kind !== '보석' || !Array.isArray(row.cells)) return null;
+  const [skill, current, next] = row.cells;
+  const from = typeof current === 'string' && current.match(/^(10|[1-9])레벨 (겁화|작열)$/);
+  const to = typeof next === 'string' && next.match(/^(10|[1-9])레벨 (겁화|작열)$/);
+  if (typeof skill !== 'string' || !skill.trim() || !from || !to || from[2] !== to[2]) return null;
+  return { skill, type: from[2] === '겁화' ? '피해' : '쿨감', from: Number(from[1]), to: Number(to[1]) };
+}
+
+function applyDamageGains(guide, className, context) {
+  if (!guide || !Number.isFinite(guide.baseScore) || guide.baseScore <= 0) return null;
+  const rows = guide.rows.map((row) => {
+    const estimate = row.gem && context ? estimateGemGain({ className, ...context, change: row.gem }) : null;
+    const modeled = Number.isFinite(estimate?.gainPercent);
+    const gainPercent = modeled ? estimate.gainPercent : (row.finalScore - guide.baseScore) / guide.baseScore * 100;
+    return { ...row, gainPercent, gainSource: modeled ? 'model' : 'lopec',
+      finalScore: modeled ? guide.baseScore * (1 + gainPercent / 100) : row.finalScore,
+      per100k: row.expectedCost === 0 ? null : gainPercent / row.expectedCost * 100_000 };
+  });
+  rows.sort((a, b) => (a.per100k === null ? b.per100k === null ? 0 : -1 : b.per100k === null ? 1 : b.per100k - a.per100k)
+    || b.gainPercent - a.gainPercent);
+  return { ...guide, rows };
+}
+
 function normalizeGuide(phaseA, phaseB, snapshots) {
   if (!Number.isFinite(phaseA?.baseScore) || !Number.isFinite(phaseB?.baseScore)
     || Math.abs(phaseA.baseScore - phaseB.baseScore) > 0.01
@@ -94,7 +194,7 @@ function normalizeGuide(phaseA, phaseB, snapshots) {
         && (snapshots.staleByKey?.[key] ?? snapshots.stale)) priceStale = true;
     }
     rows.push({ kind: a.kind, option: a.option, finalScore: a.finalScore,
-      expectedCost: cost, per100k, priceSource });
+      expectedCost: cost, per100k, priceSource, ...(a.kind === '보석' ? { gem: gemChangeFor(a) } : {}) });
   }
   if (!rows.length && droppedForPrice) {
     console.error('[스펙업] 모든 후보의 비용을 확인하지 못했습니다');
@@ -322,7 +422,7 @@ function buildSpecupScript(originalModules) {
       if(!parser||parser.profile?.supportCheck)return null;
       const price=input.options?.peonCrystalPrice95Gold;
       const includePeon=input.options?.excludePeonCost===false&&Number.isFinite(price)&&price>0;
-      const options={...input.options,excludeScorchGemUpgrades:true,
+      const options={...input.options,excludeScorchGemUpgrades:false,
         excludePeonCost:!includePeon,peonCrystalPrice95Gold:includePeon?price:null};
       const parserKey=JSON.stringify(parser);
       if(!rawCache||rawCache.key!==parserKey){
@@ -342,7 +442,7 @@ function buildSpecupScript(originalModules) {
         destruction:'weapon-stone',protection:'armor-stone','destruction-crystal':'weapon-stone-crystal','protection-crystal':'armor-stone-crystal',
         ...Object.fromEntries(m.materialAliases.map(p=>[p.inputId,p.enhancementMaterialId])) };
       const prices=options.auctionPriceSnapshot?.pricesByTarget??{};
-      const candidates=rows.filter(row=>(!ids||ids.has(row.id))&&!definitions.get(row.id)?.excludeOnScorchFilter).map(row=>{
+      const candidates=rows.filter(row=>!ids||ids.has(row.id)).map(row=>{
         const origin=raw.get(row.id), meta=origin?.metadata??{}, def=definitions.get(row.id);
         if(!origin||!def)throw Error('원본 후보 메타데이터 없음');
         const requiredKeys=new Set((def.materialDependencies??[]).map(key=>aliases[key]??key));
@@ -457,7 +557,8 @@ function createSpecupGetter({
   fetchHtml = (name) => fetchText(`${BASE_URL}/character/specupGuide/${encodeURIComponent(name)}`),
   readParser = (html) => objectAfter(flightPayload(html), '"lostarkParser":'),
   ensure = ensureSpecupRuntime, getSnapshots = getLopecSnapshots, build = buildSnapshots,
-  run, now = Date.now, log = (message) => console.error('[스펙업]', message),
+  run, now = Date.now, loadGemContext = createGemContextLoader({ now }),
+  log = (message) => console.error('[스펙업]', message),
 } = {}) {
   const results = new Map();
   const pending = new Map();
@@ -476,6 +577,9 @@ function createSpecupGetter({
         const parserHtml = await fetchHtml(name);
         const parser = readParser(parserHtml);
         if (!parser || parser.profile?.supportCheck) return null;
+        const className = parser.profile?.class;
+        const gemContext = Object.hasOwn(SKILL_SHARES, className ?? '')
+          ? Promise.resolve().then(() => loadGemContext(name)).catch(() => null) : Promise.resolve(null);
         script = await ensure(parserHtml);
         // 검증을 지원하는 어댑터만 협상한다. 단발 실행 주입과 구형 어댑터는 전체 평가를 유지한다.
         let bundle;
@@ -492,7 +596,7 @@ function createSpecupGetter({
         }
         let verification;
         const calculate = async (evaluate, wait = (promise) => promise) => {
-          const peonOptions = { excludeScorchGemUpgrades: true, excludePeonCost: crystalPrice95 === null,
+          const peonOptions = { excludeScorchGemUpgrades: false, excludePeonCost: crystalPrice95 === null,
             peonCrystalPrice95Gold: crystalPrice95 };
           const probe = await evaluate({ mode: 'probe', options: peonOptions });
           const needs = collectNeeds(probe);
@@ -516,9 +620,10 @@ function createSpecupGetter({
         };
         const encode = (input) => JSON.stringify({ parser, ...input });
         // 기존 검증의 단계 실행 주입은 유지하고, 실제 호출은 한 세션에서 세 번 계산한다.
-        const value = run
+        const calculated = run
           ? await calculate((input) => run(script, 'specup', encode(input), { timeoutMs: SPECUP_TIMEOUT_MS }))
           : await withSpecupSession(script, (evaluate, wait) => calculate((input) => evaluate(encode(input)), wait));
+        const value = applyDamageGains(calculated, className, await gemContext);
         // 실제 자식 종료까지 성공한 요청만 검증 상태를 확정한다. 빈 대조는 증거로 쓰지 않는다.
         if (verification === 'failed') {
           bundle.mode = 'full';
@@ -763,7 +868,7 @@ function cached(store, key, compute) {
 }
 
 // 테스트 훅 — 격리 실행과 런타임 준비를 네트워크 없이 검증하기 위한 것. 제품 코드에서는 쓰지 않는다.
-export const __test = { runInSandbox, withSpecupSession, ensureRuntime, normalizeGuide, createLimiter, buildSpecupScript, ensureSpecupRuntime, collectNeeds, createSpecupGetter,
+export const __test = { fetchGemArmoryPart, parseGemContext, createGemContextLoader, gemChangeFor, applyDamageGains, runInSandbox, withSpecupSession, ensureRuntime, normalizeGuide, createLimiter, buildSpecupScript, ensureSpecupRuntime, collectNeeds, createSpecupGetter,
   resetRuntime: () => { runtime = null; specupRuntime = null; specupValidationEpoch++; } };
 
 // 로펙 캐릭터 페이지 팔찌 배지와 같은 값(%). 실패하면 null.

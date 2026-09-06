@@ -2,24 +2,27 @@
 // 반올림·상위 N·표기는 전부 여기서만 한다(코어는 원값과 전체 행을 준다 — 스펙 4절).
 import { TITLE } from './kakao/layout.js';
 import { STALE_AFTER_MS } from './crystal-price.js';
+import { DATA_DATE as SHARES_DATE } from './data/skill-shares.js';
 
 export const PREVIEW_COUNT = 10;
 const KAKAO_PREVIEW_COUNT = 5;
 
 const fixed1 = (n) => n.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fixed2 = (n) => n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const goldInt = (n) => Math.round(n).toLocaleString('ko-KR');
-const signed = (n) => `${n < 0 ? '-' : '+'}${fixed1(Math.abs(n))}`;
+const signedPercent = (n) => `${n < 0 ? '-' : '+'}${fixed2(Math.abs(n))}%`;
 const kstClock = (ms) =>
   new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
 
-// 한 행의 표기 조각. 진짜 무료(per100k null)는 "무료 · —", 로펙 시세로 보충한 행은 끝에 *. 고정 비용 모델(fixed) 행에는 *를 붙이지 않는다.
-export function rowParts(row, baseScore) {
+// 한 행의 표기 조각. 상승량은 코어의 gainPercent(딜 상승률 %), 효율은 per100k(10만 골드당 딜 상승률 %).
+// 진짜 무료(per100k null)는 "무료 · —", 로펙 시세로 보충한 행은 끝에 *. 고정 비용 모델(fixed) 행에는 *를 붙이지 않는다.
+export function rowParts(row) {
   const free = row.per100k === null || row.expectedCost === 0;
   return {
     label: `${row.kind} · ${row.option}`,
-    score: `${fixed1(row.finalScore)} (${signed(row.finalScore - baseScore)})`,
+    gain: signedPercent(row.gainPercent),
     cost: free ? '무료' : `${goldInt(row.expectedCost)}G`,
-    per: free ? '—' : fixed1(row.per100k),
+    per: free ? '—' : `${fixed2(row.per100k)}%`,
     star: row.priceSource === 'lopec' ? '*' : '',
   };
 }
@@ -27,9 +30,9 @@ export function rowParts(row, baseScore) {
 const headerLine = (profile, guide) =>
   `${profile.CharacterClassName} (${profile.ItemAvgLevel}) · 현재 로펙 ${fixed1(guide.baseScore)}`;
 
-const discordLine = (index, row, baseScore) => {
-  const p = rowParts(row, baseScore);
-  return `${index}. ${p.label}  ${p.score} · ${p.cost} · ${p.per}${p.star}`;
+const discordLine = (index, row) => {
+  const p = rowParts(row);
+  return `${index}. ${p.label}  ${p.gain} · ${p.cost} · ${p.per}${p.star}`;
 };
 
 // 확인 가능한 악세 등급만 변경/유지로 요약한다. 형식이 달라지면 원문을 보존한다.
@@ -53,25 +56,37 @@ function kakaoOption(row) {
   return { title: `${subject} 교체`, detail: changes.join(' · ') };
 }
 
-const kakaoItem = (index, row, baseScore, full) => {
-  const p = rowParts(row, baseScore);
+const kakaoItem = (index, row, full) => {
+  const p = rowParts(row);
   const option = kakaoOption(row);
   return [
     `${index}위 · ${option.title}`,
     ...(option.detail ? [option.detail] : []),
     '',
     `예상 비용: ${p.cost.replace(/G$/, '골드')}${p.star}`,
-    `점수 상승: ${signed(row.finalScore - baseScore)}점`,
-    `투자 효율: ${p.per === '—' ? '—' : `${p.per}점 / 10만 골드`}`,
-    ...(full ? [`변경 후 점수: ${fixed1(row.finalScore)}점`] : []),
+    `딜 상승: ${p.gain}`,
+    `투자 효율: ${p.per === '—' ? '—' : `${p.per} / 10만 골드`}`,
+    // 모델 적용 행의 finalScore는 코어가 딜 상승률로 환산한 값이라 로펙 점수와 구분해 적는다.
+    ...(full ? [`${row.gainSource === 'model' ? '모델 환산 점수' : '변경 후 점수'}: ${fixed1(row.finalScore)}점`] : []),
   ].join('\n');
 };
 
-// 푸터 7항목 — 순서 고정, 조건부 항목은 해당할 때만 (스펙 2절).
+// 푸터 첫 항목: 비보석 행은 로펙 점수 비율, 보석 행은 스킬 딜 비중 모델(자료 날짜). 보석 행이 로펙 값으로 대체됐으면 그 사실만 적는다.
+// 대체 사유(직업·빌드 자료 없음, 공식 조회 실패, 3·4레벨 보석 수치 미확인 등)는 여러 가지라 원인을 단정하지 않는다.
+// 항목 안에는 ' · '를 쓰지 않는다 — 카톡이 푸터를 ' · '로 나눈다.
+function gainParts(rows) {
+  const gems = rows.filter((r) => r.kind === '보석');
+  const modeled = gems.some((r) => r.gainSource === 'model');
+  const parts = [`딜 상승률은 로펙 점수 비율${modeled ? `, 보석은 스킬 딜 비중 기준(자료 ${SHARES_DATE})` : ''}`];
+  if (gems.some((r) => r.gainSource !== 'model')) parts.push(modeled ? '일부 보석은 로펙 점수 비율' : '보석은 로펙 점수 비율(딜 비중 모델 미적용)');
+  return parts;
+}
+
+// 푸터 — 순서 고정, 조건부 항목은 해당할 때만 (스펙 2절·실질 딜 상승률 명세 §3).
 // crystal: 저장소의 시세 { price95, at, source } — 페온 포함 여부는 코어가 실제로 쓴 guide.crystalPrice95로 판정한다(스펙 2절 페온 항목).
 export function footerFor(guide, crystal = null) {
   const parts = [
-    '점수는 로펙 스펙업 가이드와 동일',
+    ...gainParts(guide.rows),
     '비용은 거래소·경매장 실시간 시세(5분 캐시)',
   ];
   if (guide.pricedAt !== null && guide.pricedAt !== undefined) parts.push(`시세 기준 ${kstClock(guide.pricedAt)}`);
@@ -107,9 +122,9 @@ export function discordDescription(profile, guide) {
   return [
     headerLine(profile, guide),
     '',
-    ...top.map((r, i) => discordLine(i + 1, r, guide.baseScore)),
+    ...top.map((r, i) => discordLine(i + 1, r)),
     '',
-    '마지막 열 = 점수/10만G',
+    '마지막 열 = 딜 상승률/10만G',
   ].join('\n');
 }
 
@@ -118,8 +133,8 @@ export function discordDescription(profile, guide) {
 export function kakaoTexts(profile, guide, crystal = null) {
   const build = (rows, full = false) => [
     `${TITLE(`${profile.CharacterName}님의 스펙업 효율`)}\n${headerLine(profile, guide)}`,
-    ...rows.map((r, i) => kakaoItem(i + 1, r, guide.baseScore, full)),
-    '투자 효율은 같은 골드 대비 점수 상승량입니다.\n높을수록 가성비가 좋습니다.',
+    ...rows.map((r, i) => kakaoItem(i + 1, r, full)),
+    '투자 효율은 같은 골드 대비 딜 상승률입니다.\n높을수록 가성비가 좋습니다.',
     footerFor(guide, crystal).split(' · ').join('\n'),
   ].join('\n\n');
   return { preview: build(guide.rows.slice(0, KAKAO_PREVIEW_COUNT)), full: build(guide.rows, true) };
