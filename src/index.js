@@ -2,6 +2,7 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'dis
 import { commands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
 import { startUpdateNotifier } from './update-notify.js';
+import { startCrystalAutoRefresh } from './crystal-auto.js';
 import { parseEmoticonKeyword, findEmoticonFile, countEmoticons } from './emoticons.js';
 import { handleTextCommand } from './text-commands.js';
 import { handleButton } from './buttons.js';
@@ -33,6 +34,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   await restrictions.load(readyClient);
   startIslandNotifier(readyClient);
   startUpdateNotifier(readyClient);
+  startCrystalAutoRefresh(); // 스펙업 페온 환산용 크리스탈 시세 — 시작 시 1회 + 매일 08:00 KST 자동 갱신
   startKakaoServer(commandMap, process.env, { client: readyClient }); // KAKAO_PORT가 있을 때만 켜진다
 });
 

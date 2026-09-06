@@ -68,7 +68,7 @@ const kakaoItem = (index, row, baseScore, full) => {
 };
 
 // 푸터 7항목 — 순서 고정, 조건부 항목은 해당할 때만 (스펙 2절).
-// crystal: /크리스탈 설정 { price95, at } — 페온 포함 여부는 코어가 실제로 쓴 guide.crystalPrice95로 판정한다(스펙 2절 페온 항목).
+// crystal: 저장소의 시세 { price95, at, source } — 페온 포함 여부는 코어가 실제로 쓴 guide.crystalPrice95로 판정한다(스펙 2절 페온 항목).
 export function footerFor(guide, crystal = null) {
   const parts = [
     '점수는 로펙 스펙업 가이드와 동일',
@@ -87,15 +87,17 @@ const kstMonthDay = (ms) => {
   const d = new Date(ms + 9 * 60 * 60 * 1000); // KST 날짜를 월/일로
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 };
-// 페온 항목: 포함이면 쓴 시세와 설정일, 7일 넘었으면 갱신 안내, 제외면 설정 방법.
+// 페온 항목: 포함이면 쓴 시세와 출처(로아툴 자동 갱신일 / 직접 설정일), 7일 넘었으면 갱신 안내, 제외면 아직 시세를 못 받은 상태.
+// 항목 안에는 ' · '를 쓰지 않는다 — 카톡이 푸터를 ' · '로 나눈다.
 export function peonParts(guide, crystal, now = Date.now()) {
   const used = guide.crystalPrice95;
-  if (!Number.isFinite(used) || used <= 0) return ['페온 제외 — /크리스탈 95개가격 설정 시 포함'];
+  if (!Number.isFinite(used) || used <= 0) return ['페온 제외 — 크리스탈 시세를 아직 못 받았어요(/크리스탈로 직접 설정 가능)'];
   const at = Number.isFinite(crystal?.at) ? crystal.at : null;
-  const parts = [`페온 포함 — 크리스탈 95개 ${goldInt(used)}G${at ? `(${kstMonthDay(at)} 설정)` : ''}`];
+  const stamp = at === null ? '' : crystal?.source === 'auto' ? `(로아툴 ${kstMonthDay(at)} 자동)` : `(${kstMonthDay(at)} 설정)`;
+  const parts = [`페온 포함 — 크리스탈 95개 ${goldInt(used)}G${stamp}`];
   if (at === null || now - at > STALE_AFTER_MS) {
     const days = at === null ? null : Math.floor((now - at) / 86_400_000);
-    parts.push(`크리스탈 시세 ${days === null ? '설정 시각 미상' : `${days}일 전 설정`} — /크리스탈로 갱신`);
+    parts.push(`크리스탈 시세 ${days === null ? '갱신 시각 미상' : `${days}일 전 값`} — 자동 갱신이 안 되고 있어요, /크리스탈로 직접 갱신`);
   }
   return parts;
 }
