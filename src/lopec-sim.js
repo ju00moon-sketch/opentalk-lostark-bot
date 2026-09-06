@@ -9,6 +9,7 @@
 // 파일·자식 프로세스·워커를 막은 채로. node:vm만으로는 보안 격리가 아니라는 게 Node 문서의 입장이다.
 // 어디서든 실패하면 null을 주고, 커맨드는 효율표 값으로 물러난다.
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
   fetchText, flightPayload, objectAfter, matchBrace, getSpecPointHtml,
@@ -38,6 +39,8 @@ const SANDBOX_STOP_SIGNAL = SANDBOX_WRAPPER.length && process.platform !== 'win3
 const SANDBOX_TIMEOUT_MS = 15_000; // 격리 프로세스 전체(기동 + 모듈 평가 + 계산) 상한
 const SANDBOX_OUTPUT_MAX = 1024 * 1024; // 결과 JSON 상한 — 이보다 크면 뭔가 잘못된 것
 const SPECUP_TIMEOUT_MS = 20_000;
+const SPECUP_LIFETIME_MS = 60_000;
+const SPECUP_SUBSET_MARKER = '/* specup-subset-v1 */';
 
 function createLimiter(size) {
   let active = 0;
@@ -54,6 +57,7 @@ function createLimiter(size) {
   };
 }
 const limitSandbox = createLimiter(2);
+const limitSpecup = createLimiter(1);
 
 function normalizeGuide(phaseA, phaseB, snapshots) {
   if (!Number.isFinite(phaseA?.baseScore) || !Number.isFinite(phaseB?.baseScore)
@@ -106,6 +110,7 @@ const bangleCache = new Map();
 const arkgridCache = new Map();
 let runtime = null; // { key, script } — 실행 가능한 함수가 아니라 격리 프로세스에 넘길 소스 문자열
 let specupRuntime = null;
+let specupValidationEpoch = 0;
 const specupRuntimePending = new Map();
 
 // 웹팩 청크에서 모듈 정의를 모두 꺼낸다.
@@ -247,7 +252,14 @@ function buildSpecupScript(originalModules) {
   const calculatorVar = required(/calculator:[\w$]+=([\w$]+)\./, baseline.source)[1];
   const start = source.indexOf(`var ${calculatorVar}=`);
   const requireName = required(/^\([^,]+,[^,]+,([\w$]+)\)=>\{/)[1];
-  const rawName = required(/([\w$]+)\([\w$]+,\{calculator:[\w$]+,candidateGenerators:[\w$]+,resolver:[\w$]+\}\)/, baseline.source)[1];
+  const rawCall = required(/([\w$]+)\([\w$]+,\{calculator:[\w$]+,candidateGenerators:([\w$]+),resolver:[\w$]+\}\)/, baseline.source);
+  const rawName = rawCall[1];
+  if (!baseline.source.includes(`candidateGenerators:${rawCall[2]}=`)) throw new Error('로펙 후보 생성기 경계 변경');
+  const rawSource = named(rawName).source;
+  // 같은 기본 생성기·점수 계산기를 쓸 때만 원본 후보로 대체한다. 부분 집합·새 표현식은 추측하지 않는다.
+  for (const pattern of [/candidateGenerators:[\w$]+=([\w$]+)(?=,|\})/, /calculator:[\w$]+=([\w$]+\.[\w$]+)(?=,|\})/]) {
+    if (required(pattern, baseline.source)[1] !== required(pattern, rawSource)[1]) throw new Error('로펙 후보 생성기 기본값 경계 변경');
+  }
   const zero = only(functions.filter((f) => /\.id\]=String\(/.test(f.source)
     && /\(0,[\w$]+\.[\w$]+\)\(\)/.test(f.source)), '보유 수량');
   const view = only(functions.filter((f) => f.start > baseline.start && f.end <= zero.start
@@ -265,7 +277,6 @@ function buildSpecupScript(originalModules) {
   const traceId = findBinding(source, traceVar);
   const optional = required(/([\w$]+)=Object\.freeze\(\[\{inputId:/)[1];
   if (start < 0 || !traceId || zero.end < baseline.end) throw new Error('로펙 코어 범위 변경');
-  named(rawName);
   const modules = new Map(originalModules);
   modules.set(id, `(e,t,${requireName})=>{var ${traceVar}=${requireName}(${traceId});
     ${source.slice(start, zero.end)}
@@ -279,7 +290,7 @@ function buildSpecupScript(originalModules) {
     });}`);
   const registry = [...modules].map(([key, body]) => `${JSON.stringify(key)}:${body}`).join(',\n');
   // 지연 require는 UI만 사용하는 의존성을 기동하지 않는다. 받은 함수·계산식은 변경하지 않는다.
-  return `
+  return `${SPECUP_SUBSET_MARKER}
     const MODULES={${registry}}, cache=new Map();
     function real(id){id=String(id);if(cache.has(id))return cache.get(id).exports;
       if(!MODULES[id])throw Error('모듈 '+id+' 없음');const m={exports:{}};cache.set(id,m);
@@ -287,15 +298,25 @@ function buildSpecupScript(originalModules) {
     function req(id){return new Proxy(function(){},{get(_,key){return real(id)[key]},apply(_,self,args){return Reflect.apply(real(id),self,args)}})}
     req.d=(target,defs)=>{for(const key of Object.keys(defs))Object.defineProperty(target,key,{enumerable:true,get:defs[key]})};
     req.n=m=>()=>m;req.r=()=>{};req.o=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+    let rawCache=null;
     ({specup(json){
       const input=JSON.parse(json), m=real(${JSON.stringify(id)}), parser=input.parser;
       if(!parser||parser.profile?.supportCheck)return null;
       const options={...input.options,excludeScorchGemUpgrades:true,excludePeonCost:true,peonCrystalPrice95Gold:null};
-      const base=m.baseline(parser,options), raw=new Map(m.raw(parser).map(r=>[r.id,r]));
+      const parserKey=JSON.stringify(parser);
+      if(!rawCache||rawCache.key!==parserKey){
+        const candidates=m.raw(parser);
+        if(!Array.isArray(candidates))throw Error('로펙 원본 후보 형식 변경');
+        rawCache={key:parserKey,candidates,byId:new Map(candidates.map(r=>[r.id,r]))};
+      }
+      // 캐시는 이 요청의 VM 수명에만 존재한다. 시세를 캡처하는 평가 함수는 매 단계 새로 만든다.
+      const {candidates:rawCandidates,byId:raw}=rawCache;
+      const ids=input.ids?new Set(input.ids):null;
+      const evaluate=(rawCandidates)=>{
+      const base=m.baseline(parser,{...options,candidateGenerators:[()=>rawCandidates]});
       const view=m.view(base,m.zero(),null,options);
       const definitions=new Map(base.candidates.map(c=>[c.id,c]));
       const rows=input.mode==='probe'||input.ids?view.candidates:m.display(view.candidates);
-      const ids=input.ids?new Set(input.ids):null;
       const aliases={ 'destiny-leapstone':'leapstone','great-destiny-leapstone':'great-leapstone',
         destruction:'weapon-stone',protection:'armor-stone','destruction-crystal':'weapon-stone-crystal','protection-crystal':'armor-stone-crystal',
         ...Object.fromEntries(m.materialAliases.map(p=>[p.inputId,p.enhancementMaterialId])) };
@@ -325,12 +346,36 @@ function buildSpecupScript(originalModules) {
           cells:[cells.mainInfo,cells.currentState,row.recommendationPlan&&target!==next?next+' / 권장 목표 '+target:cells.nextState]};
       });
       return JSON.stringify({baseScore:base.baseSpecPoint,candidates});
+      };
+      // 기존 호출은 전체 평가. B만 원본 상대 순서를 유지한 새 배열로 축소한다.
+      if(!ids||input.mode==='probe'||!input.candidateMode||input.candidateMode==='full')return evaluate(rawCandidates);
+      const selected=rawCandidates.filter(row=>ids.has(row.id));
+      if(input.candidateMode==='subset')return evaluate(selected);
+      if(input.candidateMode!=='verify')throw Error('로펙 후보 평가 모드 오류');
+      // 원래 경로를 먼저 실행·직렬화해 검증 실패에도 그 결과를 그대로 쓴다.
+      const full=JSON.parse(evaluate(rawCandidates));
+      if(!full.candidates.length)return JSON.stringify({...full,subsetValidation:'skipped'});
+      try{
+        const subset=JSON.parse(evaluate(selected));
+        const byId=new Map(full.candidates.map(row=>[row.id,JSON.stringify(row)]));
+        const selectedIds=new Set(subset.candidates.map(row=>row.id));
+        const same=subset.baseScore===full.baseScore&&byId.size===full.candidates.length
+          &&selectedIds.size===subset.candidates.length&&byId.size===selectedIds.size
+          &&subset.candidates.every(row=>byId.get(row.id)===JSON.stringify(row));
+        return JSON.stringify({... (same?subset:full),subsetValidation:same?'passed':'failed'});
+      }catch{
+        return JSON.stringify({...full,subsetValidation:'failed'});
+      }
     }});
   `;
 }
 
+function specupChunkPaths(html) {
+  return [...new Set([...html.matchAll(/src="(\/_next\/static\/chunks\/[^"\s]+\.js)"/g)].map((m) => m[1]))];
+}
+
 async function ensureSpecupRuntime(html, fetcher = fetchText) {
-  const paths = [...new Set([...html.matchAll(/src="(\/_next\/static\/chunks\/[^"\s]+\.js)"/g)].map((m) => m[1]))];
+  const paths = specupChunkPaths(html);
   const key = paths.join('|');
   if (!key) throw new Error('로펙 스크립트 없음');
   if (specupRuntime?.key === key) return specupRuntime.script;
@@ -391,10 +436,12 @@ function createSpecupGetter({
   fetchHtml = (name) => fetchText(`${BASE_URL}/character/specupGuide/${encodeURIComponent(name)}`),
   readParser = (html) => objectAfter(flightPayload(html), '"lostarkParser":'),
   ensure = ensureSpecupRuntime, getSnapshots = getLopecSnapshots, build = buildSnapshots,
-  run = runInSandbox, now = Date.now, log = (message) => console.error('[스펙업]', message),
+  run, now = Date.now, log = (message) => console.error('[스펙업]', message),
 } = {}) {
   const results = new Map();
   const pending = new Map();
+  const validationBundles = new Map();
+  let validationEpoch = specupValidationEpoch;
   return function getGuide(name) {
     if (typeof name !== 'string' || !name.trim()) return Promise.resolve(null);
     for (const [key, value] of results) if (now() - value.at >= RESULT_TTL) results.delete(key);
@@ -407,17 +454,50 @@ function createSpecupGetter({
         const parser = readParser(parserHtml);
         if (!parser || parser.profile?.supportCheck) return null;
         script = await ensure(parserHtml);
-        const evaluate = (input) => run(script, 'specup', JSON.stringify({ parser, ...input }), { timeoutMs: SPECUP_TIMEOUT_MS });
-        const probe = await evaluate({ mode: 'probe' });
-        const needs = collectNeeds(probe);
-        const lopec = await getSnapshots(needs.targets);
-        const options = (snapshots) => ({ excludeScorchGemUpgrades: true, excludePeonCost: true,
-          peonCrystalPrice95Gold: null, enhancementMarketPriceSnapshot: snapshots.enhancement, auctionPriceSnapshot: snapshots.auction });
-        const phaseA = await evaluate({ options: options(lopec) });
-        const prices = await build(collectNeeds(phaseA), lopec);
-        // 두 번째 평가에서는 가족별 재선택 없이 첫 평가의 모든 ID를 그대로 찾는다.
-        const phaseB = await evaluate({ options: options(prices), ids: phaseA.candidates.map((row) => row.id) });
-        const value = normalizeGuide(phaseA, phaseB, prices);
+        // 검증을 지원하는 어댑터만 협상한다. 단발 실행 주입과 구형 어댑터는 전체 평가를 유지한다.
+        let bundle;
+        if (!run && script.startsWith(SPECUP_SUBSET_MARKER)) {
+          if (validationEpoch !== specupValidationEpoch) {
+            validationBundles.clear();
+            validationEpoch = specupValidationEpoch;
+          }
+          // 번들이 교차 요청되어도 한 번 거절한 축소 평가를 다시 허용하지 않는다.
+          const key = createHash('sha256').update(specupChunkPaths(parserHtml).join('|'))
+            .update('\0').update(script).digest('hex');
+          if (!validationBundles.has(key)) validationBundles.set(key, { mode: 'verify' });
+          bundle = validationBundles.get(key);
+        }
+        let verification;
+        const calculate = async (evaluate, wait = (promise) => promise) => {
+          const probe = await evaluate({ mode: 'probe' });
+          const needs = collectNeeds(probe);
+          const lopec = await wait(getSnapshots(needs.targets));
+          const options = (snapshots) => ({ excludeScorchGemUpgrades: true, excludePeonCost: true,
+            peonCrystalPrice95Gold: null, enhancementMarketPriceSnapshot: snapshots.enhancement, auctionPriceSnapshot: snapshots.auction });
+          const phaseA = await evaluate({ options: options(lopec) });
+          const prices = await wait(build(collectNeeds(phaseA), lopec));
+          // 두 번째 평가에서는 가족별 재선택 없이 첫 평가의 모든 ID를 그대로 찾는다.
+          // 전용 슬롯 안에서 상태를 읽어 앞선 요청의 검증 결과를 대기 요청도 따른다.
+          const candidateMode = bundle?.mode;
+          const phaseB = await evaluate({ options: options(prices), ids: phaseA.candidates.map((row) => row.id),
+            ...(candidateMode ? { candidateMode } : {}) });
+          if (candidateMode === 'verify') {
+            verification = phaseB?.subsetValidation;
+            if (!['passed', 'failed', 'skipped'].includes(verification)) throw new Error('로펙 후보 검증 응답 오류');
+            delete phaseB.subsetValidation;
+          }
+          return normalizeGuide(phaseA, phaseB, prices);
+        };
+        const encode = (input) => JSON.stringify({ parser, ...input });
+        // 기존 검증의 단계 실행 주입은 유지하고, 실제 호출은 한 세션에서 세 번 계산한다.
+        const value = run
+          ? await calculate((input) => run(script, 'specup', encode(input), { timeoutMs: SPECUP_TIMEOUT_MS }))
+          : await withSpecupSession(script, (evaluate, wait) => calculate((input) => evaluate(encode(input)), wait));
+        // 실제 자식 종료까지 성공한 요청만 검증 상태를 확정한다. 빈 대조는 증거로 쓰지 않는다.
+        if (verification === 'failed') {
+          bundle.mode = 'full';
+          log('후보 축소 검증 불일치: 이 모듈 묶음은 전체 후보로 계산합니다');
+        } else if (verification === 'passed' && value && bundle.mode === 'verify') bundle.mode = 'subset';
         if (value) results.set(name, { at: now(), value });
         return value;
       } catch (error) {
@@ -433,6 +513,111 @@ function createSpecupGetter({
 }
 
 export const getSpecupGuide = createSpecupGetter();
+
+// 스펙업 전용 슬롯을 먼저 확보한다. 대기 요청은 팔찌·젬이 쓸 전역 슬롯을 점유하지 않는다.
+// 호출자 실패 통지와 슬롯 반환을 분리하며, 두 슬롯 모두 실제 close까지 유지한다.
+function withSpecupSession(script, task, {
+  timeoutMs = SPECUP_TIMEOUT_MS, lifetimeMs = SPECUP_LIFETIME_MS,
+} = {}) {
+  return new Promise((resolve, reject) => {
+    limitSpecup(() => limitSandbox(() => new Promise((release) => {
+      const [cmd, ...args] = [...SANDBOX_WRAPPER, process.execPath, ...SANDBOX_FLAGS, SANDBOX_PATH, '--session'];
+      const child = spawn(cmd, args, { env: {}, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+      let failure;
+      let closed = false;
+      let sequence = 0;
+      let pending;
+      let phaseTimer;
+      let out = '';
+      let outBytes = 0;
+      let errOut = '';
+      let taskDone = false;
+      let taskValue;
+      let rejectFailure;
+      const failed = new Promise((_, fail) => { rejectFailure = fail; });
+      // 시세 대기 외 구간에서 실패해도 미처리 거부가 발생하지 않게 한다.
+      failed.catch(() => {});
+      const abort = (error) => {
+        if (failure || closed) return;
+        failure = error;
+        clearTimeout(phaseTimer);
+        clearTimeout(lifeTimer);
+        pending?.reject(error);
+        pending = null;
+        rejectFailure(error);
+        reject(error);
+        // 신호 전달이 거부돼도 유한 계산 뒤 EOF로 자가 종료할 수 있게 입력을 닫는다.
+        child.stdin.end();
+        child.kill(SANDBOX_STOP_SIGNAL);
+      };
+      const lifeTimer = setTimeout(() => abort(new Error(`로펙 계산 자식 수명 초과 (${lifetimeMs / 1000}초)`)), lifetimeMs);
+      const wait = (promise) => Promise.race([promise, failed]);
+      const evaluate = (json) => {
+        if (failure) return Promise.reject(failure);
+        if (closed || pending || sequence >= 3 || typeof json !== 'string') {
+          const error = new Error('로펙 계산 세션 요청 순서 오류');
+          abort(error);
+          return Promise.reject(error);
+        }
+        const id = ++sequence;
+        const request = id === 1 ? { id, script, entry: 'specup', json } : { id, json };
+        return new Promise((done, fail) => {
+          pending = { id, resolve: done, reject: fail };
+          phaseTimer = setTimeout(() => abort(new Error(`로펙 계산 시간 초과 (${timeoutMs / 1000}초)`)), timeoutMs);
+          try { child.stdin.write(`${JSON.stringify(request)}\n`, (error) => { if (error) abort(error); }); }
+          catch (error) { abort(error); }
+        });
+      };
+
+      child.stdout.setEncoding('utf8');
+      child.stderr.setEncoding('utf8');
+      child.stdout.on('data', (chunk) => {
+        if (failure) return;
+        outBytes += Buffer.byteLength(chunk);
+        if (outBytes > SANDBOX_OUTPUT_MAX) return abort(new Error('로펙 계산 결과가 비정상적으로 큽니다'));
+        out += chunk;
+        const newline = out.indexOf('\n');
+        if (newline < 0) return;
+        // 한 번에 한 단계만 보낸다. 여러 응답·남는 데이터·순서가 다른 응답은 허용하지 않는다.
+        if (newline !== out.length - 1 || !pending) return abort(new Error('로펙 계산 세션 응답 순서 오류'));
+        let message;
+        try { message = JSON.parse(out.slice(0, newline)); }
+        catch { return abort(new Error('로펙 계산 세션 JSON 응답 오류')); }
+        if (!message || message.id !== pending.id || typeof message.ok !== 'boolean'
+          || (message.ok && !Object.hasOwn(message, 'value'))) {
+          return abort(new Error('로펙 계산 세션 응답 형식 오류'));
+        }
+        if (!message.ok) return abort(new Error(typeof message.error === 'string' ? message.error : '로펙 계산 실패'));
+        out = '';
+        outBytes = 0;
+        clearTimeout(phaseTimer);
+        const current = pending;
+        pending = null;
+        current.resolve(message.value);
+      });
+      child.stderr.on('data', (chunk) => { errOut = (errOut + chunk).slice(-2000); });
+      child.on('error', abort);
+      child.stdin.on('error', abort);
+      child.on('close', (code) => {
+        if (!failure && (code !== 0 || !taskDone || sequence !== 3 || pending || out.length)) {
+          abort(new Error(`로펙 계산 세션 조기 종료${errOut ? `: ${errOut.trim().split('\n').pop()}` : ''}`));
+        }
+        closed = true;
+        clearTimeout(phaseTimer);
+        clearTimeout(lifeTimer);
+        release();
+        if (!failure) resolve(taskValue);
+      });
+      Promise.resolve().then(() => task(evaluate, wait)).then((value) => {
+        if (failure || closed) return;
+        if (sequence !== 3 || pending) return abort(new Error('로펙 계산 세션 미완료'));
+        taskDone = true;
+        taskValue = value;
+        child.stdin.end();
+      }, abort);
+    }))).catch(reject);
+  });
+}
 
 // 격리 프로세스에서 script를 평가하고 entry(bangle|arkgrid)를 json으로 호출한 결과를 받는다.
 //   · 환경변수를 비워 봇의 토큰·API 키가 넘어가지 않는다 (env: {})
@@ -552,8 +737,8 @@ function cached(store, key, compute) {
 }
 
 // 테스트 훅 — 격리 실행과 런타임 준비를 네트워크 없이 검증하기 위한 것. 제품 코드에서는 쓰지 않는다.
-export const __test = { runInSandbox, ensureRuntime, normalizeGuide, createLimiter, buildSpecupScript, ensureSpecupRuntime, collectNeeds, createSpecupGetter,
-  resetRuntime: () => { runtime = null; specupRuntime = null; } };
+export const __test = { runInSandbox, withSpecupSession, ensureRuntime, normalizeGuide, createLimiter, buildSpecupScript, ensureSpecupRuntime, collectNeeds, createSpecupGetter,
+  resetRuntime: () => { runtime = null; specupRuntime = null; specupValidationEpoch++; } };
 
 // 로펙 캐릭터 페이지 팔찌 배지와 같은 값(%). 실패하면 null.
 export function getBanglePercent(characterName) {

@@ -15,6 +15,10 @@ import { hardenRuntime, auditHardening } from './lopec-sandbox-harden.js';
 
 const EVAL_TIMEOUT_MS = 10_000;
 
+// 세션 플래그와 신뢰할 수 있는 입력 참조는 전역 process를 지우기 전에 확보한다.
+const sessionStdin = process.argv.includes('--session') ? process.stdin : null;
+if (sessionStdin) await runSession(sessionStdin);
+
 function readStdin() {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -56,5 +60,83 @@ if (problems.length > 0) {
     }
   } catch (err) {
     reply({ ok: false, error: err?.message ?? String(err) });
+  }
+}
+
+// 줄바꿈 전까지의 바이트 수를 제한한다. UTF-8 문자가 청크 경계에서 잘려도
+// 프레임 전체를 받은 뒤 디코딩하므로 손상되지 않는다.
+async function* readSessionFrames(stdin) {
+  let chunks = [];
+  let size = 0;
+  let limit = 32 * 1024 * 1024;
+  for await (const chunk of stdin) {
+    let start = 0;
+    while (start < chunk.length) {
+      const newline = chunk.indexOf(10, start);
+      const end = newline === -1 ? chunk.length : newline;
+      size += end - start;
+      if (size > limit) throw new Error('세션 입력 크기 초과');
+      chunks.push(chunk.subarray(start, end));
+      if (newline === -1) break;
+      const frame = Buffer.concat(chunks, size).toString('utf8');
+      chunks = [];
+      size = 0;
+      limit = 8 * 1024 * 1024;
+      yield frame;
+      start = newline + 1;
+    }
+  }
+  if (size !== 0) throw new Error('세션 입력의 마지막 줄바꿈 누락');
+}
+
+async function runSession(stdin) {
+  // write·exit는 hardenRuntime 내부에서 무장 해제 전에 잡은 참조다.
+  // stdin과 이 함수들은 VM에 주입하지 않고 JSON 문자열만 건넨다.
+  const { write, exit } = hardenRuntime();
+  const send = payload => new Promise((resolve, reject) => {
+    write(`${JSON.stringify(payload)}\n`, error => error ? reject(error) : resolve());
+  });
+  let id = 1;
+  let run;
+  try {
+    const problems = auditHardening();
+    if (problems.length) throw new Error(`격리 자가 진단 실패: ${problems.join(' · ')}`);
+    for await (const frame of readSessionFrames(stdin)) {
+      if (id > 3) throw new Error('세션은 세 단계까지만 실행할 수 있어요');
+      const request = JSON.parse(frame);
+      const keys = id === 1 ? ['id', 'script', 'entry', 'json'] : ['id', 'json'];
+      if (!request || typeof request !== 'object' || Array.isArray(request)
+        || Object.keys(request).length !== keys.length
+        || keys.some(key => !Object.hasOwn(request, key))
+        || request.id !== id || typeof request.json !== 'string'
+        || (id === 1 && (typeof request.script !== 'string' || request.entry !== 'specup'))) {
+        throw new Error('세션 입력 형식 또는 순서 오류');
+      }
+      if (id === 1) {
+        const context = vm.createContext(Object.create(null), {
+          codeGeneration: { strings: false, wasm: false },
+          microtaskMode: 'afterEvaluate',
+        });
+        const api = vm.runInContext(request.script, context, { timeout: EVAL_TIMEOUT_MS });
+        run = api?.specup;
+        if (typeof run !== 'function') throw new Error('계산 진입점 없음: specup');
+      }
+      // 기존 단발 경로처럼 VM 객체를 직렬화하지 않고 원시 문자열만 파싱한다.
+      const serialized = run(request.json);
+      await send({ id, ok: true, value: typeof serialized === 'string' ? JSON.parse(serialized) : null });
+      id++;
+    }
+    if (id !== 4) throw new Error('세션 입력이 세 단계 완료 전에 종료됐어요');
+    // 마지막 응답 쓰기까지 완료하고 EOF를 확인한 경우에만 정상 종료한다.
+    exit(0);
+  } catch (err) {
+    let error = '세션 계산 실패';
+    // VM이 던진 객체나 변환 함수를 응답 직렬화 과정에 넘기지 않는다.
+    try {
+      const message = err?.message;
+      if (typeof message === 'string') error = message;
+      else if (typeof err === 'string') error = err;
+    } catch { /* 오류 속성 접근도 실패하면 기본 문구를 쓴다 */ }
+    try { await send({ id, ok: false, error }); } finally { exit(2); }
   }
 }

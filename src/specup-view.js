@@ -3,6 +3,7 @@
 import { TITLE } from './kakao/layout.js';
 
 export const PREVIEW_COUNT = 10;
+const KAKAO_PREVIEW_COUNT = 5;
 
 const fixed1 = (n) => n.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const goldInt = (n) => Math.round(n).toLocaleString('ko-KR');
@@ -30,9 +31,39 @@ const discordLine = (index, row, baseScore) => {
   return `${index}. ${p.label}  ${p.score} · ${p.cost} · ${p.per}${p.star}`;
 };
 
-const kakaoItem = (index, row, baseScore) => {
+// 확인 가능한 악세 등급만 변경/유지로 요약한다. 형식이 달라지면 원문을 보존한다.
+function kakaoOption(row) {
+  const [subject, ...rest] = row.option.split(' · ');
+  const detail = rest.join(' · ');
+  const fallback = { title: `${row.kind} · ${subject}`, detail };
+  if (row.kind !== '악세' || !detail) return fallback;
+  const states = detail.split(' → ');
+  if (states.length !== 2) return fallback;
+  const parsed = states.map((state) => state.split(/\s*\/\s*/).map((part) => /^(.+?)\s*\[(하|중|상)\]$/.exec(part.trim())));
+  if (parsed.some((parts) => parts.some((p) => !p))) return fallback;
+  const [before, after] = parsed.map((parts) => new Map(parts.map((p) => [p[1].trim(), p[2]])));
+  if (before.size !== parsed[0].length || after.size !== parsed[1].length) return fallback;
+  const changes = [...new Set([...before.keys(), ...after.keys()])].map((name) => {
+    const from = before.get(name), to = after.get(name);
+    if (!from) return `${name} ${to} 추가`;
+    if (!to) return `${name} ${from} 제거`;
+    return from === to ? `${name} ${to} 유지` : `${name} ${from} → ${to}`;
+  });
+  return { title: `${subject} 교체`, detail: changes.join(' · ') };
+}
+
+const kakaoItem = (index, row, baseScore, full) => {
   const p = rowParts(row, baseScore);
-  return `${index}. ${p.label}\n→ ${p.score} · ${p.cost} · ${p.per}/10만G${p.star}`;
+  const option = kakaoOption(row);
+  return [
+    `${index}위 · ${option.title}`,
+    ...(option.detail ? [option.detail] : []),
+    '',
+    `예상 비용: ${p.cost.replace(/G$/, '골드')}${p.star}`,
+    `점수 상승: ${signed(row.finalScore - baseScore)}점`,
+    `투자 효율: ${p.per === '—' ? '—' : `${p.per}점 / 10만 골드`}`,
+    ...(full ? [`변경 후 점수: ${fixed1(row.finalScore)}점`] : []),
+  ].join('\n');
 };
 
 // 푸터 7항목 — 순서 고정, 조건부 항목은 해당할 때만 (스펙 2절).
@@ -60,13 +91,14 @@ export function discordDescription(profile, guide) {
   ].join('\n');
 }
 
-// 카톡: 미리보기(상위 10개)와 전체(행 전체). 둘 다 제목·머리줄·푸터를 갖춘 완결된 본문이다.
-// 행이 10개 이하면 두 문자열이 같아 브리지가 전체 보기 링크를 만들지 않는다(스펙 2절 조건).
+// 카톡: 상위 5개는 비용·상승량 중심으로, 전체 보기는 모든 후보와 변경 후 총점까지 제공한다.
+// 후보가 5개 이하여도 총점은 전체 보기에서만 제공하므로 두 본문을 구분한다.
 export function kakaoTexts(profile, guide) {
-  const build = (rows) => [
+  const build = (rows, full = false) => [
     `${TITLE(`${profile.CharacterName}님의 스펙업 효율`)}\n${headerLine(profile, guide)}`,
-    ...rows.map((r, i) => kakaoItem(i + 1, r, guide.baseScore)),
-    footerFor(guide),
+    ...rows.map((r, i) => kakaoItem(i + 1, r, guide.baseScore, full)),
+    '투자 효율은 같은 골드 대비 점수 상승량입니다.\n높을수록 가성비가 좋습니다.',
+    footerFor(guide).split(' · ').join('\n'),
   ].join('\n\n');
-  return { preview: build(guide.rows.slice(0, PREVIEW_COUNT)), full: build(guide.rows) };
+  return { preview: build(guide.rows.slice(0, KAKAO_PREVIEW_COUNT)), full: build(guide.rows, true) };
 }

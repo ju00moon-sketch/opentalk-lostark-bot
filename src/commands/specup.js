@@ -46,7 +46,7 @@ export function createExecute({ getSpecupGuide, getCharacterProfile }) {
 
     const components = characterButtons(profile.CharacterName, FOLLOW_UPS);
     if (interaction.platform === 'kakao') {
-      // 미리보기(상위 10개)는 content로, 전체 행은 kakaoFull로 — 브리지가 전체 보기 링크에 후자를 저장한다(스펙 3절 훅)
+      // 미리보기(상위 5개)는 content로, 전체 후보와 변경 후 총점은 kakaoFull로 전달한다.
       const { preview, full } = kakaoTexts(profile, guide);
       await interaction.editReply({ content: preview, kakaoFull: full, components });
       return;
