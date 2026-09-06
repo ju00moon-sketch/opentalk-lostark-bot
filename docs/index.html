@@ -6,9 +6,7 @@
 <title>포근해용 — 포근해 길드 전용 로스트아크 챗봇</title>
 <meta name="description" content="포근해 길드 전용 로스트아크 디스코드 챗봇. 캐릭터 조회, 길드 랭킹, 시세 검색, 모험섬·업데이트 알림, 이모티콘까지.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<link rel="preload" href="assets/fonts/body-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   :root {
     --bg: #16120e;
@@ -265,8 +263,10 @@
     .footer-inner { flex-direction: column; }
   }
 </style>
+<link rel="stylesheet" href="homepage.css">
 </head>
 <body>
+<a class="skip-link" href="#main-content">본문 바로가기</a>
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -289,39 +289,30 @@
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="main-content" tabindex="-1">
 
   <!-- ── 소개 ── -->
   <section class="tab-panel active" id="panel-intro">
     <div class="hero">
-      <div>
-        <span class="pill" style="display:inline-block; margin-bottom:22px;">루페온 서버 · 로스트아크 디스코드 봇</span>
-        <h1>포근해 전용 챗봇<br>포근해<b>용</b></h1>
+      <div class="hero-copy">
+        <p class="hero-eyebrow">루페온 서버의 우리 길드 도우미</p>
+        <h1><span>포근해 전용 챗봇</span>포근해<b>용</b></h1>
         <p class="lead">캐릭터 스펙, 거래소 시세, 레이드 딜컷, 모험섬 알림까지. 슬래시 하나면 전투정보실을 열지 않아도 됩니다.</p>
         <div class="cta-row">
           <a class="btn-primary" href="https://discord.com/oauth2/authorize?client_id=1542885088038092901&permissions=52224&scope=bot%20applications.commands">서버에 초대하기</a>
           <button class="btn-ghost" data-tab="commands" type="button">커맨드 둘러보기</button>
         </div>
-        <div class="stats">
-          <div class="stat"><div class="num">55</div><div class="label">커맨드</div></div>
-          <div class="stat"><div class="num">160</div><div class="label">이모티콘</div></div>
-          <div class="stat"><div class="num">24h</div><div class="label">상시 가동</div></div>
-          <div class="stat"><div class="num">v1.2</div><div class="label">최신 버전</div></div>
-        </div>
       </div>
+      <figure class="hero-art">
+        <img src="assets/lounge-hero.webp" srcset="assets/lounge-hero-768.webp 768w, assets/lounge-hero.webp 1536w" sizes="(max-width: 767px) 100vw, (max-width: 1240px) 55vw, 670px" width="1536" height="1024" fetchpriority="high" alt="따뜻한 등불 아래 모험 일지와 작은 새싹이 놓인 길드 라운지 일러스트">
+      </figure>
+    </div>
 
-      <div class="preview" aria-label="봇이 보내는 알림 예시">
-        <div class="meta"><span class="dot"></span>포근해용 · 오늘 오전 8:00<span class="tag">예시</span></div>
-        <div class="embed">
-          <div class="title">☀️ 오늘의 모험 섬</div>
-          <div class="rows">
-            <div><span>죽음의 협곡</span><span class="gold">💰 골드</span></div>
-            <div><span>몽환의 섬</span><span>카드 · 실링</span></div>
-            <div><span>죽음의 협곡</span><span>11:00 · 13:00</span></div>
-          </div>
-        </div>
-        <div class="cmds"><code>/정보</code><code>/랭킹</code><code>/시세</code><code>/딜컷</code><code>/체급</code></div>
-      </div>
+    <div class="stats" aria-label="주요 기능과 운영 정보">
+      <div class="stat"><div class="num">55<span>개</span></div><div class="label">기본 커맨드</div></div>
+      <div class="stat"><div class="num">160<span>종</span></div><div class="label">채팅 이모티콘</div></div>
+      <div class="stat"><div class="num">24<span>h</span></div><div class="label">상시 가동</div></div>
+      <a class="stat stat-release" href="updates/v1.2.html"><div class="num">v1.2<span aria-hidden="true">↗</span></div><div class="label">최신 업데이트 보기</div></a>
     </div>
 
     <h2>길드가 매일 쓰는 것들</h2>
@@ -342,10 +333,22 @@
         <h3>시세와 계산</h3>
         <p>거래소 검색, 보석 최저가, 경매 적정 입찰가를 수수료까지 반영해 계산합니다. 연마 조합 시세도 한 번에.</p>
       </div>
-      <div class="card">
+      <div class="card card-alerts">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 10-12 0c0 6-2 7-2 7h16s-2-1-2-7z"></path><path d="M10 20a2 2 0 004 0"></path></svg>
         <h3>알아서 오는 알림</h3>
         <p>매일 아침 8시 모험 섬, 수요일 업데이트 내역은 공지가 올라오는 즉시. 점검이 연장돼도 그때 맞춰 나갑니다.</p>
+        <div class="preview" aria-label="봇이 보내는 알림 예시">
+          <div class="meta">포근해용 · 오늘 오전 8:00<span class="tag">예시</span></div>
+          <div class="embed">
+            <div class="title">☀️ 오늘의 모험 섬</div>
+            <div class="rows">
+              <div><span>죽음의 협곡</span><span class="gold">💰 골드</span></div>
+              <div><span>몽환의 섬</span><span>카드 · 실링</span></div>
+              <div><span>죽음의 협곡</span><span>11:00 · 13:00</span></div>
+            </div>
+          </div>
+          <div class="cmds"><code>/정보</code><code>/랭킹</code><code>/시세</code><code>/딜컷</code><code>/체급</code></div>
+        </div>
       </div>
       <div class="card">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
@@ -605,10 +608,21 @@ npm install</pre>
   const buttons = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.tab-panel');
 
+  document.querySelector('.skip-link').addEventListener('click', (event) => {
+    event.preventDefault();
+    document.getElementById('main-content').focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
   function showTab(name) {
     const target = document.getElementById('panel-' + name);
     if (!target) return false;
-    buttons.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+    buttons.forEach((b) => {
+      const active = b.dataset.tab === name;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
     panels.forEach((p) => p.classList.toggle('active', p === target));
     return true;
   }
@@ -618,7 +632,7 @@ npm install</pre>
     btn.addEventListener('click', () => {
       showTab(btn.dataset.tab);
       history.replaceState(null, '', '#' + btn.dataset.tab);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     });
   });
 
