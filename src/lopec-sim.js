@@ -150,13 +150,13 @@ function findBinding(body, variable) {
 // 진입점 찾기. 모듈 ID는 로펙이 배포할 때마다 바뀌므로 소스의 호출 형태로 역추적한다.
 //
 // 팔찌: 화면 코드의 "banglePercent:(0,n.l)(" 로 분배 함수를 찾고, 그 안의
-//   "return(0,r.sh)(e,a)" 로 딜러용 계산 함수를 집어낸다. 분배 함수를 그대로 부르지 않는 이유는
-//   서폿 계산 모듈이 이 페이지들에 실려 오지 않아 불러오는 순간 실패하기 때문이다.
+//   "return(0,r.sh)(e,a)" 로 딜러용 계산 함수를 집어낸다. 서포터는 supportCheck 분기의
+//   원본 efficiency를 읽는다. 분배 함수의 누락값 → 0 대체는 사용하지 않는다.
 // 아크그리드(젬): 같은 화면 코드의 딜러 분기 "else{let t=(0,s.cA)(e);m.arkgridPercent=" 에서
 //   계산 함수를 집어낸다.
 function findEntries(modules) {
   for (const [, body] of modules) {
-    const bangleCall = /banglePercent:\(0,([A-Za-z$_]+)\.[A-Za-z$_]+\)\(/.exec(body);
+    const bangleCall = /banglePercent:\(0,([A-Za-z$_]+)\.([A-Za-z$_]+)\)\(/.exec(body);
     if (!bangleCall) continue;
 
     const dispatcherId = findBinding(body, bangleCall[1]);
@@ -169,6 +169,24 @@ function findEntries(modules) {
 
     const entries = { bangle: { id: bangleId, name: dealer[2] } };
 
+    // 같은 모듈의 다른 supportCheck 함수가 아니라 화면이 참조한 export만 따라간다.
+    const bindings = [...dispatcher.matchAll(/(?:\{|,)([\w$]+):\(\)=>([\w$]+)(?=,|\})/g)]
+      .filter((m) => m[1] === bangleCall[2]);
+    const functions = bindings.length === 1
+      ? namedFunctions(dispatcher).filter((f) => f.name === bindings[0][2]) : [];
+    const dispatchBody = functions.length === 1 ? functions[0].source : '';
+    const branches = [...dispatchBody.matchAll(/if\(([\w$]+)\.profile\.supportCheck\)\{/g)];
+    const supportBranch = branches.length === 1 ? branches[0] : null;
+    if (supportBranch) {
+      const open = supportBranch.index + supportBranch[0].length - 1;
+      const close = matchBrace(dispatchBody, open);
+      const calls = close === -1 ? [] : [...dispatchBody.slice(open + 1, close)
+        .matchAll(/\(0,([\w$]+)\.([\w$]+)\)\(([\w$]+)\)\.efficiency/g)];
+      const support = calls.length === 1 && calls[0][3] === supportBranch[1] ? calls[0] : null;
+      const supportId = support && findBinding(dispatcher, support[1]);
+      if (supportId && modules.has(supportId)) entries.supportBangle = { id: supportId, name: support[2] };
+    }
+
     const grid = /else\{let [A-Za-z$_]+=\(0,([A-Za-z$_]+)\.([A-Za-z$_]+)\)\([A-Za-z$_]+\);[A-Za-z$_]+\.arkgridPercent=/
       .exec(body);
     const gridId = grid && findBinding(body, grid[1]);
@@ -179,7 +197,7 @@ function findEntries(modules) {
   return null;
 }
 
-// 모듈들을 한 스크립트로 묶는다. 평가하면 { bangle, arkgrid }(캐릭터 JSON → 계산 결과) 객체가 나온다.
+// 모듈들을 한 스크립트로 묶는다. 평가하면 { bangle, supportBangle, arkgrid } 객체가 나온다.
 // 여기서는 실행하지 않는다 — 실행은 격리 프로세스의 몫.
 function buildScript(modules, entries) {
   const registry = [...modules.entries()]
@@ -187,9 +205,9 @@ function buildScript(modules, entries) {
     .join(',\n');
 
   // 결과는 컨텍스트 안에서 JSON 문자열로 바꿔 돌려준다 — 호스트(격리 프로세스)가 남의 객체의 getter를 건드리지 않게
-  const call = (entry) =>
+  const call = (entry, field = null) =>
     entry
-      ? `(json) => JSON.stringify(req(${JSON.stringify(entry.id)})[${JSON.stringify(entry.name)}](JSON.parse(json), {}) ?? null)`
+      ? `(json) => JSON.stringify(req(${JSON.stringify(entry.id)})[${JSON.stringify(entry.name)}](JSON.parse(json)${field ? '' : ', {}'})${field ? `?.[${JSON.stringify(field)}]` : ''} ?? null)`
       : 'null';
 
   const script = `
@@ -212,7 +230,7 @@ function buildScript(modules, entries) {
     req.n = (m) => () => m;
     req.r = () => {};
     req.o = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-    ({ bangle: ${call(entries.bangle)}, arkgrid: ${call(entries.arkgrid)} });
+    ({ bangle: ${call(entries.bangle)}, supportBangle: ${call(entries.supportBangle, 'efficiency')}, arkgrid: ${call(entries.arkgrid)} });
   `;
   return script;
 }
@@ -302,7 +320,10 @@ function buildSpecupScript(originalModules) {
     ({specup(json){
       const input=JSON.parse(json), m=real(${JSON.stringify(id)}), parser=input.parser;
       if(!parser||parser.profile?.supportCheck)return null;
-      const options={...input.options,excludeScorchGemUpgrades:true,excludePeonCost:true,peonCrystalPrice95Gold:null};
+      const price=input.options?.peonCrystalPrice95Gold;
+      const includePeon=input.options?.excludePeonCost===false&&Number.isFinite(price)&&price>0;
+      const options={...input.options,excludeScorchGemUpgrades:true,
+        excludePeonCost:!includePeon,peonCrystalPrice95Gold:includePeon?price:null};
       const parserKey=JSON.stringify(parser);
       if(!rawCache||rawCache.key!==parserKey){
         const candidates=m.raw(parser);
@@ -442,11 +463,13 @@ function createSpecupGetter({
   const pending = new Map();
   const validationBundles = new Map();
   let validationEpoch = specupValidationEpoch;
-  return function getGuide(name) {
+  return function getGuide(name, { crystalPrice95 = null } = {}) {
     if (typeof name !== 'string' || !name.trim()) return Promise.resolve(null);
+    crystalPrice95 = Number.isFinite(crystalPrice95) && crystalPrice95 > 0 ? crystalPrice95 : null;
+    const resultKey = JSON.stringify([name, crystalPrice95]);
     for (const [key, value] of results) if (now() - value.at >= RESULT_TTL) results.delete(key);
-    if (results.has(name)) return Promise.resolve(results.get(name).value);
-    if (pending.has(name)) return pending.get(name);
+    if (results.has(resultKey)) return Promise.resolve(results.get(resultKey).value);
+    if (pending.has(resultKey)) return pending.get(resultKey);
     const promise = (async () => {
       let script;
       try {
@@ -469,11 +492,13 @@ function createSpecupGetter({
         }
         let verification;
         const calculate = async (evaluate, wait = (promise) => promise) => {
-          const probe = await evaluate({ mode: 'probe' });
+          const peonOptions = { excludeScorchGemUpgrades: true, excludePeonCost: crystalPrice95 === null,
+            peonCrystalPrice95Gold: crystalPrice95 };
+          const probe = await evaluate({ mode: 'probe', options: peonOptions });
           const needs = collectNeeds(probe);
           const lopec = await wait(getSnapshots(needs.targets));
-          const options = (snapshots) => ({ excludeScorchGemUpgrades: true, excludePeonCost: true,
-            peonCrystalPrice95Gold: null, enhancementMarketPriceSnapshot: snapshots.enhancement, auctionPriceSnapshot: snapshots.auction });
+          const options = (snapshots) => ({ ...peonOptions,
+            enhancementMarketPriceSnapshot: snapshots.enhancement, auctionPriceSnapshot: snapshots.auction });
           const phaseA = await evaluate({ options: options(lopec) });
           const prices = await wait(build(collectNeeds(phaseA), lopec));
           // 두 번째 평가에서는 가족별 재선택 없이 첫 평가의 모든 ID를 그대로 찾는다.
@@ -486,7 +511,8 @@ function createSpecupGetter({
             if (!['passed', 'failed', 'skipped'].includes(verification)) throw new Error('로펙 후보 검증 응답 오류');
             delete phaseB.subsetValidation;
           }
-          return normalizeGuide(phaseA, phaseB, prices);
+          const guide = normalizeGuide(phaseA, phaseB, prices);
+          return guide ? { ...guide, crystalPrice95 } : null;
         };
         const encode = (input) => JSON.stringify({ parser, ...input });
         // 기존 검증의 단계 실행 주입은 유지하고, 실제 호출은 한 세션에서 세 번 계산한다.
@@ -498,7 +524,7 @@ function createSpecupGetter({
           bundle.mode = 'full';
           log('후보 축소 검증 불일치: 이 모듈 묶음은 전체 후보로 계산합니다');
         } else if (verification === 'passed' && value && bundle.mode === 'verify') bundle.mode = 'subset';
-        if (value) results.set(name, { at: now(), value });
+        if (value) results.set(resultKey, { at: now(), value });
         return value;
       } catch (error) {
         if (script && specupRuntime?.script === script) specupRuntime = null;
@@ -506,8 +532,8 @@ function createSpecupGetter({
         return null;
       }
     })();
-    pending.set(name, promise);
-    promise.finally(() => pending.delete(name));
+    pending.set(resultKey, promise);
+    promise.finally(() => pending.delete(resultKey));
     return promise;
   };
 }
@@ -704,15 +730,15 @@ async function ensureRuntime(html) {
   return runtime.script;
 }
 
-// 캐릭터 페이지 데이터를 받아 격리 컨텍스트에서 계산한다. 서폿은 계산 모듈이
-// 이 페이지들에 실려 오지 않아 건너뛴다 (커맨드가 대체값으로 물러난다).
+// 캐릭터 페이지 데이터를 받아 격리 컨텍스트에서 계산한다. 서포터는 팔찌만 지원한다.
 async function compute(characterName, entry) {
   const html = await getSpecPointHtml(characterName);
   const parser = objectAfter(flightPayload(html), '"lostarkParser":');
-  if (!parser || parser.profile?.supportCheck) return null;
+  if (!parser || (parser.profile?.supportCheck && entry !== 'bangle')) return null;
+  const target = parser.profile?.supportCheck ? 'supportBangle' : entry;
   const script = await ensureRuntime(html);
   try {
-    return await runInSandbox(script, entry, JSON.stringify(parser));
+    return await runInSandbox(script, target, JSON.stringify(parser));
   } catch (err) {
     // 스크립트 평가·계산이 깨졌다면 받아 둔 모듈 묶음을 믿을 수 없다 — 버리고 다음 조회에서 다시 만든다
     runtime = null;

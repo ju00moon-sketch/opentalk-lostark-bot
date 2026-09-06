@@ -14,6 +14,7 @@ notify-channels.json
 user-links.json
 update-notify.json
 price-history.json
+crystal-price.json
 island-notify.json
 *.json.bak
 *.json.tmp

@@ -70,10 +70,11 @@ export async function execute(interaction) {
     return;
   }
 
-  // 로펙 캐릭터 페이지의 팔찌 배지 값이 정확한 수치다.
-  // 그게 안 나오면(서폿·조회 실패) 효율표 값으로 물러난다.
-  const banglePercent = await getBanglePercent(name);
-  const efficiency = banglePercent ?? (await getBraceletEfficiency(name));
+  // 미착용이면 로펙에 남아 있는 이전 팔찌 효율도 조회하지 않는다.
+  // 캐릭터 페이지 계산값이 없을 때만 효율표 값으로 물러난다.
+  const banglePercent = bracelet ? await getBanglePercent(name) : null;
+  const efficiency = bracelet ? banglePercent ?? (await getBraceletEfficiency(name)) : null;
+  const efficiencyText = efficiency === null ? '조회할 수 없어요' : `${efficiency.toFixed(2)}%`;
 
   const stoneInfo = stoneParts(stone);
   const braceletInfo = braceletParts(bracelet);
@@ -84,7 +85,7 @@ export async function execute(interaction) {
     await interaction.editReply({
       content: blocks(
         TITLE(`${name} · 스톤 & 팔찌`),
-        efficiency === null ? null : row('팔찌 효율', `${efficiency}%`),
+        bracelet ? row('팔찌 효율', efficiencyText) : null,
         section('어빌리티 스톤', [stoneInfo.head, ...stoneInfo.body]),
         section('팔찌', [braceletInfo.head, ...braceletInfo.body]),
         note ? NOTE(note) : null,
@@ -94,13 +95,13 @@ export async function execute(interaction) {
   }
 
   const sections = [discordBlock(stoneInfo), discordBlock(braceletInfo)];
-  if (efficiency !== null) {
+  if (bracelet) {
     sections.push(
       [
         '❙ 로펙 기준 팔찌 효율',
-        `  팔찌 효율: **${efficiency}%**`,
-        `  ※ ${note}`,
-      ].join('\n'),
+        `  팔찌 효율: ${efficiency === null ? efficiencyText : `**${efficiencyText}**`}`,
+        note ? `  ※ ${note}` : null,
+      ].filter(Boolean).join('\n'),
     );
   }
 

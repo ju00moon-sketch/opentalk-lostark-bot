@@ -195,6 +195,8 @@ const BRIDGE_BUDGET_MS = 25_000;
 
 // 카카오 스킬 응답 JSON → 방에 쓸 평문. 본문(body)과 뒤에 붙는 후속 안내(tail)를 나눠 돌려준다 —
 // 분량을 맞출 때 안내 몫을 따로 남겨 둬야 해서다(fitBridgeMessage).
+// 후속 안내("▸ 이어서 쓸 수 있어요" + 디스코드 후속 버튼 목록)는 2026-09-06 사용자 요청으로 방에 보내지 않는다 —
+// tail은 항상 null이고, quickReplies는 스킬 응답 JSON(1:1 채널용)에만 남는다.
 // 이미지는 URL 줄로 두되, 미리보기 카드(link)가 따로 나가면 뺀다 — 카드가 그 이미지를 보여 주니까.
 export function flattenParts(response, { skipImages = false } = {}) {
   const outputs = response?.template?.outputs ?? [];
@@ -202,13 +204,9 @@ export function flattenParts(response, { skipImages = false } = {}) {
     .map((o) => o.simpleText?.text ?? (skipImages ? '' : o.simpleImage?.imageUrl ?? ''))
     .filter(Boolean);
   if (response?.useCallback && response.data?.text) parts.push(response.data.text);
-  const quick = (response?.template?.quickReplies ?? []).map((q) => q.messageText).filter(Boolean);
-  const tail = quick.length > 0
-    ? '▸ 이어서 쓸 수 있어요\n' + quick.map((q) => `· ${q}`).join('\n')
-    : null;
   return {
     body: parts.join('\n\n') || null,
-    tail,
+    tail: null,
     full: typeof response?.full === 'string' && response.full.trim() ? response.full : null, // 미리보기와 다른 전체 보기 본문(있을 때만)
   };
 }

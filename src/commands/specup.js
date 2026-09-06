@@ -5,6 +5,7 @@ import { trunc, EMBED_COLOR, NOT_FOUND_HINT } from '../format.js';
 import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 import { characterButtons } from '../buttons.js';
 import { discordDescription, footerFor, kakaoTexts } from '../specup-view.js';
+import { crystalStore } from '../crystal-price.js';
 
 export const data = new SlashCommandBuilder()
   .setName('스펙업')
@@ -19,7 +20,7 @@ export const NO_CANDIDATES = '지금 추천할 스펙업이 없어요 (로펙 �
 const FOLLOW_UPS = ['로펙', '팔찌', '젬효율'];
 
 // 의존성을 주입할 수 있게 실행 함수를 만드는 공장 — 테스트와 통합 검증에서 코어·API를 대역으로 바꾼다.
-export function createExecute({ getSpecupGuide, getCharacterProfile }) {
+export function createExecute({ getSpecupGuide, getCharacterProfile, store = crystalStore }) {
   return async function execute(interaction) {
     const name = resolveCharacter(interaction);
     if (!name) {
@@ -34,7 +35,9 @@ export function createExecute({ getSpecupGuide, getCharacterProfile }) {
       await interaction.editReply(`\`${name}\` — ${NOT_FOUND_HINT}`);
       return;
     }
-    const guide = await getSpecupGuide(name);
+    // 크리스탈 시세가 설정돼 있으면 페온 포함으로 계산한다(스펙 5차 개정). 코어는 실제 쓴 값을 guide.crystalPrice95로 돌려준다.
+    const crystal = store.get();
+    const guide = await getSpecupGuide(name, { crystalPrice95: crystal?.price95 ?? null });
     if (!guide) {
       await interaction.editReply(`\`${name}\` — ${UNAVAILABLE}`);
       return;
@@ -47,7 +50,7 @@ export function createExecute({ getSpecupGuide, getCharacterProfile }) {
     const components = characterButtons(profile.CharacterName, FOLLOW_UPS);
     if (interaction.platform === 'kakao') {
       // 미리보기(상위 5개)는 content로, 전체 후보와 변경 후 총점은 kakaoFull로 전달한다.
-      const { preview, full } = kakaoTexts(profile, guide);
+      const { preview, full } = kakaoTexts(profile, guide, crystal);
       await interaction.editReply({ content: preview, kakaoFull: full, components });
       return;
     }
@@ -57,7 +60,7 @@ export function createExecute({ getSpecupGuide, getCharacterProfile }) {
       .setTitle(`❙ ${profile.CharacterName}님의 스펙업 효율`)
       .setThumbnail(profile.CharacterImage ?? null)
       .setDescription(trunc(discordDescription(profile, guide), 4096))
-      .setFooter({ text: footerFor(guide) });
+      .setFooter({ text: footerFor(guide, crystal) });
     await interaction.editReply({ embeds: [embed], components });
   };
 }

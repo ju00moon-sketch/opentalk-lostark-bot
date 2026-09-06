@@ -53,6 +53,7 @@ import * as ranking from './ranking.js';
 import * as tier from './tier.js';
 import * as specup from './specup.js';
 import * as rice from './rice.js';
+import * as crystal from './crystal.js';
 
 import { ALIASES } from '../text-commands.js';
 
@@ -63,7 +64,7 @@ const base = [
   gemsof, gemboard, engraving, engravingRank, engravingRankRelic, engravingRankLegend,
   life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency, dealshare, dealcut,
-  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice,
+  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice, crystal,
 ];
 
 // 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).

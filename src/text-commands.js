@@ -71,6 +71,11 @@ export const ALIASES = {
   ㅅㅍㅇ: { cmd: '스펙업', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㅆ: { cmd: '쌀', parse: () => ({}) },
   쌀값: { cmd: '쌀', desc: '쌀과 같은 커맨드', parse: () => ({}) },
+  ㅋㄹㅅㅌ: { cmd: '크리스탈', usage: 'ㅋㄹㅅㅌ [95개가격] (예: ㅋㄹㅅㅌ 16626)', parse: (p) => {
+    if (!p[0]) return {};
+    const 가격 = Number(p[0].replace(/,/g, ''));
+    return Number.isInteger(가격) ? { 가격 } : null;
+  } },
   ㄱㅈ: { cmd: '군장', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   ㄹㅋ: { cmd: '랭킹', usage: 'ㄹㅋ [쪽] (예: ㄹㅋ 2)', parse: parsePage },
   ㅊㄱ: { cmd: '체급', usage: 'ㅊㄱ [쪽] (예: ㅊㄱ 2)', parse: parsePage },
