@@ -42,11 +42,11 @@ let inFlight = null; // 진행 중인 조회 — 캐시가 빈 사이 여럿이 
 // 시세판 한 줄 분량 — 키는 "10겁"처럼 짧게 잡아 기록 파일에도 그대로 쓴다.
 async function fetchBoard() {
   const rows = [];
-  for (const level of BOARD_LEVELS) {
-    for (const type of BOARD_TYPES) {
+  for (const type of BOARD_TYPES) {
+    for (const level of BOARD_LEVELS) {
       const result = await searchAuctionItems(GEM_CATEGORY, `${level}레벨 ${type}의 보석`);
       const cheapest = (result?.Items ?? []).find((i) => i.AuctionInfo?.BuyPrice > 0);
-      rows.push({ key: `${level}${type[0]}`, level, price: cheapest?.AuctionInfo.BuyPrice ?? null });
+      rows.push({ key: `${level}${type[0]}`, type, level, price: cheapest?.AuctionInfo.BuyPrice ?? null });
     }
   }
   return rows;
@@ -66,16 +66,16 @@ function loadBoard() {
   return inFlight;
 }
 
-// 레벨이 바뀌는 자리마다 빈 줄을 넣어 10 → 9 → 8 → 7 묶음으로 보이게 한다.
-function groupByLevel(rows, lineOf) {
+// 종류가 바뀌는 자리에 빈 줄을 넣어 겁화·작열을 각각 높은 레벨부터 묶어 보여 준다.
+function groupByType(rows, lineOf) {
   const lines = [];
-  let prevLevel = null;
+  let prevType = null;
   for (const row of rows) {
     const line = lineOf(row);
     if (line === null) continue;
-    if (prevLevel !== null && row.level !== prevLevel) lines.push('');
+    if (prevType !== null && row.type !== prevType) lines.push('');
     lines.push(line);
-    prevLevel = row.level;
+    prevType = row.type;
   }
   return lines;
 }
@@ -95,7 +95,7 @@ async function showBoard(interaction) {
   // 경매장 API에는 전일 가격이 없어서 우리가 남긴 어제 기록과 비교한다.
   const baseline = recordAndCompare('보석', Object.fromEntries(rows.map((r) => [r.key, r.price])));
 
-  const lines = groupByLevel(rows, (r) => `${r.key}: ${r.price === null ? '매물 없음' : amount(r.price)}`);
+  const lines = groupByType(rows, (r) => `${r.key}: ${r.price === null ? '매물 없음' : amount(r.price)}`);
 
   // 기준 날짜는 보석마다 다를 수 있다 — 그날 매물이 없었으면(가격 null) 그 보석은 기록이 안 남는다.
   // 그래서 가장 최근 기준일을 푸터에 적고, 그보다 오래된 기록과 비교한 줄에는 그 줄에 날짜를 적는다.
@@ -103,7 +103,7 @@ async function showBoard(interaction) {
   const newestBase = baseDates.at(-1) ?? null;
   const monthDay = (date) => date.slice(5);
 
-  const deltaLines = groupByLevel(rows, (r) => {
+  const deltaLines = groupByType(rows, (r) => {
     const base = baseline[r.key];
     const delta = r.price === null || !base ? null : priceDelta(r.price, base.price);
     if (delta === null) return null;
