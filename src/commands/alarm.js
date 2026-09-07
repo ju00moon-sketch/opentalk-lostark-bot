@@ -34,7 +34,7 @@ export async function execute(interaction) {
       embeds: [
         new EmbedBuilder()
           .setColor(EMBED_COLOR)
-          .setDescription(`✅ <#${channel.id}> 채널로 매일 아침 8시 모험 섬, 업데이트 공지, 떠돌이 상인 출현(하루 4번, 출현 5분 뒤)을 알려드릴게요!`),
+          .setDescription(`✅ <#${channel.id}> 채널로 매일 아침 8시 모험 섬, 업데이트 공지, 떠돌이 상인 출현(하루 4번, 출현 10분 뒤)을 알려드릴게요!`),
       ],
     });
     return;

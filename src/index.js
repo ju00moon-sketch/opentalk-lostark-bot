@@ -35,7 +35,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   await restrictions.load(readyClient);
   startIslandNotifier(readyClient);
   startUpdateNotifier(readyClient);
-  startMerchantNotifier(readyClient); // 떠돌이 상인 출현 5분 뒤 전체 판을 알림 채널로
+  startMerchantNotifier(readyClient); // 떠돌이 상인 출현 10분 뒤 전체 판을 알림 채널로
   startCrystalAutoRefresh(); // 스펙업 페온 환산용 크리스탈 시세 — 시작 시 1회 + 매일 08:00 KST 자동 갱신
   startKakaoServer(commandMap, process.env, { client: readyClient }); // KAKAO_PORT가 있을 때만 켜진다
 });

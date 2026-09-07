@@ -1,5 +1,5 @@
-// 떠돌이 상인 자동 알림: 출현(하루 4회, 04·10·16·22시 KST) 5분 뒤에 /떠상 전체 판을 알림 채널로 보낸다.
-// 채널은 모험섬 아침 알림과 같다(/알림설정). 정각에는 제보가 없어서 5분을 기다린다.
+// 떠돌이 상인 자동 알림: 출현(하루 4회, 04·10·16·22시 KST) 10분 뒤에 /떠상 전체 판을 알림 채널로 보낸다.
+// 채널은 모험섬 아침 알림과 같다(/알림설정). 정각 직후에는 제보가 적어서 10분을 기다린다(처음 5분이었다가 2026-09-07 사용자 결정으로 늘림).
 //
 // 판을 못 만들거나(조회 실패·제보 회차 아직 없음) 일부 채널 전송이 실패하면 10분 뒤 그 채널들만 다시 시도한다(최대 3번).
 // 재시도 대기 상태는 파일(merchant-notify.json)에 남겨 그사이 봇이 재시작돼도 이어서 시도한다.
@@ -11,7 +11,7 @@ import { getMerchantWindows } from './merchant.js';
 import { targetChannelIds } from './notify.js';
 import { readJson, writeJsonAtomic } from './json-store.js';
 
-export const SEND_DELAY_MS = 5 * 60 * 1000; // 출현 뒤 제보가 쌓이기를 기다리는 시간
+export const SEND_DELAY_MS = 10 * 60 * 1000; // 출현 뒤 제보가 쌓이기를 기다리는 시간
 export const RETRY_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 3;
 export const GRACE_MS = 60 * 60 * 1000; // 시작 시 발송 시각이 지났어도 이 안이면 늦게라도 보낸다
