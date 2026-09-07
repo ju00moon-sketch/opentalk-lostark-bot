@@ -1,6 +1,7 @@
 // /딜지분 · /딜컷 공용 로직 — 인자 파싱과 기여도 계산.
 // 슬래시 커맨드와 채팅 커맨드가 같은 규칙을 쓰도록 여기 모아 둔다.
-import { RAID_HP, CUTS, BASE_TITLE } from './data/raidhp.js';
+import { RAID_HP } from './data/raidhp.js';
+import { RAID_CUTS, CUTS, BASE_TITLE } from './data/raid-cuts.js';
 
 // 레이드명 별칭. "세나" = 세르카 나메처럼 (레이드 약칭 + 난이도 약칭)으로 조합해 찾는다.
 const RAID_ALIASES = {
@@ -136,21 +137,25 @@ export function parseArgs(parts, mode = 'share') {
 
 // 관문 하나의 기여도 계산 결과.
 export function computeGate(entry, gate, damage, seconds) {
-  const total = gate.hp - gate.tactic; // 연합군(택틱) 딜은 분모에서 뺀다
+  const source = RAID_CUTS[entry.key];
+  const amounts = source.gates[gate.gate - 1];
   const time = seconds ?? gate.time;
-  const cuts = CUTS[entry.players].map((cut) => ({
+  const cuts = CUTS[entry.players].map((cut, index) => ({
     ...cut,
-    need: total * cut.ratio,
-    dps: total * cut.ratio / time,
+    ratio: cut.ratio ?? source.oneRatio,
+    need: amounts[index] * 1e8,
+    dps: amounts[index] * 1e8 / time,
   }));
+  // 공개 잔혈 컷에서 역산한 지분 기준이며 보스 체력 자체가 아니다.
+  const total = cuts[2].need / cuts[2].ratio;
 
   let ratio = null;
   let title = null;
   if (damage != null) {
     ratio = damage / total;
     title = BASE_TITLE;
-    for (const cut of [...cuts].sort((a, b) => a.ratio - b.ratio)) {
-      if (cut.title && ratio >= cut.ratio) title = cut.title;
+    for (const cut of cuts) {
+      if (cut.title && damage >= cut.need) title = cut.title;
     }
   }
   return { total, time, cuts, ratio, title, dps: damage == null ? null : damage / time };

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { DATA_DATE } from '../data/raidhp.js';
+import { DATA_DATE, RAID_CUTS } from '../data/raid-cuts.js';
 import {
   resolveRaid, parseArgs, parseDamage, parseTime, computeGate, damageText, dpsText, timeText, shortName,
 } from '../dealshare.js';
@@ -24,7 +24,7 @@ export const data = new SlashCommandBuilder()
 const RAID_NOT_FOUND =
   '레이드를 찾지 못했어요. 지원: `4막` `종막` `세르카` `성당` `벨가르딘` (예: `세나`, `벨하`, `성당3단계`)';
 const UNSUPPORTED_MSG =
-  '1~3막은 아직 보스 체력 데이터가 없어요. 현재 지원: `4막` `종막` `세르카` `성당` `벨가르딘`';
+  '1~3막은 아직 지원하지 않아요. 현재 지원: `4막` `종막` `세르카` `성당` `벨가르딘`';
 
 // 슬래시 옵션과 채팅 인자를 같은 형태로 맞춘다.
 // 자유 형식 파서(parseArgs)는 "세나1관 2700억 10분"처럼 한 줄에 섞인 채팅 입력을 추측으로 가른다.
@@ -61,15 +61,14 @@ function gateField(entry, gate, parsed) {
 
   if (r.ratio != null) {
     lines.push(
-      `내 딜 **${damageText(parsed.damage)}** / ${damageText(r.total)}`,
+      `내 딜 **${damageText(parsed.damage)}** / 기준 ${damageText(r.total)}`,
       `딜지분 **${(r.ratio * 100).toFixed(1)}%** · ${dpsText(r.dps)} (${timeText(r.time)} 기준)`,
       `예상 칭호 **${r.title}**`,
       '',
     );
   } else {
     const basis = r.time === gate.time ? '' : ` · DPS 기준 ${timeText(r.time)}`;
-    lines.push(`체력 ${damageText(gate.hp)} · 제한 ${timeText(gate.time)}${basis}`);
-    if (gate.tactic > 0) lines.push(`택틱 제외 실딜 **${damageText(r.total)}**`);
+    lines.push(`기준 피해량 **${damageText(r.total)}** · 제한 ${timeText(gate.time)}${basis}`);
     lines.push('');
   }
 
@@ -113,17 +112,17 @@ export async function run(interaction, mode) {
     const entry = resolved.entries[0];
     const lines = resolved.entries.map((e) => {
       const gates = e.gates
-        .map((g) => `${g.gate}관 ${damageText(g.hp - g.tactic)}`)
+        .map((g) => `${g.gate}관 ${damageText(computeGate(e, g, null).total)}`)
         .join(' · ');
       return `**${e.diff}** ${gates}`;
     });
     const embed = new EmbedBuilder()
       .setColor(EMBED_COLOR)
-      .setTitle(`🗡️ ${entry.full} — 난이도별 실딜량`)
+      .setTitle(`🗡️ ${entry.full} — 난이도별 기준 피해량`)
       .setDescription(
         `${lines.join('\n')}\n\n난이도까지 붙여서 다시 불러 주세요. 예: \`${shortName(resolved.entries.at(-1))}\``,
       )
-      .setFooter({ text: `${DATA_DATE} 기준 · 택틱 제외 실딜량` });
+      .setFooter({ text: `로아뷰 공개 딜컷 · ${DATA_DATE} 확인 · 잔혈 컷에서 역산한 참고 기준` });
     await interaction.reply({ embeds: [embed] });
     return;
   }
@@ -144,8 +143,10 @@ export async function run(interaction, mode) {
     )
     .addFields(gates.map((g) => gateField(entry, g, parsed)));
 
-  const notes = [`${DATA_DATE} 기준`, '딜러 기준 · 국룰 택틱 반영'];
+  const notes = ['로아뷰 공개 딜컷', `${DATA_DATE} 확인`, '실제 MVP와 다를 수 있는 예상치'];
+  if (RAID_CUTS[entry.key].oneDerived) notes.push('1인분은 공개 표 계산식(딜러 6인 균등) 적용');
   if (parsed.damage == null) notes.push('피해량을 넣으면 판정까지 나와요');
+  else notes.push('지분 소수 1자리·피해량 억 단위 반올림, 판정은 반올림 전 기준');
   embed.setFooter({ text: notes.join(' · ') });
 
   await interaction.reply({ embeds: [embed] });

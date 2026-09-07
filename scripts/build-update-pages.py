@@ -1,6 +1,6 @@
 # docs/updates.html(전체 노트)의 <article>들을 읽어 버전별 페이지 docs/updates/<파일>.html을 다시 만든다.
 # 새 버전을 낼 때: updates.html에 <article id="..."> 추가 → 아래 VERSIONS에 한 줄 추가 → python scripts/build-update-pages.py
-# 버전 페이지에는 그 버전 노트 하나 + 이전/다음 글 + 전체 목록(게시판식)만 들어간다.
+# 버전 페이지에는 그 버전 노트 하나 + 이전/다음 글 + 전체 목록(게시판식)만 들어간다. 출시 날짜는 표시하지 않는다.
 import re
 from pathlib import Path
 
@@ -8,10 +8,10 @@ DOCS = Path(__file__).resolve().parent.parent / 'docs'
 
 # 최신이 위. id = updates.html의 article id, file = 버전 페이지 파일명
 VERSIONS = [
-    {'id': 'v1-2',       'file': 'v1.2.html',       'badge': 'v1.2', 'title': '카카오톡 오픈채팅방 연동', 'date': '2026. 09. 04'},
-    {'id': 'v1-1',       'file': 'v1.1.html',       'badge': 'v1.1', 'title': '길드원 랭킹 추가',  'date': '2026. 09. 02'},
-    {'id': '2026-08-31', 'file': '2026-08-31.html', 'badge': '기능',  'title': '캐릭터 분석 확장',  'date': '2026. 08. 31'},
-    {'id': 'v0-1',       'file': 'v0.1.html',       'badge': 'v0.1', 'title': '첫 공개',          'date': '2026. 08. 30'},
+    {'id': 'v1-2',       'file': 'v1.2.html',       'badge': 'v1.2', 'title': '카카오톡 오픈채팅방 연동'},
+    {'id': 'v1-1',       'file': 'v1.1.html',       'badge': 'v1.1', 'title': '길드원 랭킹 추가'},
+    {'id': '2026-08-31', 'file': '2026-08-31.html', 'badge': '기능',  'title': '캐릭터 분석 확장'},
+    {'id': 'v0-1',       'file': 'v0.1.html',       'badge': 'v0.1', 'title': '첫 공개'},
 ]
 
 HEAD = '''<meta charset="UTF-8">
@@ -43,8 +43,7 @@ def main():
 
         rows = ''.join(
             f'    <a class="row{" current" if r is v else ""}" href="{r["file"]}">'
-            f'<span class="badge">{r["badge"]}</span><span class="title">{r["title"]}</span>'
-            f'<span class="date">{r["date"]}</span></a>\n'
+            f'<span class="badge">{r["badge"]}</span><span class="title">{r["title"]}</span></a>\n'
             for r in VERSIONS
         )
 
@@ -53,7 +52,7 @@ def main():
 <head>
 {HEAD}
 <title>{v["badge"]} {v["title"]} — 포근해용 업데이트 노트</title>
-<meta name="description" content="포근해용 {v["badge"]} 업데이트 노트 ({v["date"]}) — {v["title"]}.">
+<meta name="description" content="포근해용 {v["badge"]} 업데이트 노트 — {v["title"]}.">
 </head>
 <body>
 
@@ -64,7 +63,7 @@ def main():
       <a class="back" href="../updates.html">전체 노트 보기 →</a>
     </div>
     <h1>업데이트 <span class="accent">노트</span></h1>
-    <p class="lead">{v["badge"]} · {v["date"]}</p>
+    <p class="lead">{v["badge"]} · {v["title"]}</p>
   </div>
 </header>
 

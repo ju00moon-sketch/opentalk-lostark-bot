@@ -1,4 +1,4 @@
-// 오늘의 한마디 — 클로드 API로 길드 채팅용 한마디 1~2줄을 만들고, 사용자당 하루 한 번만 새로 만든다.
+// 오늘의 한마디 — 하루에 건네는 짧은 응원·생각거리. 사용자당 하루 한 번만 새로 만든다.
 // 키가 없거나 호출이 실패·지연되거나 봇 전체 하루 상한을 넘기면 고정 목록(src/data/quips.js)에서 뽑는다. 명세 §2.
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,11 +8,12 @@ import { QUIPS, QUIP_TOPICS } from './data/quips.js';
 
 const STORE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'quip-daily.json');
 const KST_OFFSET = 9 * 60 * 60 * 1000;
-export const QUIP_MODEL_DEFAULT = 'claude-haiku-4-5'; // 가장 저렴한 모델. 환경변수 QUIP_MODEL로 바꾼다.
+export const QUIP_MODEL_DEFAULT = 'gpt-5.6-luna';
+const ANTHROPIC_MODEL_DEFAULT = 'claude-haiku-4-5';
 export const DAILY_CAP = 300; // 봇 전체 하루 LLM 호출 상한(시도 기준) — 넘으면 고정 목록
 export const TIMEOUT_MS = 4000; // 카톡 25초 예산 안에서 넉넉히, 넘기면 고정 목록
-const MAX_CHARS = 120;
-const TONES = ['유머', '응원', '짧은 명언'];
+const MAX_CHARS = 80;
+const TONES = ['따뜻한 응원', '짧은 생각거리', '소소한 즐거움'];
 
 const kstDate = (ms) => new Date(ms + KST_OFFSET).toISOString().slice(0, 10);
 const pick = (list, random) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
@@ -24,48 +25,83 @@ export function pickFallback({ random = Math.random, avoid = null } = {}) {
 }
 
 const SYSTEM = [
-  '너는 로스트아크 길드의 디스코드·카카오톡 봇이다. 요청마다 길드원에게 건네는 "오늘의 한마디"를 한국어로 만든다.',
-  '규칙: 1~2줄, 전체 60자 이내. 톤은 요청에 적힌 것(유머·응원·짧은 명언)을 따르되 뻔하지 않게.',
-  '읽는 길드원 한 사람에게 직접 건네는 존댓말로 쓴다. 봇이 앞에 "○○님"을 붙여 보내므로 이름·호칭·"당신"으로 시작하지 않고 바로 이어질 말로 시작한다(예: "오늘 숙제는 하나만 끝내도 충분해요").',
-  '로스트아크 용어(숙제, 재련, 레이드, 골드, 카오스 던전, 모험섬, 떠상 등)는 자연스러울 때만 섞는다.',
-  '특정 사람 이름·욕설·비하·정치·종교·광고를 넣지 않는다. 이모지는 최대 1개.',
-  '따옴표·머리말·설명·해시태그 없이 한마디 문장만 출력한다.',
+  '오늘 하루에 건네는 따뜻한 응원이나 짧은 생각거리를 한국어 존댓말 1~2문장·2줄·80자 이내로 쓰세요.',
+  '앞에 이름님을 붙이므로 이름·호칭·당신·머리말 없이 문장만 출력하세요. 이모지는 최대 1개.',
+  '소소한 일상을 구체적으로 다루되 훈계·억지 게임 용어·운세·성공 보장·명언 인용은 피하세요.',
+  '욕설·비하·정치·종교·광고·해시태그는 금지합니다.',
 ].join('\n');
 
 // 요청 본문. 사용자 입력은 넣지 않고 주제·톤·날짜만 무작위로 섞어 매번 다르게 만든다.
-export function buildRequest({ model = process.env.QUIP_MODEL || QUIP_MODEL_DEFAULT, random = Math.random, date = kstDate(Date.now()) } = {}) {
+export function buildRequest({ provider = 'openai', model, random = Math.random, date = kstDate(Date.now()) } = {}) {
+  const input = `${date} · ${pick(QUIP_TOPICS, random)} · ${pick(TONES, random)}`;
+  if (provider === 'anthropic') return {
+    model: model || ANTHROPIC_MODEL_DEFAULT, max_tokens: 200, temperature: 1,
+    system: SYSTEM, messages: [{ role: 'user', content: input }],
+  };
+  const selectedModel = model || QUIP_MODEL_DEFAULT;
   return {
-    model,
-    max_tokens: 200,
-    temperature: 1,
-    system: SYSTEM,
-    messages: [{ role: 'user', content: `주제 힌트: ${pick(QUIP_TOPICS, random)} · 톤: ${pick(TONES, random)} · 오늘 날짜: ${date}\n오늘의 한마디를 만들어 줘.` }],
+    model: selectedModel, instructions: SYSTEM, input, max_output_tokens: 200, store: false,
+    // 이 계열은 추론 없이 짧은 문장 출력에만 예산을 쓴다.
+    ...(/^gpt-5\.(4|6)(-|$)/.test(selectedModel) ? { reasoning: { effort: 'none' } } : {}),
   };
 }
 
-// 응답 본문 정리: 앞뒤 따옴표·공백 제거, 빈 줄 제거, 최대 2줄. 비어 있거나 너무 길면 null.
+// 응답 본문 정리: 앞뒤 따옴표·공백 제거. 범위를 넘긴 답을 잘라 보내지 않고 고정 목록으로 대체한다.
 function normalize(text) {
-  const lines = String(text ?? '').trim().replace(/^["'“”「『]+|["'“”」』]+$/g, '').trim().split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 2);
+  if (typeof text !== 'string') return null;
+  const lines = text.trim().replace(/^["'“”「『]+|["'“”」』]+$/g, '').trim().split('\n').map((l) => l.trim()).filter(Boolean);
   const out = lines.join('\n');
-  return out.length === 0 || out.length > MAX_CHARS ? null : out;
+  return lines.length > 2 || out.length === 0 || out.length > MAX_CHARS ? null : out;
 }
 
-// 키가 있을 때만 클라이언트를 만든다(SDK가 ANTHROPIC_API_KEY를 읽는다). 없으면 null → 항상 고정 목록.
-export function createClient() {
-  return process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+// 명시한 제공자 → 기존 모델 접두어 → 사용 가능한 키 순서. 기존 키만 있는 설치도 유지한다.
+export function createClient({ env = process.env, fetchImpl = fetch } = {}) {
+  const model = env.QUIP_MODEL?.trim();
+  const modelProvider = model?.startsWith('claude-') ? 'anthropic' : model?.startsWith('gpt-') ? 'openai' : null;
+  const provider = env.QUIP_PROVIDER?.trim() || modelProvider || (env.OPENAI_API_KEY ? 'openai' : 'anthropic');
+  if (modelProvider && provider !== modelProvider) return null;
+  if (provider === 'anthropic' && env.ANTHROPIC_API_KEY) {
+    const sdk = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    return { provider, model: model || ANTHROPIC_MODEL_DEFAULT, messages: sdk.messages };
+  }
+  if (provider !== 'openai' || !env.OPENAI_API_KEY) return null;
+  return { provider, model: model || QUIP_MODEL_DEFAULT, responses: {
+    async create(body, { signal }) {
+      const response = await fetchImpl('https://api.openai.com/v1/responses', {
+        method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body), signal,
+      });
+      if (!response.ok) throw Object.assign(new Error('Request failed'), { status: response.status });
+      return response.json();
+    },
+  } };
 }
 
 // LLM 호출 1회 → 정리한 한마디 또는 null(실패·지연·거부·빈 응답). 본문·키는 로그에 남기지 않는다.
 export async function generateQuip({ client, model, random = Math.random, now = Date.now, timeoutMs = TIMEOUT_MS } = {}) {
   if (!client) return null;
   try {
-    // timeout은 연결·헤더까지만 막고 본문 수신은 제한하지 않아 AbortSignal.timeout도 함께 넘긴다(기술 검토 P2-2).
-    const response = await client.messages.create(buildRequest({ model, random, date: kstDate(now()) }), { timeout: timeoutMs, maxRetries: 0, signal: AbortSignal.timeout(timeoutMs) });
-    if (response?.stop_reason === 'refusal') return null;
-    const block = (response?.content ?? []).find((b) => b.type === 'text');
-    return normalize(block?.text);
+    const provider = client.provider || 'anthropic';
+    const request = buildRequest({ provider, model: model || client.model, random, date: kstDate(now()) });
+    // 연결부터 본문 수신까지 하나의 기한. 실패 후 다른 제공자를 호출하지 않는다.
+    const options = { timeout: timeoutMs, maxRetries: 0, signal: AbortSignal.timeout(timeoutMs) };
+    if (provider === 'openai') {
+      const response = await client.responses.create(request, options);
+      if (response?.status !== 'completed') return null;
+      const messages = (response.output ?? []).filter((item) => item.type === 'message');
+      if (messages.some((item) => item.status !== 'completed')) return null;
+      const blocks = messages.flatMap((item) => item.content ?? []);
+      if (blocks.some((block) => block.type !== 'output_text' || typeof block.text !== 'string')) return null;
+      return normalize(blocks.map((block) => block.text).join('\n'));
+    }
+    const response = await client.messages.create(request, options);
+    if (response?.stop_reason !== 'end_turn') return null;
+    const blocks = response.content ?? [];
+    if (blocks.some((block) => block.type !== 'text' || typeof block.text !== 'string')) return null;
+    return normalize(blocks.map((block) => block.text).join('\n'));
   } catch (err) {
-    console.error('한마디 생성 실패:', err?.status ? `HTTP ${err.status}` : err?.name ?? err?.message);
+    const detail = Number.isInteger(err?.status) ? `HTTP ${err.status}` : /^(AbortError|TimeoutError)$/.test(err?.name) ? '시간 초과' : '요청 오류';
+    console.error('한마디 생성 실패:', detail);
     return null;
   }
 }

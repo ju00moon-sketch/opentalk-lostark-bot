@@ -46,7 +46,6 @@
   .release-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
   .release-head h2 { font-family: var(--display); font-weight: 400; font-size: 1.45rem; }
   .release-head .ver { color: var(--accent); font-weight: 400; }
-  .release-head .date { color: var(--text-dim); font-size: 0.92rem; }
   .summary { color: var(--text-dim); margin-bottom: 18px; }
 
   h3 { font-family: var(--display); font-weight: 400; font-size: 1.15rem; margin: 22px 0 8px; padding-top: 18px; border-top: 1px solid var(--border); }
@@ -102,7 +101,7 @@
   .board { margin-top: 36px; border-top: 2px solid var(--border-strong); }
   .board-head { color: var(--text-dim); font-size: 0.85rem; padding: 12px 8px 6px; }
   .board .row {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: center;
     padding: 14px 8px; border-bottom: 1px solid var(--border);
     color: var(--text); text-decoration: none;
   }
@@ -113,9 +112,7 @@
   }
   .board .row.current .badge { color: var(--accent); border-color: var(--accent); }
   .board .row.current .title { color: var(--accent); }
-  .board .date { color: var(--text-dim); font-size: 0.88rem; white-space: nowrap; }
   @media (max-width: 560px) {
     .pager { grid-template-columns: 1fr; }
     .board .row { grid-template-columns: 64px minmax(0, 1fr); }
-    .board .date { grid-column: 2; font-size: 0.8rem; }
   }

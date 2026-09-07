@@ -1,17 +1,13 @@
 // 레이드 관문별 보스 체력 · 제한시간 · 공대장 택틱(연합군) 피해량.
-// 출처: lopec.kr 기여도 계산기 (2026-08-31 확인). 체력 조정 패치가 오면 이 파일만 고치면 된다.
+// 출처: https://lopec.kr/tool/mvp (자료 2026-08-31, 벨가르딘 나메 체력 2026-09-07 재확인).
+// hp·tactic은 원본 참고 자료로 보존하며 현재 딜지분·딜컷 계산에는 사용하지 않는다.
+// 현재 계산 기준은 raid-cuts.js의 공개 딜컷이다. 비교 근거는 specs/2026-09-07-dealshare-basis-review.md 참고.
+// 성당 2단계 원본 체력은 공개 컷의 역산 기준과 약 9% 다르며 원인은 미확정이다.
 //   hp      — 관문 보스 총 체력
-//   tactic  — 국룰 택틱 기본값 합계 (연합군 스킬이 넣는 딜). 딜지분 분모에서 제외한다.
+//   tactic  — 원본의 국룰 택틱 기본값 합계 (연합군 스킬이 넣는 딜).
 //   time    — 관문 제한시간(초). DPS 기준 시간의 기본값.
 // 1~3막은 lopec 계산기에서 빠져 있어 아직 미지원.
 export const DATA_DATE = '2026-08-31';
-
-// 딜러 기준 컷 (기여도 비율). 4인 레이드와 8인 레이드가 다르다.
-export const CUTS = {
-  4: [{ short: '강투', title: '강직한 투사', ratio: 0.3 }, { short: '1인분', ratio: 1 / 3 }, { short: '잔혈', title: '잔혹한 혈투사', ratio: 0.4 }],
-  8: [{ short: '강투', title: '강직한 투사', ratio: 0.15 }, { short: '1인분', ratio: 1 / 6 }, { short: '잔혈', title: '잔혹한 혈투사', ratio: 0.2 }],
-};
-export const BASE_TITLE = '투사';
 
 export const RAID_HP = [
   { key: '4막 노말', raid: '4막', full: '4막: 파멸의 성채', diff: '노말', players: 8, gates: [
