@@ -366,8 +366,8 @@
   <!-- ── 커맨드 ── -->
   <section class="tab-panel" id="panel-commands">
     <h1 class="page">커맨드</h1>
-    <p class="lead">슬래시(/)를 치면 목록이 떠요. 자주 쓰는 건 초성만 쳐도 되고, 서버에서 <code>/도움말</code>을 입력하면 언제든 다시 볼 수 있습니다.</p>
-    <div class="pills"><span class="pill">슬래시 57개</span><span class="pill">별칭 38개</span><span class="pill">이모티콘 160종</span></div>
+    <p class="lead">디스코드에서 슬래시(/)를 치면 기본 커맨드 58개가 떠요. 초성·단어 별칭은 기존 채팅 입력으로 사용할 수 있고, <code>/도움말</code>에서 다시 볼 수 있습니다. 출첵·한마디는 아래 카카오톡 전용 영역을 확인해 주세요.</p>
+    <div class="pills"><span class="pill">슬래시 58개</span><span class="pill">채팅 별칭 지원</span><span class="pill">카톡 전용 2개</span><span class="pill">이모티콘 160종</span></div>
 
     <div class="cmd-group">
       <h2>캐릭터 조회</h2>
@@ -410,10 +410,11 @@
       <p class="section-desc">거래소와 경매장은 실시간으로 조회합니다.</p>
       <div class="cmd-table">
         <div class="cmd-row"><span class="cmd"><code>/시세 아이템명</code><em>ㅅㅅ</em></span><span class="desc">거래소 가격 검색 (부분 검색 가능)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/쌀</code><em>ㅆ · 쌀값</em></span><span class="desc">쌀값 — 재련 재료(파괴석·수호석·돌파석·융화 재료·파편 주머니·숨결·에스더의 기운) 거래소 최저가 한눈에 + 전일 대비 (5분 캐시)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/쌀</code><em>ㅆ · .쌀값</em></span><span class="desc">쌀값 — 재련 재료(파괴석·수호석·돌파석·융화 재료·파편 주머니·숨결·에스더의 기운) 거래소 최저가 한눈에 + 전일 대비 (5분 캐시)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/팔찌검색 옵션</code><em>ㅍㅉㄱㅅ</em></span><span class="desc">경매장 팔찌 검색 — 특·치·신·제·인·숙 최소값(예: <code>특90치90</code>, 붙여 써도 됨), 선택 <code>부여3</code>·<code>고정2</code>·특수 효과 이름 → 고대 4티어 즉시 구매가 최저 10개 (부여 효과 내용은 API 미제공)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/보석</code><em>ㅄ · ㅂㅅ</em></span><span class="desc">겁화→작열 순, 종류별 10→7레벨 최저가 시세판 + 전일 대비 · <code>/보석 종류 레벨</code> 단일 시세 · <code>/보석 닉네임</code> 그 캐릭터 장착 보석 · <code>/보석현황</code> 4티어 레벨별 표</span></div>
         <div class="cmd-row"><span class="cmd"><code>/각인서 각인명</code><em>ㄱㅇㅅ</em></span><span class="desc">각인서 시세 (등급별)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ · 비싼유각</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 + 전일 대비 · <code>/유각 2</code>로 다음 쪽 (<code>/각인서랭킹 [등급] [페이지]</code>의 단축 커맨드) · <code>/비싼유각</code>은 <code>/유각</code>과 같은 커맨드</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/유각</code> <code>/전각</code><em>ㅇㄱ · ㅈㄱㅇ · .비싼유각</em></span><span class="desc">비싼 유물 · 전설 각인서 TOP 10 + 전일 대비 · <code>/유각 2</code>로 다음 쪽 (<code>/각인서랭킹 [등급] [페이지]</code>의 단축 커맨드) · 채팅 <code>.비싼유각</code>은 <code>/유각</code>과 같은 커맨드</span></div>
         <div class="cmd-row"><span class="cmd"><code>/생활재료</code></span><span class="desc">생활 재료 분야별 시세</span></div>
         <div class="cmd-row"><span class="cmd"><code>/분배금 가격 [인원]</code><em>ㅂㅂㄱ</em></span><span class="desc">선점 추천가·균등 분배가·재판매 원금 회수 상한을 구분 (4/8/16인). <b>균등 분배가</b>는 낙찰자의 재판매 이익과 나머지 인원의 분배금이 같아지는 금액, <b>선점 추천가</b>는 거기서 1.1로 나눠 낙찰 쪽에 여유를 둔 금액, <b>재판매 상한</b>은 판매 수수료 5%만 반영한 금액이라 분배금을 포기하는 기회비용은 빠져 있어요</span></div>
         <div class="cmd-row"><span class="cmd"><code>/악세 검색 [품질]</code></span><span class="desc">연마 조합별 경매장 최저가 — 채팅은 <code>.상상</code> <code>.상중 70</code></span></div>
@@ -445,7 +446,7 @@
       <div class="cmd-table">
         <div class="cmd-row"><span class="cmd"><code>/떠상 [서버]</code><em>ㄸㅅ</em></span><span class="desc">떠돌이 상인 — 8개 서버의 전설 호감도 개수와 전설 카드·기타 전설 아이템 이름, 판매 마감까지 남은 시간, 서버를 넣으면 대륙별 판매 품목 (클로아 커뮤니티 제보 기준)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/모험섬</code><em>ㅁㅎㅅ</em></span><span class="desc">오늘의 모험 섬 시간표 + 주요 보상 (골드섬 💰 표시)</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/업데이트</code> <code>/업뎃</code><em>ㅇㄷㅇㅌ</em></span><span class="desc">이번 주 업데이트 내역 — 버튼으로 공지 바로 열기, 같은 날 공지와 지난 업데이트도 함께. 새 업데이트 내역이 올라오면 알림 채널에 자동 발송</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/업데이트</code> <code>.업뎃</code><em>ㅇㄷㅇㅌ</em></span><span class="desc">이번 주 업데이트 내역 — 버튼으로 공지 바로 열기, 같은 날 공지와 지난 업데이트도 함께. 새 업데이트 내역이 올라오면 알림 채널에 자동 발송</span></div>
         <div class="cmd-row"><span class="cmd"><code>/이벤트</code> <code>/공지</code></span><span class="desc">진행 중 이벤트 · 최신 공지사항</span></div>
         <div class="cmd-row"><span class="cmd"><code>/알림설정</code></span><span class="desc">서버별 알림 채널 켜기/끄기 — 모험섬 아침 알림 · 업데이트 공지 알림 · 떠돌이 상인 출현 알림 (관리자)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/이모티콘</code></span><span class="desc">사용 가능한 이모티콘 키워드 목록</span></div>
@@ -453,9 +454,18 @@
       </div>
     </div>
 
+    <div class="cmd-group">
+      <h2>카카오톡 전용</h2>
+      <p class="section-desc">아래 두 커맨드는 카톡에서만 사용할 수 있습니다. 디스코드의 슬래시·채팅 입력에는 응답하지 않습니다.</p>
+      <div class="cmd-table">
+        <div class="cmd-row"><span class="cmd"><code>/출첵</code><em>ㅊㅊ</em></span><span class="desc">출석 체크 — 하루 한 번(한국 시간 자정 기준) 1~3P 무작위 지급, 누적 포인트·출석 횟수 표시 (<code>/출첵</code>·<code>.ㅊㅊ</code>·접두사 없는 <code>ㅊㅊ</code>)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/한마디</code><em>/ㅎㅁㄷ · .ㅎㅁㄷ</em></span><span class="desc">오늘의 한마디 — 하루 한 번 새로 만든 1~2줄(유머·응원·명언), 같은 날 다시 부르면 그날 한마디를 다시. 생성이 안 되면 고정 목록에서 선택 · 접두사 없는 <code>ㅎㅁㄷ</code>는 미지원</span></div>
+      </div>
+    </div>
+
     <div class="note">
-      <div class="title">슬래시 없이 쓰는 법</div>
-      초성은 그냥 치면 됩니다 — <code>ㅂㅂㄱ 4000</code>. 단어형은 점을 붙여요 — <code>.분배금 4000</code>, <code>.업뎃</code>. 일반 대화가 오작동하지 않도록 나눠 뒀습니다. 슬래시 별칭(<code>/ㅂㅂㄱ</code>)도 같이 등록돼 있어요.
+      <div class="title">기존 채팅 입력도 그대로</div>
+      디스코드 초성은 그냥 치면 됩니다 — <code>ㅂㅂㄱ 4000</code>. 단어형은 점을 붙여요 — <code>.분배금 4000</code>, <code>.업뎃</code>. 슬래시 목록에는 <code>/분배금</code>·<code>/업데이트</code>처럼 기본 이름만 등록하며, 초성·단어 별칭은 채팅으로 사용합니다. 이모티콘 키워드와 결과 버튼도 그대로입니다.
     </div>
   </section>
 
@@ -535,7 +545,7 @@
     <div class="kakao-card">
       <div class="title"><span>카카오톡 오픈채팅방</span><span class="soon">운영 중</span></div>
       <p><code>/정보</code>·<code>/팔찌</code>·<code>/랭킹</code>·<code>/체급</code>은 카톡 전용 양식으로 읽기 편하게 정리했습니다. 긴 결과는 <b>전체 보기</b> 링크에서 확인할 수 있어요. 링크는 30분간 유효하며 서버 재시작 시에도 만료됩니다.</p>
-      <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code> 또는 <code>.</code>으로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>.ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 분배금은 <code>ㅂㅂㄱ 4000</code>·<code>ㅂㅂㄱ 4000 8</code>처럼 접두사 없이도 쓸 수 있어요. 다른 초성에는 <code>/</code> 또는 <code>.</code>을 붙여 주세요. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
+      <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code> 또는 <code>.</code>으로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>.ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 분배금(<code>ㅂㅂㄱ 4000</code>·<code>ㅂㅂㄱ 4000 8</code>)과 출첵(<code>ㅊㅊ</code>)은 접두사 없이도 쓸 수 있어요. <b>출첵·한마디는 카톡 전용</b>이며, 한마디는 <code>/한마디</code>·<code>.ㅎㅁㄷ</code>처럼 접두사를 붙여 주세요. 다른 초성에는 <code>/</code> 또는 <code>.</code>을 붙여 주세요. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
       <div class="actions">
         <a class="btn-kakao" href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">💬 카카오톡으로 물어보기</a>
         <small>봇과 1:1 채팅이 열려요 — 방 밖에서도 <code>/정보 닉네임</code>처럼 바로 물어볼 수 있습니다.</small>
@@ -567,7 +577,7 @@ npm install</pre>
       <a class="release latest" href="updates/v1.2.html">
         <div class="head"><span class="ver">v1.2</span><span class="date">2026. 09. 04</span><span class="badge">최신</span></div>
         <p class="summary">카카오톡 오픈채팅방 연동에 더해, 카톡 전용 양식과 긴 결과 전체 보기를 제공합니다. 보석 시세판·각인서 등락 조회도 개선했습니다.</p>
-        <div class="chips"><span>카카오톡 오픈채팅방 연동</span><span>카톡 가독성·전체 보기</span><span>/보석 · /ㅄ</span><span>각인서 등락·쪽 넘김</span><span>/치적 개선</span></div>
+        <div class="chips"><span>카카오톡 오픈채팅방 연동</span><span>카톡 가독성·전체 보기</span><span>/보석 · 채팅 ㅄ</span><span>각인서 등락·쪽 넘김</span><span>/치적 개선</span></div>
       </a>
       <a class="release" href="updates/v1.1.html">
         <div class="head"><span class="ver">v1.1</span><span class="date">2026. 09. 02</span></div>

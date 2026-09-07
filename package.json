@@ -15,6 +15,7 @@
     "dev:register": "node --env-file=.env.dev src/register-commands.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "discord.js": "^14.27.0"
   }
 }

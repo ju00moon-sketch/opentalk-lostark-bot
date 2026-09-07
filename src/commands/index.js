@@ -55,8 +55,9 @@ import * as specup from './specup.js';
 import * as rice from './rice.js';
 import * as crystal from './crystal.js';
 import * as merchant from './merchant.js';
-
-import { ALIASES } from '../text-commands.js';
+import * as braceletSearch from './bracelet-search.js';
+import * as attendance from './attendance.js';
+import * as quip from './quip.js';
 
 const base = [
   character, info, gear, expedition, bid, island, market, gem, help,
@@ -65,21 +66,11 @@ const base = [
   gemsof, gemboard, engraving, engravingRank, engravingRankRelic, engravingRankLegend,
   life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency, dealshare, dealcut,
-  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice, crystal, merchant,
+  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice, crystal, merchant, braceletSearch, attendance, quip,
 ];
 
-// 초성 별칭을 슬래시 커맨드로도 등록한다 (/ㅂㅂㄱ 등).
-// 대상 커맨드의 옵션 구조를 그대로 복제하고 이름만 바꾼다.
-const aliasCommands = Object.entries(ALIASES).flatMap(([alias, def]) => {
-  const target = base.find((c) => c.data.name === def.cmd);
-  if (!target) return [];
-  return [{
-    data: {
-      name: alias,
-      toJSON: () => ({ ...target.data.toJSON(), name: alias, description: def.desc ?? `${def.cmd} 축약 커맨드` }),
-    },
-    execute: target.execute,
-  }];
-});
+// 슬래시 등록과 디스코드 실행은 기본 명령만 사용한다. 출첵·한마디는 카톡 전용이다.
+export const commands = base.filter((command) => !['출첵', '한마디'].includes(command.data.name));
 
-export const commands = [...base, ...aliasCommands];
+// 카톡의 단어·초성 별칭은 기존 텍스트 파서가 기본 명령 이름으로 풀어 실행한다.
+export const kakaoCommands = base;

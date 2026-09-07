@@ -9,10 +9,10 @@ import { KakaoInteraction } from './interaction.js';
 import { toKakaoResponse, textResponse, cardLinkFor, fitBridgeMessage, CHANNEL_LIMITS } from './render.js';
 
 // 카톡에서 커맨드로 보는 접두사. 폰 자판에서 /보다 .이 편해 둘 다 받는다(사용자 요청 2026-09-05).
-// 접두사 없는 초성은 ㅂㅂㄱ만 예외로 받는다. 첫 단어가 정확히 일치해야 한다.
+// 접두사 없는 초성은 ㅂㅂㄱ(분배금)과 ㅊㅊ(출첵)만 예외로 받는다(사용자 결정 2026-09-06·2026-09-07). 첫 단어가 정확히 일치해야 한다.
 export const KAKAO_PREFIXES = ['/', '.'];
 export const hasCommandPrefix = (text) => KAKAO_PREFIXES.some((p) => text.startsWith(p));
-export const KAKAO_MATCH_OPTIONS = { prefixes: KAKAO_PREFIXES, bareChosung: false, bareAliases: ['ㅂㅂㄱ'], anyCommand: true };
+export const KAKAO_MATCH_OPTIONS = { prefixes: KAKAO_PREFIXES, bareChosung: false, bareAliases: ['ㅂㅂㄱ', 'ㅊㅊ'], anyCommand: true };
 const isCommandInput = (text) => hasCommandPrefix(text) || KAKAO_MATCH_OPTIONS.bareAliases.includes(text.trim().split(/\s+/, 1)[0]);
 // 디스코드 채널 개념이 필요한 커맨드 — 카카오에선 항상 제외
 export const KAKAO_EXCLUDED = new Set(['알림설정']);
@@ -27,11 +27,11 @@ const DEFAULT_BUDGET_MS = 4500;
 const PENDING_TTL_MS = 3 * 60 * 1000;
 const TIMEOUT = Symbol('timeout');
 
-const GUIDE = '명령은 / 또는 .으로 시작해요. 예: /정보 닉네임 · /도움말. 분배금은 ㅂㅂㄱ 4000처럼 접두사 없이도 쓸 수 있어요.';
+const GUIDE = '명령은 / 또는 .으로 시작해요. 예: /정보 닉네임 · /도움말. 분배금(ㅂㅂㄱ 4000)과 출첵(ㅊㅊ)은 접두사 없이도 쓸 수 있어요.';
 const GUIDE_REPLIES = [['도움말', '/도움말'], ['모험섬', '/모험섬'], ['가토', '/가토'], ['업데이트', '/업데이트'], ['유각', '/유각']]
   .map(([label, messageText]) => ({ label, action: 'message', messageText }));
 const helpNote = (guild) => '💬 카카오톡에서는 /커맨드 또는 .커맨드 형식으로 써요 (예: /정보 닉네임, .ㅂㅂㄱ 4000, /등록 캐릭터명). '
-  + '분배금은 ㅂㅂㄱ 4000처럼 접두사 없이도 쓸 수 있어요. 다른 초성은 / 또는 .을 붙여 주세요. '
+  + '분배금(ㅂㅂㄱ 4000)과 출첵(ㅊㅊ)은 접두사 없이도 쓸 수 있어요. 다른 초성은 / 또는 .을 붙여 주세요. '
   + `${[...excludedFor(guild)].join('·')}은 디스코드 전용이에요.`
   + (guild ? ' /랭킹·/체급은 디스코드·카톡에서 /등록한 길드원을 집계해요.' : '')
   + (KAKAO_EMOTICONS_ENABLED ? '' : ' 이모티콘([키워드)은 카톡에서 잠시 꺼져 있어요.');

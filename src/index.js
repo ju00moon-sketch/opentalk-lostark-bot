@@ -1,5 +1,5 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
-import { commands } from './commands/index.js';
+import { commands, kakaoCommands } from './commands/index.js';
 import { startIslandNotifier } from './notify.js';
 import { startUpdateNotifier } from './update-notify.js';
 import { startMerchantNotifier } from './merchant-notify.js';
@@ -22,6 +22,7 @@ const commandMap = new Collection();
 for (const command of commands) {
   commandMap.set(command.data.name, command);
 }
+const kakaoCommandMap = new Collection(kakaoCommands.map((command) => [command.data.name, command]));
 
 // 채널 제한 — ALLOWED_CHANNEL_IDS의 채널이 속한 서버는 그 채널에서만 커맨드가 동작한다 (channel-restrictions.js).
 const allowedChannels = (process.env.ALLOWED_CHANNEL_IDS ?? '')
@@ -37,7 +38,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   startUpdateNotifier(readyClient);
   startMerchantNotifier(readyClient); // 떠돌이 상인 출현 10분 뒤 전체 판을 알림 채널로
   startCrystalAutoRefresh(); // 스펙업 페온 환산용 크리스탈 시세 — 시작 시 1회 + 매일 08:00 KST 자동 갱신
-  startKakaoServer(commandMap, process.env, { client: readyClient }); // KAKAO_PORT가 있을 때만 켜진다
+  startKakaoServer(kakaoCommandMap, process.env, { client: readyClient }); // KAKAO_PORT가 있을 때만 켜진다
 });
 
 // 텍스트 메시지 처리: ① 초성 커맨드 (ㅂㅂㄱ 4000 등) ② 이모티콘 ([따봉 등)

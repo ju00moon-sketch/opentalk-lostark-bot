@@ -116,6 +116,24 @@ export function searchAccessories({ category, etcOptions, quality, grade = '고�
   });
 }
 
+// 경매장 팔찌 검색 — etcOptions는 API 형식 그대로({ FirstOption, SecondOption, MinValue, MaxValue }). 고대 4티어, 즉시 구매가 오름차순 1쪽.
+export function searchBraceletAuction(etcOptions) {
+  return request('/auctions/items', {
+    ItemLevelMin: 0,
+    ItemLevelMax: 0,
+    ItemGradeQuality: null,
+    EtcOptions: etcOptions,
+    Sort: 'BUY_PRICE',
+    CategoryCode: 200040,
+    CharacterClass: '',
+    ItemTier: 4,
+    ItemGrade: '고대',
+    ItemName: '',
+    PageNo: 1,
+    SortCondition: 'ASC',
+  });
+}
+
 // 경매장 검색 (보석 등).
 export function searchAuctionItems(categoryCode, itemName) {
   return request('/auctions/items', {
