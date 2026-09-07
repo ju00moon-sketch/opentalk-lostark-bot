@@ -57,6 +57,7 @@ import * as crystal from './crystal.js';
 import * as merchant from './merchant.js';
 import * as braceletSearch from './bracelet-search.js';
 import * as attendance from './attendance.js';
+import * as attendanceStatus from './attendance-status.js';
 import * as quip from './quip.js';
 
 const base = [
@@ -66,11 +67,11 @@ const base = [
   gemsof, gemboard, engraving, engravingRank, engravingRankRelic, engravingRankLegend,
   life, events, notices,
   raidgold, weekly, synergy, tankiness, hell, naraka, efficiency, dealshare, dealcut,
-  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice, crystal, merchant, braceletSearch, attendance, quip,
+  grinding, cores, paradise, skillcode, guardian, alarm, register, lopec, alt, gemEfficiency, update, cpm, ranking, tier, specup, rice, crystal, merchant, braceletSearch, attendance, attendanceStatus, quip,
 ];
 
-// 슬래시 등록과 디스코드 실행은 기본 명령만 사용한다. 출첵·한마디는 카톡 전용이다.
-export const commands = base.filter((command) => !['출첵', '한마디'].includes(command.data.name));
+// 슬래시 등록과 디스코드 실행은 기본 명령만 사용한다. 출석·현황·한마디는 카톡 전용이다.
+export const commands = base.filter((command) => !['출첵', '출석체크현황', '한마디'].includes(command.data.name));
 
 // 카톡의 단어·초성 별칭은 기존 텍스트 파서가 기본 명령 이름으로 풀어 실행한다.
 export const kakaoCommands = base;

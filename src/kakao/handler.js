@@ -48,7 +48,7 @@ const plain = (response) => ({ response, link: null });
 
 // 발화 하나를 끝까지 실행한다 (예산과 무관). 절대 reject하지 않는다.
 // → { response: 카카오 스킬 응답 JSON, link: 방에 보낼 미리보기 카드 주소(없으면 null) }
-async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits = CHANNEL_LIMITS.skill } = {}) {
+async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, roomName = null, limits = CHANNEL_LIMITS.skill } = {}) {
   const render = (payloads) => toKakaoResponse(payloads, { baseUrl, limits, fullTitle: utterance });
   const keyword = parseEmoticonKeyword(utterance);
   if (keyword) {
@@ -67,7 +67,7 @@ async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayNa
   if (excludedFor(guild).has(name)) return plain(textResponse('이 커맨드는 디스코드에서만 쓸 수 있어요.'));
   if (name === '이모티콘' && !KAKAO_EMOTICONS_ENABLED) return plain(textResponse(EMOTICONS_OFF));
 
-  const interaction = new KakaoInteraction(userKey, match.options, { displayName, guild });
+  const interaction = new KakaoInteraction(userKey, match.options, { displayName, guild, roomName });
   try {
     await match.command.execute(interaction);
   } catch (err) {
@@ -129,7 +129,7 @@ async function postCallback(callbackUrl, response, fetchImpl) {
 }
 
 // 공통 처리: 예산·보류 캐시·콜백. → { response, link }
-async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch, channel = 'skill' } = {}) {
+async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEFAULT_BUDGET_MS, fetchImpl = fetch, channel = 'skill', roomName = null } = {}) {
   const limits = CHANNEL_LIMITS[channel] ?? CHANNEL_LIMITS.skill;
   // 요청 필드는 전부 바깥에서 온 값이다 — 문자열이 아니면 없는 것으로 본다(객체를 넣어 예외를 일으키는 요청 등).
   const req = body?.userRequest;
@@ -143,12 +143,12 @@ async function process(body, commandMap, { baseUrl, guild = null, budgetMs = DEF
   if (!utterance || !userKey) return plain(guideResponse());
 
   const started = Date.now();
-  const key = `${channel}\n${userKey}\n${utterance}`; // 채널마다 분량 규격이 달라 보류 결과를 섞지 않는다
+  const key = JSON.stringify([channel, roomName, userKey, utterance]); // 서로 다른 방의 동명 사용자 응답을 섞지 않는다
   let task = pending.get(key);
   if (!task) {
     // runUtterance는 절대 reject하지 않도록 만들어 두었지만, 여기서 한 번 더 감싼다 — 이 Promise는 pending에 담겨
     // 여러 요청이 기다리므로, 거절이 처리되지 않은 채 남으면 Node가 프로세스를 통째로 끝내 버린다(디스코드 봇까지).
-    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, limits })
+    task = runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, roomName, limits })
       .catch((err) => {
         console.error(`[카카오] 처리 실패 "${utterance}":`, err);
         return plain(textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.'));
@@ -235,7 +235,7 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
   let response;
   let link = null;
   try {
-    ({ response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs, channel: 'bridge' }));
+    ({ response, link } = await process(skillBody, commandMap, { baseUrl, guild, budgetMs, channel: 'bridge', roomName: room }));
   } catch (err) {
     console.error('[카카오 브리지] 처리 실패:', err);
     response = textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.');

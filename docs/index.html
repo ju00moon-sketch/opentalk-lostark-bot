@@ -366,8 +366,8 @@
   <!-- ── 커맨드 ── -->
   <section class="tab-panel" id="panel-commands">
     <h1 class="page">커맨드</h1>
-    <p class="lead">디스코드에서 슬래시(/)를 치면 기본 커맨드 58개가 떠요. 초성·단어 별칭은 기존 채팅 입력으로 사용할 수 있고, <code>/도움말</code>에서 다시 볼 수 있습니다. 출첵·한마디는 아래 카카오톡 전용 영역을 확인해 주세요.</p>
-    <div class="pills"><span class="pill">슬래시 58개</span><span class="pill">채팅 별칭 지원</span><span class="pill">카톡 전용 2개</span><span class="pill">이모티콘 160종</span></div>
+    <p class="lead">디스코드에서 슬래시(/)를 치면 기본 커맨드 58개가 떠요. 초성·단어 별칭은 기존 채팅 입력으로 사용할 수 있고, <code>/도움말</code>에서 다시 볼 수 있습니다. 출첵·출석체크현황·한마디는 아래 카카오톡 전용 영역을 확인해 주세요.</p>
+    <div class="pills"><span class="pill">슬래시 58개</span><span class="pill">채팅 별칭 지원</span><span class="pill">카톡 전용 3개</span><span class="pill">이모티콘 160종</span></div>
 
     <div class="cmd-group">
       <h2>캐릭터 조회</h2>
@@ -456,11 +456,13 @@
 
     <div class="cmd-group">
       <h2>카카오톡 전용</h2>
-      <p class="section-desc">아래 두 커맨드는 카톡에서만 사용할 수 있습니다. 디스코드의 슬래시·채팅 입력에는 응답하지 않습니다.</p>
+      <p class="section-desc">아래 세 커맨드는 카톡에서만 사용할 수 있습니다. 디스코드의 슬래시·채팅 입력에는 응답하지 않습니다.</p>
       <div class="cmd-table">
-        <div class="cmd-row"><span class="cmd"><code>/출첵</code><em>ㅊㅊ</em></span><span class="desc">출석 체크 — 하루 한 번(한국 시간 자정 기준) 1~3P 무작위 지급, 누적 포인트·출석 횟수 표시 (<code>/출첵</code>·<code>.ㅊㅊ</code>·접두사 없는 <code>ㅊㅊ</code>)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/출첵</code><em>ㅊㅊ</em></span><span class="desc">방마다 하루 한 번(한국 시간 자정 기준) 1~3P 무작위 지급, 해당 방의 이번 달 포인트·출석 횟수 표시. 매월 1일 한국 시간 00:00 초기화 (<code>/출첵</code>·<code>.ㅊㅊ</code>·접두사 없는 <code>ㅊㅊ</code>)</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/출석체크현황</code></span><span class="desc">이번 달에 현재 방에서 출석한 참여자의 월별 포인트·출석 횟수·오늘 출석 여부와 이번 달 참여자 수·오늘 출석 수. 포인트가 높은 순이며 동점이면 출석 횟수가 많은 순·닉네임순 (<code>.출석체크현황</code>도 가능)</span></div>
         <div class="cmd-row"><span class="cmd"><code>/한마디</code><em>/ㅎㅁㄷ · .ㅎㅁㄷ</em></span><span class="desc">오늘의 한마디 — 하루 한 번 새로 만든 1~2줄(유머·응원·명언), 같은 날 다시 부르면 그날 한마디를 다시. 생성이 안 되면 고정 목록에서 선택 · 접두사 없는 <code>ㅎㅁㄷ</code>는 미지원</span></div>
       </div>
+      <p class="section-desc">방별 기록은 0P부터 시작하며, <b>매월 1일 한국 시간 00:00에 포인트·출석 횟수·현황 집계가 초기화</b>됩니다. 현황에는 이번 달에 이 방에서 출석한 참여자만 나옵니다. 전체 방 멤버 목록은 제공하지 않으며 긴 현황은 <b>전체 보기</b>에서 확인할 수 있어요. 이름이 같은 방은 기록을 공유하고, 방 이름이나 카톡 닉네임이 바뀌면 새 기록을 시작합니다.</p>
     </div>
 
     <div class="note">
@@ -545,7 +547,7 @@
     <div class="kakao-card">
       <div class="title"><span>카카오톡 오픈채팅방</span><span class="soon">운영 중</span></div>
       <p><code>/정보</code>·<code>/팔찌</code>·<code>/랭킹</code>·<code>/체급</code>은 카톡 전용 양식으로 읽기 편하게 정리했습니다. 긴 결과는 <b>전체 보기</b> 링크에서 확인할 수 있어요. 링크는 30분간 유효하며 서버 재시작 시에도 만료됩니다.</p>
-      <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code> 또는 <code>.</code>으로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>.ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 분배금(<code>ㅂㅂㄱ 4000</code>·<code>ㅂㅂㄱ 4000 8</code>)과 출첵(<code>ㅊㅊ</code>)은 접두사 없이도 쓸 수 있어요. <b>출첵·한마디는 카톡 전용</b>이며, 한마디는 <code>/한마디</code>·<code>.ㅎㅁㄷ</code>처럼 접두사를 붙여 주세요. 다른 초성에는 <code>/</code> 또는 <code>.</code>을 붙여 주세요. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
+      <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code> 또는 <code>.</code>으로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>.ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 분배금(<code>ㅂㅂㄱ 4000</code>·<code>ㅂㅂㄱ 4000 8</code>)과 출첵(<code>ㅊㅊ</code>)은 접두사 없이도 쓸 수 있어요. <b>출첵·출석체크현황·한마디는 카톡 전용</b>입니다. 출첵 기록은 방별·월별로 쌓이며 <code>/출석체크현황</code>에서 현재 방의 이번 달 기록을 볼 수 있어요. 한마디는 <code>/한마디</code>·<code>.ㅎㅁㄷ</code>처럼 접두사를 붙여 주세요. 다른 초성에는 <code>/</code> 또는 <code>.</code>을 붙여 주세요. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
       <div class="actions">
         <a class="btn-kakao" href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">💬 카카오톡으로 물어보기</a>
         <small>봇과 1:1 채팅이 열려요 — 방 밖에서도 <code>/정보 닉네임</code>처럼 바로 물어볼 수 있습니다.</small>

@@ -1,8 +1,9 @@
 // 카카오 스킬 요청을 슬래시 인터랙션처럼 보이게 하는 어댑터 (text-commands.js의 TextInteraction과 같은 역할).
 // 커맨드가 reply/editReply로 보낸 페이로드를 모아 두고, handler가 한 번에 카카오 응답으로 바꾼다.
 export class KakaoInteraction {
-  constructor(userKey, options = {}, { displayName, guild = null } = {}) {
+  constructor(userKey, options = {}, { displayName, guild = null, roomName = null } = {}) {
     this.platform = 'kakao';
+    this.roomName = roomName; // 오픈채팅방 제목. 기존 사용자/등록 식별자와 별도로 전달한다.
     // 카카오 사용자 키에 접두사를 붙여 user-links.json에 디스코드 ID와 함께 저장한다.
     // 랭킹 집계는 스노플레이크만 골라 쓰므로 섞여도 영향이 없다.
     // displayName(오픈채팅방 브리지가 넘기는 카톡 닉네임)을 username에 넣어 두면 user-store의 resolveCharacter가
