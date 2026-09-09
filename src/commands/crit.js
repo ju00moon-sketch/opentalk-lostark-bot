@@ -136,19 +136,44 @@ function isConditionalCrit(text, index) {
   return scope !== null && !ALL_SKILLS.has(scope[1]);
 }
 
+// 현재 효과 상자만 읽어 다른 상자의 다음 레벨 수치가 섞이지 않게 한다.
+function readBluntThorn(description, tooltip) {
+  const node = /^진화\s+\d+티어\s+뭉툭한 가시\s+Lv\.([1-9]\d*)$/.exec(description);
+  if (!node) return null;
+  const box = tooltip?.Element_002;
+  const text = box?.type === 'MultiTextBox' && typeof box.value === 'string'
+    ? stripTags(box.value).replace(/\s+/g, ' ') : '';
+  const patterns = [
+    /진화형 피해가\s*(\d+(?:\.\d+)?)\s*%\s*증가/,
+    /치명타가 발생할 확률이 최대\s*(\d+(?:\.\d+)?)\s*%/,
+    /초과한 모든 치명타가 발생할 확률의\s*(\d+(?:\.\d+)?)\s*%\s*가 진화형 피해로 전환/,
+    /이 노드에 의한 진화형 피해는 최대\s*(\d+(?:\.\d+)?)\s*%/,
+  ];
+  const values = patterns.map((pattern) => {
+    const match = pattern.exec(text);
+    return match ? Number(match[1]) : NaN;
+  });
+  const [base, cap, rate, max] = values;
+  const valid = values.every((value) => Number.isFinite(value) && value >= 0)
+    && cap <= 100 && max >= base;
+  return { level: node[1], effect: valid ? { base, cap, rate, max } : null };
+}
+
 // 아크 패시브 노드에서 치적을 모은다. 출처는 계열(진화·깨달음·도약)로 묶는다.
 // 파생형("이속 증가량의 30% 만큼")은 합계에 못 넣으니 derived로 따로 돌려준다.
 function fromArkPassive(ark) {
   const found = [];
   const conditional = [];
   const derived = [];
+  let bluntThorn = null;
   for (const e of ark?.Effects ?? []) {
     const tooltip = parseTooltip(e.ToolTip);
-    const text = Object.values(tooltip)
+    const text = Object.values(tooltip ?? {})
       .filter((v) => v?.type === 'MultiTextBox')
       .map((v) => stripTags(v.value).replace(/\|/g, ' '))
       .join(' ');
     const description = stripTags(e.Description);
+    bluntThorn ??= readBluntThorn(description, tooltip);
     const category = /^(진화|깨달음|도약)/.exec(description)?.[1] ?? '아크패시브';
     const nodeName = description.replace(/^(진화|깨달음|도약)\s*\d*티어\s*/, '');
     for (const hit of readCrit(text)) {
@@ -163,7 +188,7 @@ function fromArkPassive(ark) {
       });
     }
   }
-  return { found, conditional, derived };
+  return { found, conditional, derived, bluntThorn };
 }
 
 // 채용한 스킬 본문·트라이포드에서 두 가지를 모은다 — 해당 스킬에만 붙는 값이라 합계에 넣지 않는다.
@@ -198,6 +223,43 @@ function fromSkills(skills) {
 
 const pct = (n) => `${n.toFixed(2)}%`;
 
+function bluntThornLines(node, total) {
+  if (!node) return [];
+  const warning = `⚠️ 뭉툭한 가시 Lv.${node.level} 채용중`;
+  const skipped = [warning + ' (효과 수치를 읽지 못해 계산 생략)'];
+  if (!node.effect || !Number.isFinite(total)) return skipped;
+  const { base, cap, rate, max } = node.effect;
+  const excess = Math.max(0, total - cap);
+  const converted = excess * rate / 100;
+  const raw = base + converted;
+  if (!Number.isFinite(raw)) return skipped;
+  // 노드 상한은 기본과 전환을 합친 전체 효과에 적용한다.
+  const evo = Math.min(raw, max);
+  const calculation = `기본 ${pct(base)} + 초과 치적 ${pct(excess)} × ${rate}% = ${pct(converted)}`;
+  const detail = raw >= max ? `상한 도달 — ${calculation}`
+    : excess === 0 ? '기본, 초과 치적 없음'
+      : `${calculation}, 노드 상한 ${pct(max)}`;
+  return [
+    `${warning} — 치적은 ${pct(cap)}까지만 적용`,
+    `진화형 피해 +${pct(evo)} (${detail})`,
+  ];
+}
+
+// 합산은 기존 행으로 끝낸 뒤 표시만 묶는다. 기존 세부와 중첩 근거를 보존한다.
+function groupedSourceLines(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    if (!groups.has(row.source)) groups.set(row.source, []);
+    groups.get(row.source).push(row);
+  }
+  return [...groups].map(([source, entries]) => {
+    const value = entries.reduce((sum, row) => sum + row.value, 0);
+    const details = entries.filter((row) => row.detail).map((row) =>
+      entries.length > 1 ? `${row.detail} ${pct(row.value)}` : row.detail);
+    return `• ${source}: ${pct(value)}${details.length ? ` (${details.join(' · ')})` : ''}`;
+  });
+}
+
 // 같은 부위에서 여러 줄이 나오면 한 줄로 합친다 (반지 두 개 등).
 const MERGED_SOURCES = new Set(['목걸이', '귀걸이', '반지', '팔찌']);
 
@@ -231,7 +293,7 @@ export async function execute(interaction) {
   const extras = all.filter((h) => !h.additive);
 
   // 부위별 옵션(반지 두 개 등)은 한 줄로 합치고, 각인·노드는 이름을 그대로 남긴다.
-  const rows = [{ label: `스탯 (치명 ${critStat?.Value ?? '-'})`, value: statCrit }];
+  const rows = [{ source: '스탯', detail: `치명 ${critStat?.Value ?? '-'}`, value: statCrit }];
   const mergedIndex = new Map();
   for (const hit of counted) {
     const value = hit.value * hit.stacks;
@@ -241,26 +303,28 @@ export async function execute(interaction) {
         found.value += value;
         continue;
       }
-      const row = { label: hit.source, value };
+      const row = { source: hit.source, value };
       mergedIndex.set(hit.source, row);
       rows.push(row);
       continue;
     }
     // 풀스택 환산이면 어떻게 나온 값인지 같이 적는다
     const suffix = hit.stacks > 1 ? ` (${hit.value}% ×${hit.stacks}중첩)` : '';
-    rows.push({ label: `${hit.source} ${hit.detail}${suffix}`, value });
+    rows.push({ source: hit.source, detail: `${hit.detail}${suffix}`, value });
   }
   // 백어택은 기습의 대가를 낀 캐릭터(백어택 빌드)에만 더한다.
   const backAttack = (armory.ArmoryEngraving?.ArkPassiveEffects ?? [])
     .some((e) => e.Name === BACK_ATTACK_ENGRAVING && e.Level > 0);
-  if (backAttack) rows.push({ label: '백 어택', value: BACK_ATTACK_CRIT });
+  if (backAttack) rows.push({ source: '백 어택', value: BACK_ATTACK_CRIT });
 
   const total = rows.reduce((sum, r) => sum + r.value, 0);
   const lines = [
     `**총합: ${pct(total)}**`,
     '',
-    ...rows.map((r) => `• ${trunc(r.label, 60)}: ${pct(r.value)}`),
+    ...groupedSourceLines(rows),
   ];
+  const bluntLines = bluntThornLines(ark.bluntThorn, total);
+  if (bluntLines.length) lines.push('', ...bluntLines);
 
   // 아이덴티티(Z키) 치적은 API에 없어서 직업별 표에서 가져온다.
   // 같은 노드의 툴팁에서 이미 수치를 읽었다면(패치로 툴팁에 실린 경우) 표 항목은 빼서 두 번 세지 않는다.

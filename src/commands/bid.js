@@ -55,6 +55,13 @@ const SECTION = {
   cap: '재판매 원금 회수 상한',
 };
 
+// 분배금 입력에서 지원하는 각인 줄임말을 정식 이름으로 되돌린다.
+const ENGRAVING_NAMES = new Map([
+  ['예둔', '예리한 둔기'], ['기습', '기습의 대가'], ['돌대', '돌격대장'],
+  ['아드', '아드레날린'], ['저받', '저주받은 인형'], ['질증', '질량 증가'],
+  ['타대', '타격의 대가'],
+]);
+
 // "4인: 30,225G" 줄 묶음 — 인원을 지정하면 그 인원 한 줄만.
 const bidLines = (price, sizes, calc) => sizes.map((n) => `${n}인: ${gold(calc(price, n))}`);
 
@@ -67,7 +74,7 @@ export async function execute(interaction) {
 
   if (bookName) {
     await interaction.deferReply();
-    const fullName = `유물 ${bookName} 각인서`;
+    const fullName = `유물 ${ENGRAVING_NAMES.get(bookName) ?? bookName} 각인서`;
     let result;
     try {
       result = await searchMarketItems(40000, fullName, { grade: '유물' });

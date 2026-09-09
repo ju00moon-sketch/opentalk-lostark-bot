@@ -378,7 +378,7 @@
         <div class="cmd-row"><span class="cmd"><code>/캐릭터 닉네임</code><em>ㅋㄹㅌ</em></span><span class="desc">서버 · 직업 · 아이템 레벨 등 기본 정보</span></div>
         <div class="cmd-row"><span class="cmd"><code>/군장 닉네임</code><em>ㄱㅈ</em></span><span class="desc">장비 · 각인 · 보석 · 카드 한눈에</span></div>
         <div class="cmd-row"><span class="cmd"><code>/전투력 닉네임</code></span><span class="desc">전투력 · 전투 특성 · 공격력/생명력</span></div>
-        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 상시 아크패시브 노드 (백어택은 기습의 대가 착용 시) · 조건부 노드·아이덴티티·치적 시너지는 추가 확률로</span></div>
+        <div class="cmd-row"><span class="cmd"><code>/치적 닉네임</code><em>ㅊㅈ</em></span><span class="desc">치명타 적중률 출처별 합산 — 스탯 · 악세 · 팔찌 · 각인 · 상시 아크패시브 노드 (백어택은 기습의 대가 착용 시) · 조건부 노드·아이덴티티·치적 시너지는 추가 확률로 · 출처별 세부를 묶어 표시하고 뭉툭한 가시 채용 시 진화형 피해와 치적 상한 안내</span></div>
         <div class="cmd-row"><span class="cmd"><code>/로펙 닉네임</code><em>ㄹㅍ</em></span><span class="desc">로펙 환산 점수 · 전체/직업 순위 · 레벨 중앙값 대비 · 보유카드 · 팔찌/젬 효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/젬효율 닉네임</code><em>ㅈㅎㅇ</em></span><span class="desc">아크 그리드 젬 효율 — 옵션/포인트 구성과 옵션별 실효율</span></div>
         <div class="cmd-row"><span class="cmd"><code>/스펙업 닉네임</code><em>ㅅㅍㅇ</em></span><span class="desc">스펙업 효율 — 같은 골드 대비 딜 상승률(%) 순으로 디스코드 상위 10개·카톡 상위 5개 · 강화·장신구는 로펙 점수 비율, 보석은 직업·빌드별 스킬 딜 비중으로 계산 · 카톡은 옵션·비용·딜 상승·효율을 나눠 표시, 전체 보기에서 모든 후보와 모델 환산 점수 또는 로펙 변경 후 점수 제공 · 0G는 무료, 로펙 시세 보충 비용은 * · 페온은 자동 갱신 또는 직접 설정한 크리스탈 시세로 환산(<code>/크리스탈</code>로 확인, 시세 미수신 시 제외)</span></div>
@@ -548,7 +548,7 @@
       <div class="title"><span>카카오톡 오픈채팅방</span><span class="soon">운영 중</span></div>
       <p><code>/정보</code>·<code>/팔찌</code>·<code>/랭킹</code>·<code>/체급</code>은 카톡 전용 양식으로 읽기 편하게 정리했습니다. 긴 결과는 <b>전체 보기</b> 링크에서 확인할 수 있어요. 링크는 30분간 유효하며 서버 재시작 시에도 만료됩니다.</p>
       <p>길드 오픈채팅방에 포근해용 봇이 들어가 있어요. 디스코드에서 쓰던 커맨드를 <b><code>/</code> 또는 <code>.</code>으로 시작해서 그대로</b> — <code>/정보 닉네임</code> <code>.ㅂㅂㄱ 4000</code> <code>/모험섬</code> <code>/도움말</code>. 분배금(<code>ㅂㅂㄱ 4000</code>·<code>ㅂㅂㄱ 원한 8</code>)·비싼 유각(<code>ㅂㅆㅇㄱ [쪽]</code>)·출첵(<code>ㅊㅊ</code>)과 단독 <code>한마디</code>·<code>ㅎㅁㄷ</code>는 접두사 없이도 쓸 수 있어요. <b>출첵·출석체크현황·한마디는 카톡 전용</b>입니다. 출첵 기록은 방별·월별로 쌓이며 <code>/출석체크현황</code>에서 현재 방의 이번 달 기록을 볼 수 있어요. 한마디는 사람마다 오늘 받은 본문이 겹치지 않게 전해요. 이미 겹친 당일 기록은 다음 호출에서 바꿔 드립니다. 기존 <code>/한마디</code>·<code>.ㅎㅁㄷ</code>도 쓸 수 있어요. 다른 초성에는 <code>/</code> 또는 <code>.</code>을 붙여 주세요. 카톡 닉네임이 캐릭터명이면 닉네임을 생략할 수 있고, 아니면 <code>/등록 캐릭터명</code> 한 번. 디스코드 봇과 같은 두뇌(로스트아크 공식 API)를 공유해서 어느 쪽에서 물어봐도 같은 정보를 받습니다. <code>/랭킹</code> <code>/체급</code>도 되고(디스코드·카톡에서 <code>/등록</code>한 길드원이 한 판), 캐릭터 이미지·차트·이모티콘은 미리보기 카드로 오며, 아침 알림은 디스코드에서만. 자세한 사용법은 <a href="updates/v1.2.html">v1.2 노트</a>.</p>
-      <p><code>/분배금 원한</code>·<code>.분배금 저주받은 인형 8</code>처럼 금액 대신 각인서명을 입력할 수 있습니다. 유물 등급의 권당 현재 최저가를 적용하고, 계산 결과에 각인서 이름과 시세를 함께 표시합니다. 인원을 생략하면 4/8/16인을 모두 표시하며, 이름이나 현재 가격을 확인할 수 없으면 계산 대신 안내합니다.</p>
+      <p><code>/분배금 원한</code>·<code>.분배금 저주받은 인형 8</code>처럼 금액 대신 각인서명을 입력할 수 있습니다. <code>ㅂㅂㄱ 예둔 8</code>처럼 예둔·저받·아드·돌대 등의 줄임말도 지원합니다. 유물 등급의 권당 현재 최저가를 적용하고, 계산 결과에는 정식 각인서 이름과 시세를 함께 표시합니다. 인원을 생략하면 4/8/16인을 모두 표시하며, 이름이나 현재 가격을 확인할 수 없으면 계산 대신 안내합니다.</p>
       <div class="actions">
         <a class="btn-kakao" href="https://open.kakao.com/me/cozybot" target="_blank" rel="noopener">💬 카카오톡으로 물어보기</a>
         <small>봇과 1:1 채팅이 열려요 — 방 밖에서도 <code>/정보 닉네임</code>처럼 바로 물어볼 수 있습니다.</small>
@@ -579,8 +579,8 @@ npm install</pre>
     <div class="releases">
       <a class="release latest" href="updates/v1.2.html">
         <div class="head"><span class="ver">v1.2</span><span class="badge">최신</span></div>
-        <p class="summary">각인서명만 입력하면 유물 각인서의 현재 최저가로 분배금을 계산합니다. 숫자 가격 직접 입력과 4·8·16인 계산은 그대로 지원하며, 카톡에서는 ㅂㅆㅇㄱ로 비싼 유물 각인서 순위를 빠르게 조회할 수 있습니다.</p>
-        <div class="chips"><span>각인서명 분배금 계산</span><span>유물 최저가 자동 적용</span><span>카톡 ㅂㅆㅇㄱ</span></div>
+        <p class="summary">분배금 계산에 예둔·돌대 등 각인서 줄임말 7종을 사용할 수 있습니다. 치적 정보는 출처별로 묶어 보여드리며, 뭉툭한 가시를 채용했다면 치적 적용 상한과 노드가 주는 진화형 피해를 함께 안내합니다.</p>
+        <div class="chips"><span>각인서 줄임말 7종</span><span>치적 출처 묶기</span><span>뭉툭한 가시 효과</span></div>
       </a>
       <a class="release" href="updates/v1.1.html">
         <div class="head"><span class="ver">v1.1</span></div>
