@@ -23,10 +23,9 @@ export function createExecute({ getQuip = getQuipStore, now = Date.now } = {}) {
       await interaction.editReply(FAILED);
       return;
     }
-    // 양식(사용자 지정): "이름님 한마디" — 머리말 없이 이름 뒤에 바로 한마디가 이어진다. 같은 날 재요청이면 둘째 줄에 안내.
-    const note = result.status === 'repeat' ? '\n(오늘의 한마디를 다시 전해드려요 · 내일 00:00 한국 시간에 새 한마디)' : '';
+    // 양식(사용자 지정): "이름님 한마디" — 처음과 재요청 모두 이름 뒤에 한마디만 이어진다.
     // 별명과 생성 문장이 답장에 들어가므로 멘션 해석을 끈다(@everyone·<@id>가 섞여도 알림이 가지 않게).
-    await interaction.editReply({ content: `${name}님 ${result.text}${note}`, allowedMentions: { parse: [] } });
+    await interaction.editReply({ content: `${name}님 ${result.text}`, allowedMentions: { parse: [] } });
   };
 }
 
