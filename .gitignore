@@ -17,6 +17,7 @@ price-history.json
 crystal-price.json
 island-notify.json
 merchant-notify.json
+kakao-update-notify.json
 attendance.json
 quip-daily.json
 *.json.bak

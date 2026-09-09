@@ -18,10 +18,27 @@ const TONES = ['따뜻한 응원', '짧은 생각거리', '소소한 즐거움']
 const kstDate = (ms) => new Date(ms + KST_OFFSET).toISOString().slice(0, 10);
 const pick = (list, random) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
 
-// 고정 목록에서 하나. avoid(직전에 받은 문장)와 같으면 다음 것.
-export function pickFallback({ random = Math.random, avoid = null } = {}) {
+const textKey = (text) => text.normalize('NFC').replace(/\s+/g, '');
+const usedByOthers = (store, userId, date) => new Set(Object.entries(store)
+  .filter(([id, entry]) => id !== userId && entry.date === date)
+  .map(([, entry]) => textKey(entry.text)));
+
+// 본인의 직전 문장과 다른 사람의 당일 문장을 피한다. 기본 목록을 모두 썼으면 짧은 두 문장을 묶는다.
+export function pickFallback({ random = Math.random, avoid = null, exclude = [] } = {}) {
+  const blocked = new Set([...exclude, avoid].filter((text) => typeof text === 'string').map(textKey));
   const index = Math.min(QUIPS.length - 1, Math.floor(random() * QUIPS.length));
-  return QUIPS[index] === avoid ? QUIPS[(index + 1) % QUIPS.length] : QUIPS[index];
+  const ordered = [...QUIPS.slice(index), ...QUIPS.slice(0, index)];
+  const available = ordered.find((text) => !blocked.has(textKey(text)));
+  if (available) return available;
+  const singles = ordered.filter((text) => /^[^.!?\n]+[.!?]$/.test(text));
+  for (const first of singles) {
+    for (const second of singles) {
+      if (first === second) continue;
+      const text = `${first}\n${second}`;
+      if (text.length <= MAX_CHARS && !blocked.has(textKey(text))) return text;
+    }
+  }
+  throw new Error('오늘 나눌 서로 다른 한마디를 모두 사용했어요');
 }
 
 const SYSTEM = [
@@ -121,7 +138,7 @@ const defaultGenerate = (opts) => {
   return generateQuip({ client: defaultClient, ...opts });
 };
 
-// { userId: { date, text, source } } — 같은 날은 저장된 문장을 다시 준다. 깨진 파일이면 readJson이 예외를 던져 저장을 막는다.
+// { userId: { date, text, source } } — 당일 중복을 정리한 뒤에는 저장된 문장을 다시 준다. 깨진 파일은 저장을 막는다.
 // 파싱은 되지만 구조가 다른 파일(배열 루트, 문자열이 아닌 text 등)도 손상으로 본다 — 배열 위에 저장하면 기록이 사라진다.
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const isEntry = (e) => e && typeof e === 'object' && !Array.isArray(e) && typeof e.date === 'string' && DATE_RE.test(e.date) && typeof e.text === 'string' && (e.source === 'llm' || e.source === 'list');
@@ -136,24 +153,34 @@ function loadStore(storePath) {
 
 // 생성을 기다리는 동안(수 초) 다른 요청이 저장할 수 있으므로(기술 검토 P2-1):
 // 같은 사용자·날짜의 진행 중 요청은 한 프로미스를 공유하고, 저장 직전에 파일을 다시 읽어(검증 포함) 내 항목만 덧붙이며,
-// 그사이 같은 사용자에게 같은 날 또는 더 뒤 날짜의 기록이 생겼으면 덮어쓰지 않고 그 기록을 돌려준다.
+// 그사이 같은 사용자에게 중복 없는 당일 기록이나 더 뒤 날짜의 기록이 생겼으면 그 기록을 돌려준다.
 const inFlight = new Map(); // `${storePath}\n${userId}\n${date}` → Promise
 const repeatOf = (entry) => ({ status: 'repeat', text: entry.text, source: entry.source, date: entry.date });
 
 export async function getQuip(userId, { now = Date.now, random = Math.random, generate = defaultGenerate, storePath = STORE_PATH, cap = DAILY_CAP } = {}) {
   const date = kstDate(now());
-  const prev = loadStore(storePath)[userId] ?? null;
-  if (prev?.date === date) return repeatOf(prev);
+  const initial = loadStore(storePath);
+  const prev = initial[userId] ?? null;
+  if (prev?.date === date && !usedByOthers(initial, userId, date).has(textKey(prev.text))) return repeatOf(prev);
   const key = `${storePath}\n${userId}\n${date}`;
   if (inFlight.has(key)) return inFlight.get(key);
   const job = (async () => {
-    let text = null;
-    if (generate && tryReserve(date, cap)) text = await generate({ random, now });
-    const source = text ? 'llm' : 'list';
+    // 이미 저장된 당일 중복은 추가 생성 없이 요청자의 문장만 바꾼다.
+    let text = prev?.date === date ? prev.text : null;
+    let source = prev?.date === date ? prev.source : 'list';
+    if (prev?.date !== date && generate && tryReserve(date, cap)) {
+      text = await generate({ random, now });
+      source = text ? 'llm' : 'list';
+    }
     const store = loadStore(storePath); // 저장 직전 최신 상태
     const latest = store[userId] ?? null;
-    if (latest && latest.date >= date) return repeatOf(latest);
-    text ??= pickFallback({ random, avoid: latest?.text ?? prev?.text ?? null });
+    const used = usedByOthers(store, userId, date);
+    if (latest && (latest.date > date || (latest.date === date && !used.has(textKey(latest.text))))) return repeatOf(latest);
+    const previousText = latest?.text ?? prev?.text ?? null;
+    if (!text || used.has(textKey(text)) || (previousText && textKey(text) === textKey(previousText))) {
+      text = pickFallback({ random, avoid: previousText, exclude: used });
+      source = 'list';
+    }
     store[userId] = { date, text, source };
     writeJsonAtomic(storePath, store);
     return { status: 'new', text, source, date };

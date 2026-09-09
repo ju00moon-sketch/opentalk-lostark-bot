@@ -1,5 +1,6 @@
 // 카카오톡용 HTTP 서버. 디스코드 봇과 같은 프로세스에서 KAKAO_PORT가 있을 때만 켜진다.
 //   POST /bridge/message/<KAKAO_SKILL_SECRET>  오픈채팅방 브리지 — 폰의 메신저봇R이 { room, sender, text }를 보내고 { text }를 받음
+//   GET  /bridge/updates/<KAKAO_SKILL_SECRET>  수요일 당일 전체 공지 자동 알림 피드
 //   POST /kakao/skill/<KAKAO_SKILL_SECRET>     오픈빌더 스킬 요청 (채널 1:1 챗봇용, 항상 200 + JSON — 오류도 문구로)
 //   GET  /health                               ok
 //   GET  /p/(emo|chart|char|full)/<id>         카톡 링크 미리보기 카드 · 긴 결과 전문 페이지 (preview.js)
@@ -12,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { handleSkillRequest, handleBridgeMessage, KAKAO_EMOTICONS_ENABLED } from './handler.js';
 import { textResponse } from './render.js';
 import { renderPreview } from './preview.js';
+import { kakaoUpdateFeed } from './update-feed.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PUBLIC_DIRS = {
@@ -73,7 +75,7 @@ async function serveAsset(res, dir, rawName) {
   createReadStream(real).pipe(res);
 }
 
-async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
+async function route(req, res, { commandMap, secret, baseUrl, getGuild, updateFeed }) {
   const url = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && url.pathname === '/health') return sendText(res, 200, 'ok');
 
@@ -96,6 +98,15 @@ async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
 
   const isSkill = url.pathname === `/kakao/skill/${secret}`;
   const isBridge = url.pathname === `/bridge/message/${secret}`;
+  if (req.method === 'GET' && url.pathname === `/bridge/updates/${secret}`) {
+    res.setHeader('Cache-Control', 'no-store');
+    try {
+      return sendJson(res, 200, updateFeed.snapshot());
+    } catch {
+      console.error('카톡 업데이트 피드 조회 실패 — 상태 파일을 확인해 주세요');
+      return sendJson(res, 503, { error: '업데이트 알림을 잠시 조회할 수 없어요.' });
+    }
+  }
   if (req.method === 'POST' && (isSkill || isBridge)) {
     const body = await readJson(req);
     if (body === TOO_LARGE) return sendText(res, 413, 'payload too large');
@@ -110,7 +121,7 @@ async function route(req, res, { commandMap, secret, baseUrl, getGuild }) {
 }
 
 // client: 디스코드 클라이언트 — KAKAO_GUILD_ID가 있으면 그 서버를 찾아 /랭킹·/체급 집계 대상으로 넘긴다.
-export function startKakaoServer(commandMap, env = process.env, { client = null } = {}) {
+export function startKakaoServer(commandMap, env = process.env, { client = null, updateFeed = kakaoUpdateFeed } = {}) {
   const port = Number(env.KAKAO_PORT);
   if (!port) {
     console.log('카카오 스킬 서버: 꺼짐(KAKAO_PORT 없음)');
@@ -137,7 +148,7 @@ export function startKakaoServer(commandMap, env = process.env, { client = null 
   };
 
   const server = createServer((req, res) => {
-    route(req, res, { commandMap, secret, baseUrl, getGuild }).catch((err) => {
+    route(req, res, { commandMap, secret, baseUrl, getGuild, updateFeed }).catch((err) => {
       console.error('[카카오 서버]', err);
       if (!res.headersSent) sendJson(res, 200, textResponse(`오류가 발생했어요: ${err.message}`));
       else res.end();
