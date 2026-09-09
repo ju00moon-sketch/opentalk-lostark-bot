@@ -34,14 +34,28 @@ const parseGemArgs = (p) => {
   return { 닉네임: p.join(' ') };
 };
 
-// parse는 인자 배열을 받아 옵션 객체를 반환한다. null이면 사용법 안내.
-export const ALIASES = {
-  ㅂㅂㄱ: { cmd: '분배금', usage: 'ㅂㅂㄱ 가격 [인원] (예: ㅂㅂㄱ 4000)', parse: (p) => {
-    const 가격 = toInt(p[0]);
-    if (가격 === null || 가격 < 1) return null;
+// 숫자 입력은 기존 규칙을 유지하고, 각인명은 마지막의 선택 인원만 떼어 공백을 보존한다.
+const parseBidArgs = (p) => {
+  if (!p.length) return null;
+  const 가격 = toInt(p[0]);
+  if (가격 !== null) {
+    if (가격 < 1) return null;
     const 인원 = toInt(String(p[1] ?? '').replace('인', ''));
     return [4, 8, 16].includes(인원) ? { 가격, 인원 } : { 가격 };
-  } },
+  }
+  const parts = [...p];
+  let 인원;
+  if (/^[0-9]+인?$/.test(parts.at(-1))) {
+    인원 = Number(parts.pop().replace(/인$/, ''));
+    if (![4, 8, 16].includes(인원)) return null;
+  }
+  const 각인서 = parts.join(' ').normalize('NFC').replace(/^유물\s+/, '').replace(/\s+각인서$/, '').trim();
+  return 각인서 ? { 각인서, ...(인원 ? { 인원 } : {}) } : null;
+};
+
+// parse는 인자 배열을 받아 옵션 객체를 반환한다. null이면 사용법 안내.
+export const ALIASES = {
+  ㅂㅂㄱ: { cmd: '분배금', usage: 'ㅂㅂㄱ 가격|각인서명 [인원] (예: ㅂㅂㄱ 4000 · ㅂㅂㄱ 원한 8, 각인서는 유물만)', parse: parseBidArgs },
   ㅁㅎㅅ: { cmd: '모험섬', parse: () => ({}) },
   ㅊㅊ: { cmd: '출첵', parse: () => ({}) },
   ㅎㅁㄷ: { cmd: '한마디', parse: () => ({}) },
@@ -60,6 +74,7 @@ export const ALIASES = {
   ㅄ: { cmd: '보석', usage: 'ㅄ [종류 레벨 | 닉네임] (예: ㅄ · ㅄ 겁화 10 · ㅄ 블레상돈)', parse: parseGemArgs },
   ㅅㅋㅋㄷ: { cmd: '스킬코드', parse: (p) => ({ 닉네임: p.join(' ') || null }) },
   비싼유각: { cmd: '유각', desc: '유각과 같은 커맨드', usage: '.비싼유각 [쪽] (1~20 정수, 예: .비싼유각 2)', parse: parsePage },
+  ㅂㅆㅇㄱ: { cmd: '유각', usage: 'ㅂㅆㅇㄱ [쪽] (1~20 정수, 예: ㅂㅆㅇㄱ 2)', parse: parsePage },
   ㅇㄱ: { cmd: '유각', usage: 'ㅇㄱ [쪽] (1~20 정수, 예: ㅇㄱ 2)', parse: parsePage },
   ㅈㄱㅇ: { cmd: '전각', usage: 'ㅈㄱㅇ [쪽] (1~20 정수, 예: ㅈㄱㅇ 2)', parse: parsePage },
   ㄷㅈㅂ: { cmd: '딜지분', usage: 'ㄷㅈㅂ 레이드[관문] [피해량] (예: ㄷㅈㅂ 세하1관 2700억)', parse: (p) => (p[0] ? { 레이드: p.join(' ') } : null) },
