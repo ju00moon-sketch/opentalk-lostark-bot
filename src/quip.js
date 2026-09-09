@@ -8,12 +8,11 @@ import { QUIPS, QUIP_TOPICS } from './data/quips.js';
 
 const STORE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'quip-daily.json');
 const KST_OFFSET = 9 * 60 * 60 * 1000;
-export const QUIP_MODEL_DEFAULT = 'gpt-5.6-luna';
+export const QUIP_MODEL_DEFAULT = 'gpt-5.6-sol';
 const ANTHROPIC_MODEL_DEFAULT = 'claude-haiku-4-5';
 export const DAILY_CAP = 300; // 봇 전체 하루 LLM 호출 상한(시도 기준) — 넘으면 고정 목록
-export const TIMEOUT_MS = 4000; // 카톡 25초 예산 안에서 넉넉히, 넘기면 고정 목록
+export const TIMEOUT_MS = 12000; // 카톡 브리지 25초 예산 안에서 생성 완료를 기다리고, 넘기면 고정 목록
 const MAX_CHARS = 80;
-const TONES = ['따뜻한 응원', '짧은 생각거리', '소소한 즐거움'];
 
 const kstDate = (ms) => new Date(ms + KST_OFFSET).toISOString().slice(0, 10);
 const pick = (list, random) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
@@ -23,12 +22,47 @@ const usedByOthers = (store, userId, date) => new Set(Object.entries(store)
   .filter(([id, entry]) => id !== userId && entry.date === date)
   .map(([, entry]) => textKey(entry.text)));
 
+// 짧은 공통 어미는 허용하고, 같은 첫 문장이나 긴 연속 표현은 피한다.
+function expressionKeys(text) {
+  const parts = text.normalize('NFC').split(/[.!?。！？\n]+/u)
+    .map((part) => part.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
+  const keys = [];
+  if (parts[0]?.length >= 8) keys.push(`first:${parts[0]}`);
+  for (const part of parts) {
+    for (let i = 0; i + 16 <= part.length; i++) keys.push(`phrase:${part.slice(i, i + 16)}`);
+  }
+  return keys;
+}
+
+function overlapsExpressions(texts) {
+  const used = new Set(texts.filter((text) => typeof text === 'string').flatMap(expressionKeys));
+  return (text) => expressionKeys(text).some((key) => used.has(key));
+}
+
+let topicDeck = [];
+let lastTopic = null;
+function nextTopic(random) {
+  if (topicDeck.length === 0) {
+    topicDeck = [...QUIP_TOPICS];
+    for (let i = topicDeck.length - 1; i > 0; i--) {
+      const j = Math.min(i, Math.floor(random() * (i + 1)));
+      [topicDeck[i], topicDeck[j]] = [topicDeck[j], topicDeck[i]];
+    }
+    const last = topicDeck.length - 1;
+    if (topicDeck[last] === lastTopic) [topicDeck[0], topicDeck[last]] = [topicDeck[last], topicDeck[0]];
+  }
+  lastTopic = topicDeck.pop();
+  return lastTopic;
+}
+
 // 본인의 직전 문장과 다른 사람의 당일 문장을 피한다. 기본 목록을 모두 썼으면 짧은 두 문장을 묶는다.
-export function pickFallback({ random = Math.random, avoid = null, exclude = [] } = {}) {
+export function pickFallback({ random = Math.random, avoid = null, exclude = [], avoidExpressions = [] } = {}) {
   const blocked = new Set([...exclude, avoid].filter((text) => typeof text === 'string').map(textKey));
   const index = Math.min(QUIPS.length - 1, Math.floor(random() * QUIPS.length));
   const ordered = [...QUIPS.slice(index), ...QUIPS.slice(0, index)];
-  const available = ordered.find((text) => !blocked.has(textKey(text)));
+  const overlaps = overlapsExpressions(avoidExpressions);
+  const candidates = ordered.filter((text) => !blocked.has(textKey(text)));
+  const available = candidates.find((text) => !overlaps(text)) ?? candidates[0];
   if (available) return available;
   const singles = ordered.filter((text) => /^[^.!?\n]+[.!?]$/.test(text));
   for (const first of singles) {
@@ -42,15 +76,16 @@ export function pickFallback({ random = Math.random, avoid = null, exclude = [] 
 }
 
 const SYSTEM = [
-  '오늘 하루에 건네는 따뜻한 응원이나 짧은 생각거리를 한국어 존댓말 1~2문장·2줄·80자 이내로 쓰세요.',
-  '앞에 이름님을 붙이므로 이름·호칭·당신·머리말 없이 문장만 출력하세요. 이모지는 최대 1개.',
-  '소소한 일상을 구체적으로 다루되 훈계·억지 게임 용어·운세·성공 보장·명언 인용은 피하세요.',
-  '욕설·비하·정치·종교·광고·해시태그는 금지합니다.',
+  '한국어 존댓말 한마디 본문만. 대체로 두 문장·45~75자, 최대 2줄·80자. 이름·호칭·당신·머리말 제외. 이모지는 자연스러울 때만 1개까지.',
+  '소재에 맞게 응원·공감·짧은 창작 격언을 전하고, 일상 실수에는 가벼운 농담을 곁들인다. 매번 웃기거나 교훈으로 끝낼 필요는 없다. 창작 격언에 저자나 출처를 붙이지 않는다.',
+  '소재는 가정이나 일반적인 상황으로 말한다. 상대가 겪은 일로 단정하거나 성격·계절·날씨를 추측하지 않는다.',
+  '웃음은 상황의 반전에서 찾고 사물에 감정·의지를 붙이거나 억지 비유는 쓰지 않는다. 차·커피·물 한 잔·휴식/여유 반복 금지.',
+  '훈계·비하·욕설·정치·종교·광고·성공 보장·억지 게임 용어·허위 인용·운세·해시태그 금지.',
 ].join('\n');
 
-// 요청 본문. 사용자 입력은 넣지 않고 주제·톤·날짜만 무작위로 섞어 매번 다르게 만든다.
-export function buildRequest({ provider = 'openai', model, random = Math.random, date = kstDate(Date.now()) } = {}) {
-  const input = `${date} · ${pick(QUIP_TOPICS, random)} · ${pick(TONES, random)}`;
+// 요청 본문. 사용자 입력·날짜 없이 일상 소재 하나만 보낸다.
+export function buildRequest({ provider = 'openai', model, random = Math.random, topic } = {}) {
+  const input = topic ?? pick(QUIP_TOPICS, random);
   if (provider === 'anthropic') return {
     model: model || ANTHROPIC_MODEL_DEFAULT, max_tokens: 200, temperature: 1,
     system: SYSTEM, messages: [{ role: 'user', content: input }],
@@ -95,11 +130,11 @@ export function createClient({ env = process.env, fetchImpl = fetch } = {}) {
 }
 
 // LLM 호출 1회 → 정리한 한마디 또는 null(실패·지연·거부·빈 응답). 본문·키는 로그에 남기지 않는다.
-export async function generateQuip({ client, model, random = Math.random, now = Date.now, timeoutMs = TIMEOUT_MS } = {}) {
+export async function generateQuip({ client, model, random = Math.random, timeoutMs = TIMEOUT_MS } = {}) {
   if (!client) return null;
   try {
     const provider = client.provider || 'anthropic';
-    const request = buildRequest({ provider, model: model || client.model, random, date: kstDate(now()) });
+    const request = buildRequest({ provider, model: model || client.model, random, topic: nextTopic(random) });
     // 연결부터 본문 수신까지 하나의 기한. 실패 후 다른 제공자를 호출하지 않는다.
     const options = { timeout: timeoutMs, maxRetries: 0, signal: AbortSignal.timeout(timeoutMs) };
     if (provider === 'openai') {
@@ -177,8 +212,11 @@ export async function getQuip(userId, { now = Date.now, random = Math.random, ge
     const used = usedByOthers(store, userId, date);
     if (latest && (latest.date > date || (latest.date === date && !used.has(textKey(latest.text))))) return repeatOf(latest);
     const previousText = latest?.text ?? prev?.text ?? null;
-    if (!text || used.has(textKey(text)) || (previousText && textKey(text) === textKey(previousText))) {
-      text = pickFallback({ random, avoid: previousText, exclude: used });
+    const previousExpressions = Object.entries(store)
+      .filter(([id, entry]) => id !== userId && entry.date === date).map(([, entry]) => entry.text);
+    if (previousText) previousExpressions.push(previousText);
+    if (!text || used.has(textKey(text)) || (previousText && textKey(text) === textKey(previousText)) || overlapsExpressions(previousExpressions)(text)) {
+      text = pickFallback({ random, avoid: previousText, exclude: used, avoidExpressions: previousExpressions });
       source = 'list';
     }
     store[userId] = { date, text, source };
@@ -189,4 +227,4 @@ export async function getQuip(userId, { now = Date.now, random = Math.random, ge
   return job;
 }
 
-export const __test = { resetCounter: () => { counter = { date: null, count: 0 }; inFlight.clear(); } };
+export const __test = { resetCounter: () => { counter = { date: null, count: 0 }; inFlight.clear(); topicDeck = []; lastTopic = null; } };
