@@ -23,9 +23,12 @@ export function createExecute({ getQuip = getQuipStore, now = Date.now } = {}) {
       await interaction.editReply(FAILED);
       return;
     }
-    // 양식(사용자 지정): "이름님 한마디" — 처음과 재요청 모두 이름 뒤에 한마디만 이어진다.
+    // 첫 응답은 이름과 본문만, 이미 받은 사용자의 재요청은 다음 날 안내만 보낸다.
+    const content = result.status === 'repeat'
+      ? '오늘의 한마디는 이미 받으셨어요. 내일 00:00(한국 시간) 이후에 다시 시도해 주세요.'
+      : `${name}님 ${result.text}`;
     // 별명과 생성 문장이 답장에 들어가므로 멘션 해석을 끈다(@everyone·<@id>가 섞여도 알림이 가지 않게).
-    await interaction.editReply({ content: `${name}님 ${result.text}`, allowedMentions: { parse: [] } });
+    await interaction.editReply({ content, allowedMentions: { parse: [] } });
   };
 }
 
