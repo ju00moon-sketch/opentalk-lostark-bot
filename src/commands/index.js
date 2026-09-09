@@ -71,7 +71,7 @@ const base = [
 ];
 
 // 슬래시 등록과 디스코드 실행은 기본 명령만 사용한다. 출석·현황·한마디는 카톡 전용이다.
-export const commands = base.filter((command) => !['출첵', '출석체크현황', '한마디'].includes(command.data.name));
+export const commands = base.filter((command) => !['출첵', '출석현황', '한마디'].includes(command.data.name));
 
 // 카톡의 단어·초성 별칭은 기존 텍스트 파서가 기본 명령 이름으로 풀어 실행한다.
 export const kakaoCommands = base;
