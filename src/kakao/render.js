@@ -252,9 +252,13 @@ export function toKakaoResponse(payloads, { baseUrl, limits = CHANNEL_LIMITS.ski
   const links = [];
   let quickReplies = [];
   let fullText = null; // 미리보기와 다른 "전체 보기" 본문(카톡 전용 선택 필드) — 스킬 JSON에는 싣지 않는다
+  let bridgeText = null; // 오픈채팅 메시지 안에서 전부 읽는 명령의 전문
   for (const raw of payloads ?? []) {
     const p = typeof raw === 'string' ? { content: raw } : raw ?? {};
     if (typeof p.kakaoFull === 'string' && p.kakaoFull.trim()) fullText = p.kakaoFull;
+    if (limits === CHANNEL_LIMITS.bridge && typeof p.kakaoBridgeText === 'string' && p.kakaoBridgeText.trim()) {
+      bridgeText = stripMarkdown(p.kakaoBridgeText);
+    }
     if (p.content) texts.push(stripMarkdown(p.content));
     for (const embed of p.embeds ?? []) {
       const text = embedToText(embed);
@@ -284,5 +288,6 @@ export function toKakaoResponse(payloads, { baseUrl, limits = CHANNEL_LIMITS.ski
   const response = { version: '2.0', template };
   // 비열거 속성이라 JSON.stringify(오픈빌더 응답·콜백 POST)에는 안 나가고, 브리지 handler만 response.full로 읽는다
   if (fullText) Object.defineProperty(response, 'full', { value: fullText, enumerable: false });
+  if (bridgeText) Object.defineProperty(response, 'bridgeText', { value: bridgeText, enumerable: false });
   return response;
 }

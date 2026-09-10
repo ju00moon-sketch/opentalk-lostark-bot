@@ -242,6 +242,10 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
     console.error('[카카오 브리지] 처리 실패:', err);
     response = textResponse('오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
   }
+  // 전투력처럼 메시지 안에서 전부 읽는 응답은 링크나 글자 수 절삭 없이 보낸다.
+  if (typeof response?.bridgeText === 'string' && response.bridgeText.trim()) {
+    return { text: response.bridgeText, link: null };
+  }
   // 방에 나가는 최종 메시지는 본문 + 후속 안내다 — 둘을 합친 길이로 분량을 맞춘다.
   const { body: message, tail, full } = flattenParts(response, { skipImages: Boolean(link) });
   return { text: fitBridgeMessage(message, tail, { baseUrl, fullTitle: text, fullText: full }), link };

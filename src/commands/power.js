@@ -5,6 +5,8 @@ import { resolveCharacter, NO_CHARACTER_HINT } from '../user-store.js';
 import { embedToText } from '../kakao/render.js';
 
 const COMBAT_STATS = ['치명', '특화', '제압', '신속', '인내', '숙련'];
+// 부캐 목록은 같은 메시지에 담고 카카오톡의 전체보기로 펼쳐 읽는다.
+const FOLD_PADDING = '\u200b'.repeat(500);
 
 export const data = new SlashCommandBuilder()
   .setName('전투력')
@@ -62,7 +64,7 @@ export function createExecute({ getCharacterProfile = getPowerProfile, getRoster
     if (interaction.platform === 'kakao') {
       let roster;
       try { roster = await getRoster(profile); } catch { roster = { total: null }; }
-      await interaction.editReply({ embeds: [embed], kakaoFull: `${embedToText(embed)}\n\n${rosterText(roster, profile)}` });
+      await interaction.editReply({ embeds: [embed], kakaoBridgeText: `${embedToText(embed)}\n\n${FOLD_PADDING}\n${rosterText(roster, profile)}` });
       return;
     }
     await interaction.editReply({ embeds: [embed] });
