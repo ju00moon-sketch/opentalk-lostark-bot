@@ -2,7 +2,7 @@
 
 포근해 길드(루페온) 전용 로스트아크 정보 조회 봇. **v1.2** — 디스코드 + 카카오톡 오픈채팅방
 
-🌐 **홈페이지: [https://ju00moon-sketch.github.io/opentalk-lostark-bot](https://pogeunhaeyong.duckdns.org/)**
+🌐 **홈페이지: https://pogeunhaeyong.duckdns.org/**
 
 **요구 사항: Node.js 24 이상** (ESM + 내장 `--env-file` 사용)
 
