@@ -4,6 +4,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { saveResult } from './result-store.js';
+import { emoticonCardUrl } from './emoticon-preview.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 // 공개 서빙을 허용하는 폴더 — 이 둘의 직접 자식 파일만 URL이 나온다 (server.js의 라우트와 짝)
@@ -176,7 +177,7 @@ export function cardLinkFor(payloads, { baseUrl, character = null }) {
       if (typeof filePath !== 'string') continue;
       const abs = path.resolve(filePath);
       const name = path.basename(abs).replace(/\.[^.]+$/, '');
-      if (path.dirname(abs) === PUBLIC_DIRS.emoticons) return `${baseUrl}/p/emo/${encodeURIComponent(name)}`;
+      if (path.dirname(abs) === PUBLIC_DIRS.emoticons) return emoticonCardUrl(abs, baseUrl);
       if (path.dirname(abs) === PUBLIC_DIRS.charts) return `${baseUrl}/p/chart/${encodeURIComponent(name)}`;
     }
     if (character) {

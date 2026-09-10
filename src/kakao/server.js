@@ -5,6 +5,7 @@
 //   GET  /health                               ok
 //   GET  /p/(emo|chart|char|full)/<id>         카톡 링크 미리보기 카드 · 긴 결과 전문 페이지 (preview.js)
 //   GET  /assets/emoticons/<파일> · /assets/charts/<파일>  이미지 공개 서빙 (두 폴더의 직접 자식만)
+//   GET  /assets/emoticons/preview/<파일>    현재 원본에 대응하는 가로 미리보기만 공개
 // 웹서버의 예외는 여기서 전부 잡아 디스코드 클라이언트에 영향을 주지 않는다.
 import { createServer } from 'node:http';
 import { createReadStream, promises as fs } from 'node:fs';
@@ -14,6 +15,7 @@ import { handleSkillRequest, handleBridgeMessage, KAKAO_EMOTICONS_ENABLED } from
 import { textResponse } from './render.js';
 import { renderPreview } from './preview.js';
 import { kakaoUpdateFeed } from './update-feed.js';
+import { EMOTICON_PREVIEW_DIR, isCurrentEmoticonPreview } from './emoticon-preview.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PUBLIC_DIRS = {
@@ -87,6 +89,12 @@ async function route(req, res, { commandMap, secret, baseUrl, getGuild, updateFe
     const cacheControl = preview[1] === 'full' ? 'no-store' : 'public, max-age=300';
     res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cacheControl });
     return res.end(html);
+  }
+
+  const emoticonPreview = /^\/assets\/emoticons\/preview\/([^/]+)$/.exec(url.pathname);
+  if (req.method === 'GET' && emoticonPreview) {
+    if (!KAKAO_EMOTICONS_ENABLED || !isCurrentEmoticonPreview(emoticonPreview[1])) return sendText(res, 404, 'not found');
+    return serveAsset(res, EMOTICON_PREVIEW_DIR, emoticonPreview[1]);
   }
 
   const asset = /^\/assets\/(emoticons|charts)\/([^/]+)$/.exec(url.pathname);

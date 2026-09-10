@@ -6,6 +6,9 @@ node_modules/
 assets/emoticons/*
 !assets/emoticons/README.md
 
+# 카카오 카드용 파생 이미지도 원본과 함께 비공개로 보관한다.
+assets/emoticon-previews/
+
 # Playwright MCP 테스트 잔여물
 .playwright-mcp/
 
