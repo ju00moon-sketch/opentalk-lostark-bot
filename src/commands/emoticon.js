@@ -17,7 +17,7 @@ export async function execute(interaction) {
     .setColor(EMBED_COLOR)
     .setTitle(`😄 이모티콘 목록 (${keywords.length}개)`)
     .setDescription(trunc(keywords.map((k) => `\`${k}\``).join(' '), 4096))
-    .setFooter({ text: '채팅에 [키워드 형태로 입력하면 이미지가 나와요. 예: [따봉' });
+    .setFooter({ text: '채팅에 [키워드 또는 .키워드 입력. 생일 6종은 굳·굳코·굳코코처럼 짧게도 쓸 수 있어요.' });
 
   await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }

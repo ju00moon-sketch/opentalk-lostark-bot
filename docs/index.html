@@ -58,7 +58,7 @@
 
     <div class="stats" aria-label="주요 기능과 운영 정보">
       <div class="stat"><div class="num">58<span>개</span></div><div class="label">디스코드 기본 커맨드</div></div>
-      <div class="stat"><div class="num">160<span>종</span></div><div class="label">채팅 이모티콘</div></div>
+      <div class="stat"><div class="num">166<span>종</span></div><div class="label">채팅 이모티콘</div></div>
       <div class="stat"><div class="num">24<span>h</span></div><div class="label">상시 가동</div></div>
       <a class="stat stat-release" href="updates/v1.2.html"><div class="num">v1.2<span aria-hidden="true">↗</span></div><div class="label">최신 업데이트 보기</div></a>
     </div>
@@ -105,8 +105,8 @@
       </div>
       <div class="card">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path><path d="M9 9.5h.01M15 9.5h.01"></path></svg>
-        <h3>이모티콘 160종</h3>
-        <p>채팅에 <code>[따봉</code>처럼 치면 이미지로 응답. 모코콩콘은 <code>[감사</code>처럼 콩을 빼도 되고, 모든 채널에서 됩니다.</p>
+        <h3>이모티콘 166종</h3>
+        <p>채팅에 <code>[굳</code> 또는 <code>.굳코코</code>처럼 치면 이미지로 응답. 생일 모코코 6종과 모코콩콘의 짧은 이름도 지원하며, 모든 채널에서 됩니다.</p>
       </div>
     </div>
   </section>
@@ -115,7 +115,7 @@
   <section class="tab-panel" id="panel-commands">
     <h1 class="page">커맨드</h1>
     <p class="lead">디스코드에서 슬래시(/)를 치면 기본 커맨드 58개가 떠요. 초성·단어 별칭은 기존 채팅 입력으로 사용할 수 있고, <code>/도움말</code>에서 다시 볼 수 있습니다. 출첵·출석현황·한마디는 아래 카카오톡 전용 영역을 확인해 주세요.</p>
-    <div class="pills"><span class="pill">슬래시 58개</span><span class="pill">채팅 별칭 지원</span><span class="pill">카톡 전용 3개</span><span class="pill">이모티콘 160종</span></div>
+    <div class="pills"><span class="pill">슬래시 58개</span><span class="pill">채팅 별칭 지원</span><span class="pill">카톡 전용 3개</span><span class="pill">이모티콘 166종</span></div>
 
     <div class="cmd-group">
       <h2>캐릭터 조회</h2>
@@ -221,14 +221,14 @@
 
   <!-- ── 이모티콘 ── -->
   <section class="tab-panel" id="panel-emoticons">
-    <h1 class="page">이모티콘 160종</h1>
+    <h1 class="page">이모티콘 166종</h1>
     <p class="lead">커맨드가 아니라 일반 채팅으로 씁니다. 커맨드 채널 제한과 무관하게 서버 어느 채널에서든 작동해요.</p>
 
     <div class="howto">
       <div class="card">
-        <div class="step">1 — 대괄호로 부르기</div>
-        <div class="sample">[따봉</div>
-        <p>여는 대괄호에 키워드만 붙이면 봇이 이미지를 올려줍니다. 닫는 괄호는 필요 없어요.</p>
+        <div class="step">1 — 대괄호나 점으로 부르기</div>
+        <div class="sample">[굳<span class="eq">=</span>.굳</div>
+        <p><code>[</code> 또는 <code>.</code>에 키워드를 붙이면 봇이 이미지를 올려줍니다. 대괄호는 닫지 않아도 됩니다. 점 입력은 기존 커맨드를 우선합니다.</p>
       </div>
       <div class="card">
         <div class="step">2 — 모코콩콘은 짧게</div>
@@ -242,6 +242,13 @@
       <span>서버에서 <code>/이모티콘</code> 으로도 볼 수 있어요</span>
     </div>
 
+    <details class="kw-group" open>
+      <summary>생일 모코코 <span class="count">6종</span></summary>
+      <div class="kw-chips">
+        <code>[굳코코</code> <code>[추카코코</code> <code>[냠코코</code> <code>[고코코</code> <code>[놉코코</code> <code>[넵코코</code>
+      </div>
+      <p>각 문구 뒤의 <b>코코</b>를 <b>코</b>로 줄이거나 생략해도 됩니다. <code>[굳</code> = <code>[굳코</code> = <code>[굳코코</code>. 점 접두사도 동일합니다.</p>
+    </details>
     <details class="kw-group" open>
       <summary>모코콩콘 <span class="count">17종 · 움직이는 이모티콘</span></summary>
       <div class="kw-chips">
@@ -327,7 +334,7 @@ npm install</pre>
     <div class="releases">
       <a class="release latest" href="updates/v1.2.html">
         <div class="head"><span class="ver">v1.2</span><span class="badge">최신</span></div>
-        <p class="summary">홈페이지에서 카카오·디스코드로 가입하고 길드원 인증을 받을 수 있습니다. 승인된 길드원에게 일정 시트를 제공하며, 카톡 이모티콘 미리보기는 전체 그림이 보이도록 개선했습니다.</p>
+        <p class="summary">홈페이지에서 가입·길드원 인증 후 일정 시트를 볼 수 있습니다. 생일 모코코 6종을 추가하고, 이모티콘은 대괄호·점 접두사와 짧은 이름을 지원합니다. 카톡 미리보기는 전체 그림이 보이도록 개선했습니다.</p>
         <div class="chips"><span>홈페이지 가입</span><span>길드원 자동 확인</span><span>이모티콘 미리보기</span></div>
       </a>
       <a class="release" href="updates/v1.1.html">

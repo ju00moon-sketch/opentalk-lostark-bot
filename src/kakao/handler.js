@@ -22,7 +22,7 @@ export const KAKAO_GUILD_ONLY = new Set(['랭킹', '체급']);
 const excludedFor = (guild) => (guild ? KAKAO_EXCLUDED : new Set([...KAKAO_EXCLUDED, ...KAKAO_GUILD_ONLY]));
 // 카카오톡 이모티콘 스위치. 방에서는 이미지 대신 미리보기 카드 링크(/p/emo/키워드)를 보낸다 — false면 방 침묵·안내·이미지 서빙 404.
 export const KAKAO_EMOTICONS_ENABLED = true;
-const EMOTICONS_OFF = '카카오톡에서는 이모티콘이 잠시 꺼져 있어요. 디스코드에서 [키워드로 쓸 수 있어요.';
+const EMOTICONS_OFF = '카카오톡에서는 이모티콘이 잠시 꺼져 있어요. 디스코드에서 [키워드 또는 .키워드로 쓸 수 있어요.';
 
 const DEFAULT_BUDGET_MS = 4500;
 const PENDING_TTL_MS = 3 * 60 * 1000;
@@ -47,11 +47,19 @@ const shortKey = (key) => `${String(key).slice(0, 8)}…`;
 const guideResponse = () => textResponse(GUIDE, GUIDE_REPLIES);
 const plain = (response) => ({ response, link: null });
 
+// 점 접두사는 기존 커맨드를 우선하고, 실제 이미지가 있는 키워드만 이모티콘으로 받는다.
+const emoticonKeywordFor = (text, commandMap) => {
+  const keyword = parseEmoticonKeyword(text);
+  if (keyword && text.startsWith('.')
+      && (matchTextCommand(text, commandMap, KAKAO_MATCH_OPTIONS) || !findEmoticonFile(keyword))) return null;
+  return keyword;
+};
+
 // 발화 하나를 끝까지 실행한다 (예산과 무관). 절대 reject하지 않는다.
 // → { response: 카카오 스킬 응답 JSON, link: 방에 보낼 미리보기 카드 주소(없으면 null) }
 async function runUtterance(utterance, userKey, commandMap, baseUrl, { displayName, guild, roomName = null, limits = CHANNEL_LIMITS.skill } = {}) {
   const render = (payloads) => toKakaoResponse(payloads, { baseUrl, limits, fullTitle: utterance });
-  const keyword = parseEmoticonKeyword(utterance);
+  const keyword = emoticonKeywordFor(utterance, commandMap);
   if (keyword) {
     if (!KAKAO_EMOTICONS_ENABLED) return plain(textResponse(EMOTICONS_OFF));
     const file = findEmoticonFile(keyword);
@@ -225,10 +233,10 @@ export async function handleBridgeMessage(body, commandMap, { baseUrl, guild = n
   const room = String(body?.room ?? '').trim();
   const sender = String(body?.sender ?? '').trim();
   if (!text || !room || !sender) return { text: null, link: null };
-  // 접두사 있는 명령·허용된 단독 명령/초성과 (켜져 있을 때) [이모티콘만 받는다.
-  const isEmoticon = KAKAO_EMOTICONS_ENABLED && parseEmoticonKeyword(text);
+  // 접두사 있는 명령·허용된 단독 명령/초성과 (켜져 있을 때) 두 접두사의 이모티콘을 받는다.
+  const isEmoticon = KAKAO_EMOTICONS_ENABLED && emoticonKeywordFor(text, commandMap);
   if (!isCommandInput(text) && !isEmoticon) return { text: null, link: null };
-  // "..."·".ㅋㅋ"처럼 점으로 시작하는 잡담은 흔하다 — .으로 시작했는데 커맨드가 아니면 안내문 없이 침묵한다.
+  // 점으로 시작해도 등록된 커맨드나 이모티콘이 아니면 안내문 없이 침묵한다.
   // (/로 시작하는 오타는 예전처럼 안내문을 준다.)
   if (text.startsWith('.') && !isEmoticon && !matchTextCommand(text, commandMap, KAKAO_MATCH_OPTIONS)) return { text: null, link: null };
 
