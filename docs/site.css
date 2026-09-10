@@ -1,0 +1,40 @@
+@font-face { font-family: "IBM Plex Sans KR"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/body-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans KR"; font-style: normal; font-weight: 500; font-display: swap; src: url("assets/fonts/body-500.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans KR"; font-style: normal; font-weight: 600; font-display: swap; src: url("assets/fonts/body-600.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans KR"; font-style: normal; font-weight: 700; font-display: swap; src: url("assets/fonts/body-700.woff2") format("woff2"); }
+@font-face { font-family: "Gowun Dodum"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/brand-400.woff2") format("woff2"); }
+
+:root {
+  --bg: #f8f9f4;
+  --bg-card: #fffefb;
+  --bg-soft: #eef2e8;
+  --border: #dce4d6;
+  --border-strong: #b4c6aa;
+  --text: #263a2b;
+  --text-dim: #596755;
+  --text-muted: #626e5d;
+  --accent: #3d694b;
+  --accent-soft: #e8efdf;
+  --green: #3d694b;
+  --kakao: #fee500;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --display: var(--body);
+  --mono: "Cascadia Code", Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font: 16px/1.8 var(--body); word-break: keep-all; overflow-wrap: anywhere; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: #24472e; }
+button, input { font: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+a, button, summary { transition: color .18s, background-color .18s, border-color .18s, transform .18s; }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+code { padding: 2px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); font: .88em/1.65 var(--mono); white-space: nowrap; }
+.skip-link { position: fixed; left: 16px; top: 12px; z-index: 30; padding: 10px 18px; border-radius: 8px; background: var(--accent); color: #fff; transform: translateY(-160%); }
+.skip-link:focus { transform: translateY(0); color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

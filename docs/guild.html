@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f8f9f4">
+<meta name="robots" content="noindex">
+<meta name="description" content="포근해 길드 가입 상태와 길드 일정을 확인하세요.">
+<title>우리 길드 — 포근해용</title>
+<link rel="stylesheet" href="guild.css">
+<script src="guild.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">본문 바로가기</a>
+<header class="account-header">
+  <a class="account-brand" href="./">포근해용</a>
+  <nav class="guild-nav" aria-label="주 메뉴"><a href="./">홈페이지</a><a href="guild.html" aria-current="page">우리 길드</a><a href="account.html">내 계정</a></nav>
+</header>
+<main class="guild-layout" id="main-content">
+  <div class="guild-heading">
+    <div><p class="account-eyebrow">포근해 길드 · 루페온</p><h1>함께하는 우리 길드.</h1><p class="guild-lead">다가오는 일정도, 새로 온 인사도 이곳에서 확인해요.</p></div>
+    <button id="guild-refresh" class="quiet-button" type="button">새로 확인하기</button>
+  </div>
+  <p id="guild-status" class="account-status" role="status" aria-live="polite">로그인과 길드 가입 상태를 확인하고 있어요.</p>
+  <section id="guild-gate" class="guild-gate" aria-labelledby="gate-title" hidden>
+    <p class="account-eyebrow">우리 길드에서 만나요</p>
+    <h2 id="gate-title"></h2><p id="gate-description"></p>
+    <a id="gate-account" class="home-button" href="account.html">내 계정으로 이동</a>
+  </section>
+  <div id="guild-private" hidden>
+    <div class="guild-identity"><span id="guild-character"></span><span id="guild-role" class="membership-status"></span></div>
+    <section id="sheet-panel" class="sheet-panel" aria-labelledby="sheet-title" hidden>
+      <div class="section-heading"><div><p class="account-eyebrow">GUILD SCHEDULE</p><h2 id="sheet-title">길드 일정</h2></div><a id="sheet-open" class="quiet-button" target="_blank" rel="noopener noreferrer">새 창에서 보기 <span aria-hidden="true">↗</span></a></div>
+      <p class="section-description">읽기 전용으로 표시됩니다. 시트 아래쪽 탭에서 레이드를 선택해 주세요. 작은 화면에서는 새 창으로 열면 편하게 볼 수 있어요.</p>
+      <div id="sheet-frame" class="sheet-frame"></div>
+      <p class="sheet-note">원본 Google 시트의 공유 설정은 유지됩니다. 홈페이지의 열람 권한을 철회해도 원본 링크의 공개 범위나 이미 열린 외부 창의 접근은 바뀌지 않습니다.</p>
+    </section>
+    <section id="staff-panel" class="staff-panel" aria-labelledby="staff-title" hidden>
+      <div class="section-heading"><div><p class="account-eyebrow">GUILD MEMBERS</p><h2 id="staff-title" tabindex="-1">가입 신청과 길드원</h2></div><span id="staff-role-note" class="section-description"></span></div>
+      <div class="member-toolbar"><label for="member-filter">신청 상태</label><select id="member-filter"><option value="pending">심사 중</option><option value="approved">가입 승인</option><option value="rejected">가입 거절</option><option value="revoked">열람 철회</option><option value="">전체</option></select><p id="members-summary" role="status" aria-live="polite"></p></div>
+      <div id="member-list" class="guild-member-list"></div>
+      <div class="member-pagination"><button id="members-previous" class="quiet-button" type="button" disabled>이전 목록</button><span id="members-page"></span><button id="members-next" class="quiet-button" type="button" disabled>다음 목록</button></div>
+    </section>
+  </div>
+  <noscript><p>길드 가입 상태와 일정을 확인하려면 브라우저에서 JavaScript를 사용할 수 있어야 합니다.</p></noscript>
+</main>
+<dialog id="review-dialog" class="delete-dialog" aria-labelledby="review-title" aria-describedby="review-description">
+  <h2 id="review-title"></h2><p id="review-target"></p><p id="review-description"></p>
+  <div id="review-verification" class="review-verification" hidden>
+    <label for="review-verification-code">게임에서 받은 8자리 번호</label>
+    <input id="review-verification-code" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off" spellcheck="false" aria-describedby="review-code-help">
+    <p id="review-code-help">디스코드·카카오톡 등 외부 메신저에서 받은 번호만으로 승인하지 마세요.</p>
+    <label class="review-game-check" for="review-verified-in-game"><input id="review-verified-in-game" type="checkbox"><span>이 신청의 대표 캐릭터가 게임에서 번호를 보낸 것을 직접 확인했습니다.</span></label>
+  </div>
+  <p id="review-error" class="account-status" role="status" aria-live="polite"></p>
+  <button id="review-reload" class="quiet-button" type="button" hidden>최신 목록 확인</button>
+  <div class="member-actions"><button id="cancel-review" class="quiet-button" type="button">취소</button><button id="confirm-review" class="home-button" type="button">확인</button></div>
+</dialog>
+<footer class="account-footer"><span>포근해용</span><a href="privacy.html">개인정보 처리 안내</a><a href="account.html">내 계정</a></footer>
+</body>
+</html>

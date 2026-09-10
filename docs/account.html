@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f8f9f4">
+<meta name="robots" content="noindex">
+<title>내 계정 — 포근해용</title>
+<link rel="stylesheet" href="auth.css">
+<script src="auth.js" defer></script>
+</head>
+<body data-account-page>
+<a class="skip-link" href="#main-content">본문 바로가기</a>
+<header class="account-header">
+  <a class="account-brand" href="./">포근해용</a>
+  <a href="./">홈페이지로 돌아가기 <span aria-hidden="true">↗</span></a>
+</header>
+<main class="account-layout" id="main-content">
+  <section class="account-intro">
+    <p class="account-eyebrow">포근해 길드 · 루페온</p>
+    <h1>반가워요. <br>여기도 포근한 <br>우리의 공간.</h1>
+    <p>평소 사용하시는 계정으로<br>포근해용에 로그인해 주세요.</p>
+    <div class="account-note">봇 안내와 커맨드 목록은<br>로그인 없이도 둘러보실 수 있어요.</div>
+  </section>
+  <section class="account-card" aria-labelledby="account-title">
+    <p class="account-eyebrow">MY ACCOUNT</p>
+    <h2 id="account-title">로그인</h2>
+    <p id="auth-status" class="account-status" role="status" aria-live="polite">로그인 상태를 확인하고 있어요.</p>
+    <div id="signed-out" hidden>
+      <div class="provider-buttons">
+        <button id="login-discord" class="provider-button discord-button" type="button" disabled>디스코드로 로그인</button>
+        <button id="login-kakao" class="provider-button kakao-button" type="button" aria-describedby="kakao-readiness" disabled><img src="assets/kakao-login.png" width="183" height="45" alt="카카오 로그인"></button>
+        <p id="kakao-readiness" class="provider-readiness">카카오 로그인은 준비 중입니다.</p>
+      </div>
+      <p class="account-help">처음 로그인하면 홈페이지 회원가입이 완료됩니다.<br>길드 가입은 로그인 후 따로 신청해 주세요. 디스코드와 카카오 계정은 각각 별도로 사용하며 자동으로 합치지 않아요.</p>
+      <p class="account-privacy">계정 ID와 표시 이름, 가입·로그인 시각을 저장합니다.<br>로그인 전에 <a href="privacy.html">개인정보 처리 안내</a>를 확인해 주세요.</p>
+    </div>
+    <div id="signed-in" hidden>
+      <div class="member-avatar" aria-hidden="true">🌱</div>
+      <h3 id="member-name"></h3>
+      <p id="member-provider" class="account-help"></p>
+      <section id="account-guild" class="account-guild" aria-labelledby="membership-title" hidden>
+        <h3 id="membership-title">포근해 길드 가입</h3>
+        <p id="membership-status" class="membership-status" role="status" aria-live="polite"></p>
+        <p id="membership-character" class="account-help"></p>
+        <p id="membership-description" class="account-help"></p>
+        <p id="automatic-approval-intro" class="account-help" hidden>디스코드 KOR Lost ARK에서 인증한 대표 캐릭터명을 입력해 주세요. 신청하면 추가 동의 화면으로 이동합니다. 인증 서버의 루페온 역할·대표 캐릭터와 게임 내 포근해 길드 소속이 모두 확인되면 자동 승인됩니다.</p>
+        <form id="guild-application" hidden>
+          <label for="character-name">대표 캐릭터명</label>
+          <input id="character-name" name="characterName" type="text" required minlength="2" maxlength="12" pattern="[가-힣a-zA-Z0-9]{2,12}" autocomplete="off" spellcheck="false" aria-describedby="character-help">
+          <p id="character-help" class="account-help">공백 없이 한글·영문·숫자 2~12자로 입력해 주세요.</p>
+          <button id="apply-guild" class="home-button" type="submit">길드 가입 신청</button>
+        </form>
+        <section id="guild-automatic" class="guild-verification" aria-labelledby="automatic-approval-title" hidden>
+          <h4 id="automatic-approval-title">디스코드 인증으로 가입 확인</h4>
+          <p id="automatic-approval-description" class="account-help"></p>
+          <button id="automatic-approval-start" class="home-button" type="button" hidden>디스코드로 자동 승인 확인</button>
+        </section>
+        <section id="guild-verification" class="guild-verification" aria-labelledby="verification-title" hidden>
+          <h4 id="verification-title">게임에서 번호 전달하기</h4>
+          <p id="verification-description" class="account-help">신청한 대표 캐릭터로 게임에 접속해 아래 번호를 길드 관리자에게 직접 전달해 주세요. 관리자가 발신 캐릭터와 번호를 확인한 뒤 가입을 승인합니다.</p>
+          <p id="verification-code" class="verification-code" aria-label="게임 내 확인번호"></p>
+          <p id="verification-expiry" class="account-help"></p>
+          <p id="verification-attempts" class="account-help"></p>
+          <button id="reissue-verification" class="quiet-button" type="button">번호 다시 발급</button>
+          <p id="verification-reissue" class="account-help"></p>
+          <p class="account-help">번호는 발급 후 30분 동안 사용할 수 있어요. 새 번호를 발급하면 이전 번호는 사용할 수 없습니다.</p>
+        </section>
+        <p id="application-status" class="account-status" role="status" aria-live="polite"></p>
+      </section>
+      <p class="account-help">봇의 출석·캐릭터 등록 기록과 홈페이지 계정은 별도로 관리합니다.</p>
+      <p class="account-help">이름을 바꾸려면 디스코드 또는 카카오에서 변경한 뒤 다시 로그인해 주세요.</p>
+      <div class="member-actions">
+        <a class="home-button" href="guild.html">길드 페이지로 이동</a>
+        <button id="logout" class="quiet-button" type="button">로그아웃</button>
+      </div>
+      <button id="delete-account" class="delete-link" type="button">회원 탈퇴</button>
+      <div id="reauthentication" class="account-reauth" hidden>
+        <p>계정을 보호하기 위해 본인 확인이 필요해요. 같은 계정으로 다시 로그인한 뒤 회원 탈퇴를 선택해 주세요.</p>
+        <button id="reauthenticate" class="quiet-button" type="button">다시 로그인하기</button>
+      </div>
+    </div>
+    <button id="auth-retry" class="quiet-button" type="button" hidden>다시 확인하기</button>
+    <noscript><p>로그인하려면 브라우저에서 JavaScript를 사용할 수 있어야 합니다.</p></noscript>
+  </section>
+</main>
+<dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description">
+  <h2 id="delete-title">회원 탈퇴하시겠어요?</h2>
+  <p id="delete-description">이 홈페이지의 계정 정보, 길드 가입 신청·승인 상태·관리자 권한과 모든 로그인 세션을 삭제합니다. 삭제한 정보는 복구할 수 없으며, 다시 가입하면 길드 승인을 새로 받아야 해요. 디스코드 서버 가입 상태와 봇의 출석·캐릭터 등록 기록은 변경되지 않습니다.</p>
+  <p id="delete-provider-note"></p>
+  <div class="member-actions">
+    <button id="cancel-delete" class="quiet-button" type="button">취소</button>
+    <button id="confirm-delete" class="delete-button" type="button">탈퇴하고 정보 삭제</button>
+  </div>
+</dialog>
+<footer class="account-footer"><span>포근해용</span><a href="privacy.html">개인정보 처리 안내</a><a href="mailto:ju00moon@naver.com">문의하기</a></footer>
+</body>
+</html>

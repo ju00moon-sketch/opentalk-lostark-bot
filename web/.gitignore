@@ -1,0 +1,6 @@
+.env
+.env.*
+data/
+*.sqlite
+*.sqlite-*
+*.unlink-inbox/

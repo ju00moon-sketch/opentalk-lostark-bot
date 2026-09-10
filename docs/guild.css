@@ -1,0 +1,55 @@
+@import url("auth.css");
+.guild-nav{display:flex;gap:24px;align-items:center;font-size:.86rem}
+.guild-nav [aria-current="page"]{font-weight:600;text-decoration:underline;text-underline-offset:7px}
+.guild-layout{max-width:1184px;margin:auto;padding:64px 32px 90px;min-height:calc(100svh - 190px)}
+.guild-heading,.section-heading{display:flex;justify-content:space-between;align-items:center;gap:24px}
+.guild-heading .account-eyebrow{margin-bottom:14px}
+.guild-heading h1{font-size:clamp(2rem,3.5vw,3rem);letter-spacing:-.06em;line-height:1.4;font-weight:600}
+.guild-lead{margin-top:14px;font-size:.94rem;color:var(--text-dim)}
+.guild-heading>.quiet-button{flex-shrink:0}
+.guild-layout>.account-status{margin:22px 0 28px}
+.guild-gate{max-width:620px;margin:36px auto 60px;padding:42px;background:var(--bg-card);border:1px solid var(--border);border-radius:18px}
+.guild-gate h2{font-size:1.5rem;letter-spacing:-.04em;font-weight:600}
+.guild-gate>p:not(.account-eyebrow){color:var(--text-dim);font-size:.92rem;margin-top:16px}
+.guild-gate>.home-button{margin-top:28px;width:fit-content;min-width:180px}
+.guild-identity{display:flex;gap:14px;align-items:center;margin-bottom:24px;font-size:.93rem;color:var(--text-dim)}
+.guild-identity .membership-status{margin:0;flex-shrink:0}
+.sheet-panel,.staff-panel{border:1px solid var(--border);background:var(--bg-card);border-radius:18px;padding:30px}
+.section-heading .account-eyebrow{margin-bottom:6px;font-size:.7rem}
+.section-heading h2{font-size:1.5rem;letter-spacing:-.04em;font-weight:600}
+.section-description,.sheet-note{color:var(--text-dim);font-size:.82rem;line-height:1.85}
+.section-description{margin-top:10px}
+.section-heading>.quiet-button{flex-shrink:0;display:inline-flex;align-items:center;gap:12px}
+.sheet-frame{margin-top:24px;min-height:340px;height:min(70vh,740px);border:1px solid var(--border);border-radius:9px;background:var(--bg-soft);overflow:hidden}
+.sheet-frame iframe{display:block;width:100%;height:100%;border:0;background:white}
+.sheet-note{margin-top:18px;max-width:850px}
+.staff-panel{margin-top:36px}
+.member-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:26px 0 4px;padding-bottom:18px;border-bottom:1px solid var(--border);font-size:.85rem}
+.member-toolbar label{font-weight:600}
+.member-toolbar select{font:inherit;color:var(--text);background:var(--bg-card);border:1px solid var(--border-strong);border-radius:8px;min-height:44px;padding:8px 32px 8px 12px}
+.member-toolbar select:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+#members-summary{margin-left:auto;color:var(--text-dim);font-size:.79rem}
+.guild-member{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;padding:22px 0;border-bottom:1px solid var(--border)}
+.guild-member h3{font-size:1.03rem;font-weight:600;line-height:1.6;overflow-wrap:anywhere}
+.guild-member p{font-size:.77rem;color:var(--text-dim);margin-top:5px;overflow-wrap:anywhere}
+.guild-member .member-state{color:var(--accent);font-weight:500}
+.guild-member-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.guild-member-actions .quiet-button{min-height:42px;padding:8px 14px;font-size:.79rem}
+.guild-member-actions .review-approve{background:var(--accent);color:white;border-color:var(--accent)}
+.guild-member-actions .review-caution{color:#963d37;border-color:#ccaaa5}
+.member-pagination{display:flex;justify-content:center;align-items:center;gap:24px;margin-top:24px}
+.member-pagination span{font-size:.8rem;color:var(--text-dim)}
+.guild-empty{padding:36px 0;text-align:center;color:var(--text-dim);font-size:.88rem}
+#review-target{font-weight:600;color:var(--text);overflow-wrap:anywhere}
+.review-verification{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.review-verification>label{display:block;font-size:.85rem;font-weight:600;margin-bottom:8px}
+#review-verification-code{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--border-strong);border-radius:8px;background:var(--bg-card);color:var(--text);font-size:1.25rem;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+.review-verification>.review-game-check{display:flex;align-items:flex-start;gap:10px;margin-top:20px;font-size:.83rem;line-height:1.8;font-weight:400;cursor:pointer}
+.review-game-check input{width:18px;height:18px;flex-shrink:0;margin-top:4px;accent-color:var(--accent)}
+#review-error:empty{display:none}
+#review-error{margin:16px 0 0;color:#a03632}
+#review-reload{margin-top:12px;width:100%}
+#confirm-review{min-height:46px;font-size:.84rem;padding:10px;line-height:1.5}
+#confirm-review:disabled{cursor:not-allowed}
+@media(max-width:760px){.guild-nav{gap:14px;font-size:.77rem}.guild-layout{padding:36px 22px 56px}.guild-heading{align-items:flex-start;flex-direction:column;gap:18px}.guild-heading>.quiet-button{padding:8px 14px;min-height:42px}.guild-lead{font-size:.85rem}.guild-gate{padding:28px 24px}.sheet-panel,.staff-panel{padding:24px 20px;border-radius:14px}.section-heading{flex-wrap:wrap;gap:16px}.section-heading h2{font-size:1.3rem}.section-description{margin-top:0}.sheet-panel>.section-description{margin-top:14px}.sheet-frame{height:58vh;min-height:360px;margin-top:20px}.sheet-note{font-size:.75rem}.staff-panel{margin-top:24px}.guild-member{grid-template-columns:1fr;gap:16px}.guild-member-actions{justify-content:flex-start}.member-toolbar{gap:10px}#members-summary{flex-basis:100%;margin-left:0}.member-pagination{gap:12px}.member-pagination .quiet-button{padding:9px 12px;font-size:.78rem}.guild-identity{align-items:flex-start}.guild-nav>a:first-child{display:none}}
+@media(max-width:360px){.guild-layout{padding-inline:16px}.sheet-panel,.staff-panel{padding:22px 16px}.guild-nav{gap:12px}.guild-heading h1{font-size:1.95rem}}
